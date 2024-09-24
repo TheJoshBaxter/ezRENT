@@ -155,6 +155,6 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 
 LOGIN_URL = '/managementPortal/login/'
 
-# enhance security
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+# enhance security (BUT THIS BREAKS MY LOGIN FUNCTIONALITY)
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
