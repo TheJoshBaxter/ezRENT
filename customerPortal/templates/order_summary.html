@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Order Summary</h1>
+    <p><strong>Equipment:</strong> {{ order.equipment.name }}</p>
+    <p><strong>Rental Start Date:</strong> {{ order.rental_start_date }}</p>
+    <p><strong>Rental End Date:</strong> {{ order.rental_end_date }}</p>
+    <p><strong>Pickup Time</strong> {{ order.dropoff_time }}</p>
+    <p><strong>Dropoff Time</strong> {{ order.pickup_time }}</p>
+    <p><strong>Total Cost:</strong> ${{ order.total_cost }}</p>
+    <form method="post" action="{% url 'confirmation' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Confirm and Pay</button>
+    </form>
+</div>
+{% endblock %}

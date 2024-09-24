@@ -1,0 +1,9 @@
+table {
+    background-color: #fff;
+    border-radius: 5px;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+}

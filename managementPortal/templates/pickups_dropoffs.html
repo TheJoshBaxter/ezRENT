@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Today's Pickups and Dropoffs</h1>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Outgoing Rentals
+        </div>
+        <div class="card-body">
+            {% for order in outgoing_orders %}
+                <p>{{ order.equipment.name }} - Pickup at {{ order.pickup_time }}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Rental Returns
+        </div>
+        <div class="card-body">
+            {% for order in returning_orders %}
+                <p>{{ order.equipment.name }} - Dropoff at {{ order.dropoff_time }}</p>
+                <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Perform Inspection</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

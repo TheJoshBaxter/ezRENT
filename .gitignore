@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Django
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+db.sqlite3
+
+# PG DB
+*.sql
+*.dump
+
+
+# Virtualenv
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# Ignore settings files with secrets
+*.env
+.DS_Store
+
+# Migrations
+# */migrations/
+
+# Media and static files
+media/
+staticfiles/
+
+# VSCode and PyCharm IDE
+.vscode/
+.idea/

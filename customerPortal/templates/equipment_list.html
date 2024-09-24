@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Available Equipment</h1>
+    <div class="row">
+        {% for item in equipment %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ item.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                        <p>{{ item.specs|truncatechars:100 }}</p>
+                        <p><strong>Cost per day:</strong> ${{ item.cost_per_day }}</p>
+                        <p><strong>Availability:</strong> {{ item.availability_message }}</p>
+                        <a href="{% url 'equipment_detail' item.id %}" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

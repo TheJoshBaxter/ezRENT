@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">{{ equipment.name }}</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <!-- <img src="{{ equipment.image.url }}" class="img-fluid" alt="{{ equipment.name }}"> -->
+            <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ equipment.name }}">
+        </div>
+        <div class="col-md-6">
+            <p><strong>Specifications:</strong> {{ equipment.specs }}</p>
+            <p><strong>Cost per day:</strong> ${{ equipment.cost_per_day }}</p>
+            <p><strong>Available:</strong> {{ equipment.available_quantity }} units</p>
+
+            <form method="post" action="{% url 'equipment_detail' equipment.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="start_date">Rental Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_date">Rental End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                </div>
+
+                <!-- Trigger button for modal -->
+                <button type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal">
+                    Book Your Rental
+                </button>
+
+                <!-- Bootstrap Modal -->
+                <div class="modal fade" id="rentalModal" tabindex="-1" aria-labelledby="rentalModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rentalModalLabel">Complete Your Rental</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" class="form-control" name="first_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" class="form-control" name="last_name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="company_name">Company Name (optional)</label>
+                                    <input type="text" class="form-control" name="company_name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone_number">Phone Number</label>
+                                    <input type="tel" class="form-control" name="phone_number" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" class="form-control" name="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pickup_time">Pick-up Time</label>
+                                    <input type="time" class="form-control" name="pickup_time" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dropoff_time">Drop-off Time</label>
+                                    <input type="time" class="form-control" name="dropoff_time" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Confirm and Pay</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

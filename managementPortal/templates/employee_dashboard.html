@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Employee Dashboard</h1>
+    <h3>Current Rentals</h3>
+    <!--here?-->
+    <a href="{% url 'todays_pickups_dropoffs' %}" class="btn btn-primary">See Today's Pickups/Dropoffs</a>
+    <!--here?-->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Customer</th>
+                <th>Equipment</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Payment Status</th>
+                <th>Contract Signed</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.customer.first_name }} {{ order.customer.last_name }}</td>
+                    <td>{{ order.equipment.name }}</td>
+                    <td>{{ order.rental_start_date }}</td>
+                    <td>{{ order.rental_end_date }}</td>
+                    <td>{{ order.payment_status|yesno:"Paid,Unpaid" }}</td>
+                    <td>{{ order.contract_signed|yesno:"Signed,Not Signed" }}</td>
+                    <td>
+                        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#details-{{ order.id }}" aria-expanded="false" aria-controls="details-{{ order.id }}">
+                            View Details
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="details-{{ order.id }}">
+                    <td colspan="7">
+                        <strong>Phone Number:</strong> {{ order.customer.phone_number }}<br>
+                        <strong>Email:</strong> {{ order.customer.email }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
