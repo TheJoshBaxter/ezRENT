@@ -4,6 +4,7 @@ from managementPortal.models import Equipment, RentalOrder
 from datetime import datetime, date, timedelta
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db.models import Q
 
 # Create your views here.
 
@@ -14,12 +15,17 @@ def equipment_list(request):
     # Determine availability for each equipment item
     for item in equipment:
         today = date.today()
-        next_reservation = RentalOrder.objects.filter(equipment=item, rental_start_date__gte=today).order_by('rental_start_date').first()
+        next_reservation = RentalOrder.objects.filter(
+            Q(rental_start_date__gte=today) | Q(rental_end_date__gte=today), # if the rental start date or end date is greater than or equal to today...
+            equipment=item
+            ).order_by('rental_start_date').first()
 
         if next_reservation and next_reservation.rental_start_date == today:
-            item.availability_message = f"Available until {next_reservation.rental_start_date - timedelta(days=1)}"
+            item.availability_message = f"Not available until {next_reservation.rental_end_date + timedelta(days=1)}"
+        elif next_reservation and next_reservation.rental_start_date <= today and next_reservation.rental_end_date >= today:
+            item.availability_message = f"Not available until {next_reservation.rental_end_date + timedelta(days=1)}"
         elif next_reservation:
-            item.availability_message = f"Available starting on {next_reservation.rental_start_date}"
+            item.availability_message = f"Available until {next_reservation.rental_start_date - timedelta(days=1)}"
         else:
             item.availability_message = "Available now"
 

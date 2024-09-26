@@ -9,9 +9,13 @@
             Outgoing Rentals
         </div>
         <div class="card-body">
-            {% for order in outgoing_orders %}
-                <p>{{ order.equipment.name }} - Pickup at {{ order.pickup_time }}</p>
-            {% endfor %}
+            {% if outgoing_orders %}
+                {% for order in outgoing_orders %}
+                    <p>{{ order.equipment.name }} - Pickup at {{ order.pickup_time }}</p>
+                {% endfor %}
+            {% else %}
+                <p>No rentals being picked up today</p>
+            {% endif %}
         </div>
     </div>
 
@@ -20,10 +24,18 @@
             Rental Returns
         </div>
         <div class="card-body">
-            {% for order in returning_orders %}
-                <p>{{ order.equipment.name }} - Dropoff at {{ order.dropoff_time }}</p>
-                <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Perform Inspection</a>
-            {% endfor %}
+            {% if returning_orders %}
+                {% for order in returning_orders %}
+                    <p>{{ order.equipment.name }} - Dropoff at {{ order.dropoff_time }}</p>
+                    {% if order.inspected == False %}
+                    <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Perform Inspection</a>
+                    {% else %}
+                    <a href="#" class="btn btn-success">Inspection Complete</a>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p>No rentals being returned today</p>
+            {% endif %}
         </div>
     </div>
 </div>

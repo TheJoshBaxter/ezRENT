@@ -54,6 +54,15 @@ def todays_pickups_dropoffs(request):
     outgoing_orders = RentalOrder.objects.filter(rental_start_date=today).order_by('pickup_time')
     returning_orders = RentalOrder.objects.filter(rental_end_date=today).order_by('dropoff_time')
 
+    # this block determines if each returning item has already been inspected or not
+    for item in returning_orders:
+        exists = Inspection.objects.filter(rental_order_id=item.id).exists()
+        if exists:
+            item.inspected = True
+        else:
+            item.inspected = False
+
+
     return render(request, 'pickups_dropoffs.html', {
         'outgoing_orders': outgoing_orders,
         'returning_orders': returning_orders,
