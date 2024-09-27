@@ -49,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'ezRENT.urls'
@@ -122,6 +123,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# This is where Django will collect static files for production
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Change this to your preferred directory
 
 STATICFILES_DIRS = [
     BASE_DIR / "customerPortal/static",
