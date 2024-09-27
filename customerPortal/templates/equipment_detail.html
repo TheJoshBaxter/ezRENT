@@ -18,11 +18,11 @@
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="start_date">Rental Start Date</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    <input type="text" class="form-control" id="start_date" name="start_date" required>
                 </div>
                 <div class="form-group">
                     <label for="end_date">Rental End Date</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    <input type="text" class="form-control" id="end_date" name="end_date" required>
                 </div>
 
                 <!-- Trigger button for modal -->
@@ -79,4 +79,41 @@
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        var equipmentId = {{ equipment.id }};  // Assuming you pass the equipment ID to the template
+
+        // Fetch unavailable dates from the server
+        $.ajax({
+            url: "{% url 'get_unavailable_dates' equipment.id %}",  // Django URL for fetching unavailable dates
+            method: "GET",
+            success: function(response) {
+                var unavailableDates = response.unavailable_dates;
+
+                // Convert unavailable dates to an array of string format 'YYYY-MM-DD'
+                var disabledDates = unavailableDates.map(function(dateStr) {
+                    var date = new Date(dateStr);
+                    var day = ("0" + date.getDate()).slice(-2);
+                    var month = ("0" + (date.getMonth() + 1)).slice(-2);
+                    return date.getFullYear() + '-' + month + '-' + day;
+                });
+                console.log('Disabled dates:', disabledDates);  // Log disabled dates
+
+
+                // Initialize jQuery UI Datepicker and disable unavailable dates
+                $("#start_date, #end_date").datepicker({
+                    dateFormat: "yy-mm-dd",  // Format as 'YYYY-MM-DD'
+                    beforeShowDay: function(date) {
+                        var dateString = $.datepicker.formatDate('yy-mm-dd', date);
+                        console.log('Date being checked:', dateString);  // Log the date being checked by the calendar
+                        return [disabledDates.indexOf(dateString) == -1];  // Return true if the date is not disabled
+                    }
+                });
+
+
+            }
+        });
+    });
+</script>
 {% endblock %}
