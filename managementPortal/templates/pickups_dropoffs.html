@@ -2,8 +2,20 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">Today's Pickups and Dropoffs</h1>
+    <h1 class="mt-5">Pickups and Dropoffs 
+        <label for="filter-date" class="form-label">For:</label>
+        <input type="date" id="filter-date" class="form-control" value="{{ selected_date }}" onchange="applyDateFilter()">
+    </h1>
+    <hr>
 
+    <!-- Date Picker for Filtering Pickups/Dropoffs -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-3">
+            
+        </div>
+    </div>
+
+    <!-- Outgoing Rentals Section -->
     <div class="card mt-3">
         <div class="card-header">
             Outgoing Rentals
@@ -19,6 +31,7 @@
         </div>
     </div>
 
+    <!-- Rental Returns Section -->
     <div class="card mt-3">
         <div class="card-header">
             Rental Returns
@@ -39,4 +52,12 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Function to apply the selected date filter by reloading the page with the selected date in the URL
+    function applyDateFilter() {
+        const selectedDate = document.getElementById('filter-date').value;
+        window.location.href = `?date=${selectedDate}`;  // Redirect with date in query string
+    }
+</script>
 {% endblock %}

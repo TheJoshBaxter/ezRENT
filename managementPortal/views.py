@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Equipment, RentalOrder, Inspection
 from datetime import date
+from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
@@ -45,14 +46,34 @@ def logout_view(request):
 # Backend dashboard for business to manage orders and equipment
 @login_required
 def employee_dashboard(request):
-    orders = RentalOrder.objects.all()
-    return render(request, 'employee_dashboard.html', {'orders': orders})
+    today = date.today()  # Get the current date
+
+    # print(date.today())                            THESE ARE THE SAME FOR THE RECORD
+    # print(timezone.now().date())
+
+    filter_option = request.GET.get('filter', 'current')  # Get the filter option from query parameters, default to 'current'
+
+    # Filter the RentalOrder queryset based on the selected filter option
+    if filter_option == 'current':
+        orders = RentalOrder.objects.filter(rental_end_date__gte=today)
+    elif filter_option == 'upcoming':
+        orders = RentalOrder.objects.filter(rental_start_date__gt=today)
+    elif filter_option == 'past':
+        orders = RentalOrder.objects.filter(rental_end_date__lt=today)
+    else:
+        orders = RentalOrder.objects.all()  # 'all' or no filter
+
+    return render(request, 'employee_dashboard.html', {'orders': orders, 'filter_option': filter_option})
 
 @login_required
 def todays_pickups_dropoffs(request):
-    today = date.today()
-    outgoing_orders = RentalOrder.objects.filter(rental_start_date=today).order_by('pickup_time')
-    returning_orders = RentalOrder.objects.filter(rental_end_date=today).order_by('dropoff_time')
+    # Get the date from the query parameters, defaulting to today if not provided
+    selected_date_str = request.GET.get('date', timezone.now().date().strftime('%Y-%m-%d')) # data from the user comes in string format 
+    selected_date = timezone.datetime.strptime(selected_date_str, '%Y-%m-%d').date() # convert to datetime object and format
+
+    # filter data according to user-selected date
+    outgoing_orders = RentalOrder.objects.filter(rental_start_date=selected_date).order_by('pickup_time') 
+    returning_orders = RentalOrder.objects.filter(rental_end_date=selected_date).order_by('dropoff_time')
 
     # this block determines if each returning item has already been inspected or not
     for item in returning_orders:
@@ -66,6 +87,7 @@ def todays_pickups_dropoffs(request):
     return render(request, 'pickups_dropoffs.html', {
         'outgoing_orders': outgoing_orders,
         'returning_orders': returning_orders,
+        'selected_date': selected_date_str,
     })
 
 def perform_inspection(request, order_id):
