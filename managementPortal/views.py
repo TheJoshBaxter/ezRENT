@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Equipment, RentalOrder, Inspection
-from datetime import date
+from datetime import date, timedelta
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from .forms import UserRegisterForm
-
+import json
+from django.http import JsonResponse
 
 # Create your views here.
 def register(request):
@@ -55,13 +56,18 @@ def employee_dashboard(request):
 
     # Filter the RentalOrder queryset based on the selected filter option
     if filter_option == 'current':
-        orders = RentalOrder.objects.filter(rental_end_date__gte=today)
+        orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today).order_by('rental_end_date')
     elif filter_option == 'upcoming':
         orders = RentalOrder.objects.filter(rental_start_date__gt=today)
     elif filter_option == 'past':
         orders = RentalOrder.objects.filter(rental_end_date__lt=today)
     else:
         orders = RentalOrder.objects.all()  # 'all' or no filter
+
+    # Add days remaining information to each order
+    for order in orders:
+        days_remaining = (order.rental_end_date - today).days
+        order.days_remaining = days_remaining
 
     return render(request, 'employee_dashboard.html', {'orders': orders, 'filter_option': filter_option})
 
@@ -95,10 +101,31 @@ def perform_inspection(request, order_id):
     if request.method == 'POST':
         notes = request.POST.get('notes', '')
         photos = request.FILES.get('photos', None)
+        cleaned = request.POST.get('cleaned')
+        extrasRented = request.POST.get('extrasRented')
+        extrasReturned = request.POST.get('extrasReturned')
+        fuelReturnLevel = request.POST.get('fuelReturnLevel')
         inspection = Inspection.objects.create(
             rental_order=order,
             notes=notes,
-            photos=photos
+            photos=photos,
+            cleaned=cleaned,
+            extras_rented=extrasRented,
+            extras_returned=extrasReturned,
+            fuel_return_level=fuelReturnLevel
         )
-        return redirect('employee_dashboard')
+        return redirect('todays_pickups_dropoffs')
     return render(request, 'perform_inspection.html', {'order': order})
+
+def extend_rental(request, order_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            days_to_extend = int(data.get('days_to_extend', 0))
+            rental_order = RentalOrder.objects.get(id=order_id)
+            rental_order.rental_end_date += timedelta(days=days_to_extend)
+            rental_order.save()
+            return JsonResponse({'success': True})
+        except (RentalOrder.DoesNotExist, ValueError):
+            return JsonResponse({'success': False}, status=400)
+    return JsonResponse({'success': False}, status=405)

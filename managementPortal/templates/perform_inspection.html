@@ -4,13 +4,64 @@
 <div class="container">
     <h1 class="mt-5">Perform Inspection</h1>
     <form method="post" enctype="multipart/form-data">
+        <br>
         {% csrf_token %}
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="fuelReturnLevel" class="form-label fw-bold">Fuel Return Level</label>
+                    <select name="fuelReturnLevel" id="fuelReturnLevel" class="form-select">
+                        <option value="F" selected>Full Tank</option>
+                        <option value="3/4">3/4 Tank</option>
+                        <option value="1/2">1/2 Tank</option>
+                        <option value="1/4">1/4 Tank</option>
+                        <option value="E">Empty Tank</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="cleaned" class="form-label fw-bold">Cleaned?</label>
+                    <select name="cleaned" id="cleaned" class="form-select">
+                        <option value="True" selected>Yes</option>
+                        <option value="False">No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="extrasRented" class="form-label fw-bold">Extras Rented?</label>
+                    <select name="extrasRented" id="extrasRented" class="form-select">
+                        <option value="True">Yes</option>
+                        <option value="False" selected>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="extrasReturned" class="form-label fw-bold">Extras Returned?</label>
+                    <select name="extrasReturned" id="extrasReturned" class="form-select">
+                        <option value="True">Yes</option>
+                        <option value="False" selected>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
         <div class="form-group">
-            <label for="notes">Inspection Notes</label>
+            <label for="notes" class="form-label fw-bold">Inspection Notes</label>
             <textarea class="form-control" name="notes" rows="5"></textarea>
         </div>
         <div class="form-group">
-            <label for="photos">Upload Photos</label>
+            <label for="photos" class="form-label fw-bold">Upload Photos</label>
             <input type="file" class="form-control" name="photos">
         </div>
         <button type="submit" class="btn btn-success mt-3">Submit Inspection</button>

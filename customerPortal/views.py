@@ -62,8 +62,9 @@ def equipment_detail(request, equipment_id):
         email = request.POST['email']
         start_date = request.POST['start_date']
         end_date = request.POST['end_date']
-        pickup_time = request.POST['pickup_time']
-        dropoff_time = request.POST['dropoff_time']
+        # pickup_time = request.POST['pickup_time']
+        # dropoff_time = request.POST['dropoff_time']
+        location = request.POST['location']
         print('step 1 grabbed data complete')
 
         # Step 2: Save customer information
@@ -87,8 +88,9 @@ def equipment_detail(request, equipment_id):
             equipment=equipment,
             rental_start_date=start_date,
             rental_end_date=end_date,
-            pickup_time=pickup_time,
-            dropoff_time=dropoff_time,
+            # pickup_time=pickup_time,
+            # dropoff_time=dropoff_time,
+            location=location,
             total_cost=total_cost,
         )
         print('step 4 created rentalOrder object')
