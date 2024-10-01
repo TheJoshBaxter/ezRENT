@@ -7,6 +7,8 @@
         <input type="date" id="filter-date" class="form-control" value="{{ selected_date }}" onchange="applyDateFilter()">
     </h1>
     <hr>
+    {% comment %} <a href="{% url 'employee_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+    <a href="{% url 'inspections' %}" class="btn btn-primary">Pending Inspections</a> {% endcomment %}
 
     <!-- Date Picker for Filtering Pickups/Dropoffs -->
     <div class="row align-items-center mb-4">

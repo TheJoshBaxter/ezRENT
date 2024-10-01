@@ -58,9 +58,9 @@ def employee_dashboard(request):
     if filter_option == 'current':
         orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today).order_by('rental_end_date')
     elif filter_option == 'upcoming':
-        orders = RentalOrder.objects.filter(rental_start_date__gt=today)
+        orders = RentalOrder.objects.filter(rental_start_date__gt=today).order_by('rental_end_date')
     elif filter_option == 'past':
-        orders = RentalOrder.objects.filter(rental_end_date__lt=today)
+        orders = RentalOrder.objects.filter(rental_end_date__lt=today).order_by('rental_end_date')
     else:
         orders = RentalOrder.objects.all()  # 'all' or no filter
 
@@ -117,6 +117,11 @@ def perform_inspection(request, order_id):
         return redirect('todays_pickups_dropoffs')
     return render(request, 'perform_inspection.html', {'order': order})
 
+def view_inspection(request, order_id):
+    inspection = Inspection.objects.filter(rental_order_id=order_id).get()
+
+    return render(request, 'view_inspection.html', {'inspection': inspection})
+
 def extend_rental(request, order_id):
     if request.method == 'POST':
         try:
@@ -129,3 +134,27 @@ def extend_rental(request, order_id):
         except (RentalOrder.DoesNotExist, ValueError):
             return JsonResponse({'success': False}, status=400)
     return JsonResponse({'success': False}, status=405)
+
+def end_rental(request, order_id):
+    if request.method == 'POST':
+        try:
+            rental_order = RentalOrder.objects.get(id=order_id)
+            rental_order.rental_end_date = date.today()
+            rental_order.save()
+            return JsonResponse({'success': True})
+        except (RentalOrder.DoesNotExist, ValueError):
+            return JsonResponse({'success': False}, status=400)
+    return JsonResponse({'success': False}, status=405)
+
+# Inspections view
+def inspections(request):
+
+    today = date.today()
+
+    orders_without_inspections = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today).order_by('rental_end_date')
+    orders_with_inspections = RentalOrder.objects.filter(inspection__isnull=False).order_by('rental_end_date')
+
+    return render(request, 'inspections.html', {
+        'orders_with_inspections': orders_with_inspections,
+        'orders_without_inspections': orders_without_inspections
+    })

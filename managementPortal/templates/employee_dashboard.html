@@ -6,11 +6,13 @@
     <div class="row align-items-center mb-4 mt-4">
         <div class="col-md-6">
             <h1 class="mt-3">Employee Dashboard:</h1>
+            <a href="{% url 'todays_pickups_dropoffs' %}" class="btn btn-primary">Today's Pickups/Dropoffs</a>
+            <a href="{% url 'inspections' %}" class="btn btn-primary">Pending Inspections</a>
         </div>
-        <div class="col-md-3"></div>
-        <div class="col-md-3 text-end">
-            <a href="{% url 'todays_pickups_dropoffs' %}" class="btn btn-primary">See Today's Pickups/Dropoffs</a>
-        </div>
+        {% comment %} <div class="col-md-3"></div>
+        <div class="col-md-3 text-end"> {% endcomment %}
+
+        {% comment %} </div> {% endcomment %}
     </div>
     <hr>
 
@@ -30,8 +32,8 @@
     <div class="row">
         {% for order in orders %}
             <div class="col-md-4 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-body">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
                         <!-- Rental Start Date -->
                         <div class="card-text" style="font-size: 14px; font-weight: bold;">
                             {{ order.rental_start_date }}
@@ -67,20 +69,22 @@
                         <br>
 
                         <!-- Action Buttons -->
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-secondary">End Rental</button>
-                            <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#extendModal-{{ order.id }}">Extend Rental</button>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
+                                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Modal for Extending Rental -->
-            <div class="modal fade" id="extendModal-{{ order.id }}" tabindex="-1" aria-labelledby="extendModalLabel" aria-hidden="true">
+            <div class="modal fade" id="extendRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="extendRentalModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="extendModalLabel">Extend Rental for {{ order.equipment.name }}</h5>
+                            <h5 class="modal-title" id="extendRentalModalLabel">Extend Rental for {{ order.equipment.name }}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -93,6 +97,25 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             <button type="button" class="btn btn-primary" onclick="extendRental({{ order.id }})">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for Ending Rental -->
+            <div class="modal fade" id="endRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="endRentalModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="endRentalModalLabel">End Rental for {{ order.equipment.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Are you sure you want to end this rental? This will set the end date to today.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="endRental({{ order.id }})">Yes, End Rental</button>
                         </div>
                     </div>
                 </div>
@@ -134,7 +157,7 @@
             .then(data => {
                 if (data.success) {
                     // Close the modal and refresh the page
-                    let modal = document.getElementById(`extendModal-${orderId}`);
+                    let modal = document.getElementById(`extendRentalModal-${orderId}`);
                     let modalInstance = bootstrap.Modal.getInstance(modal);
                     modalInstance.hide();
                     location.reload();
@@ -144,5 +167,30 @@
             });
         }
     }
+
+    // Function to handle the "end rental" button
+    function endRental(orderId) {
+            // Make an AJAX request to end the rental
+            fetch(`/managementPortal/end_rental/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close the modal and refresh the page
+                    let modal = document.getElementById(`endRentalModal-${orderId}`);
+                    let modalInstance = bootstrap.Modal.getInstance(modal);
+                    modalInstance.hide();
+                    location.reload();
+                } else {
+                    alert('Failed to end rental');
+                }
+            });
+        }
+
 </script>
 {% endblock %}

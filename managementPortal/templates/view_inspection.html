@@ -1,0 +1,22 @@
+<!-- templates/view_inspection.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Inspection Details for Rental Order #{{ inspection.rental_order_id }}</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title"><strong>Customer:</strong> {{ inspection.rental_order.customer.first_name }} {{ inspection.rental_order.customer.last_name }}</h5>
+            <h5 class="card-title"><strong>Inspection Date:</strong> {{ inspection.inspection_date }}</h5>
+            <h5 class="card-text"><strong>Fuel Return Level:</strong> {{ inspection.fuel_return_level }}<h5>
+            <h5 class="card-text"><strong>Cleaned:</strong> {{ inspection.cleaned }}</h5>
+            <h5 class="card-text"><strong>Extras Rented:</strong> {{ inspection.extras_rented }}</h5>
+            {% if inspection.extras_rented %}
+            <h5 class="card-text"><strong>Extras Returned:</strong> {{ inspection.extras_returned }}</h5>
+            
+            {% endif %}
+        </div>
+    </div>
+    <a href="{% url 'inspections' %}" class="btn btn-primary mt-3">Back to Inspection Dashboard</a>
+</div>
+{% endblock %}

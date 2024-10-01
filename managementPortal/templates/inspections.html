@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Inspections</h1>
+    <hr>
+    {% comment %} <a href="{% url 'employee_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
+    <a href="{% url 'inspections' %}" class="btn btn-primary">Pending Inspections</a> {% endcomment %}
+
+    <!-- Date Picker for Filtering Pickups/Dropoffs -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-3">
+            
+        </div>
+    </div>
+
+    <!-- Outgoing Rentals Section -->
+    <div class="card mt-3">
+        <div class="card-header">
+            Pending Inspections
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for order in orders_without_inspections %}
+                <div class="col-md-4 col-sm-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <!-- Rental Start Date -->
+                            <div class="card-text" style="font-size: 14px; font-weight: bold;">
+                                {{ order.rental_start_date }}
+                            </div>
+        
+                            <!-- Rental End Date with Color Coding -->
+                            <div class="text-warning" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
+                                <i class="far fa-circle" style="font-size: 20px;"></i>
+                                {{ order.rental_end_date }}
+                            </div>
+        
+                            <br>
+        
+                            <!-- Customer Name -->
+                            <div class="card-text" style="font-size: 21px;">
+                                <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                            </div>
+        
+                            <!-- Equipment ID -->
+                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                                <strong>Equipment ID:</strong> {{ order.equipment.id }}
+                            </div>
+        
+                            <br>
+        
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Perform Inspection</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>        
+    </div>
+
+    <!-- Rental Returns Section -->
+    <div class="card mt-3">
+        <div class="card-header">
+            Completed Inspections
+        </div>
+        <div class="card-body">
+            {% for order in orders_with_inspections %}
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        {% comment %} <!-- Rental Start Date -->
+                        <div class="card-text" style="font-size: 14px; font-weight: bold;">
+                            Equipment ID:
+                        </div> {% endcomment %}
+
+                        <!-- Rental End Date with Color Coding -->
+                        <div class="text-success" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
+                            <i class="fa fas fa-check-circle" style="font-size: 20px;"></i>
+                            8k #{{ order.equipment.id }}1111
+                        </div>
+
+                        <br>
+
+                        <!-- Customer Name -->
+                        <div class="card-text" style="font-size: 21px;">
+                            <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                        </div>
+
+                        <!-- Equipment ID -->
+                        <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                            <strong></strong> {{ order.rental_start_date }} - {{ order.rental_end_date }}
+                        </div>
+
+                        <br>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'view_inspection' order.id %}" class="btn btn-success">View Inspection Report</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
