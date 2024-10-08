@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import Customer
-from managementPortal.models import Equipment, RentalOrder
+from managementPortal.models import Equipment, EquipmentType, RentalOrder
 from datetime import datetime, date, timedelta
 from django.core.mail import send_mail
 from django.conf import settings
@@ -9,11 +9,19 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.timezone import localtime
 
+from customerPortal.square_client import get_square_client
+
 # Create your views here.
 
-# Equipment list view for customerPortal
-def equipment_list(request):
-    equipment = Equipment.objects.all()
+def equipment_types(request):
+    allEquipmentTypes = EquipmentType.objects.all()
+
+    return render(request, 'equipment_types.html', {'allEquipmentTypes': allEquipmentTypes})
+
+
+def equipment_list(request, equipmentTypeID):
+    equipment = Equipment.objects.filter(equipment_type_id=equipmentTypeID)
+
 
     ### NEW AVAILABILITY CALCULATOR ###
 
@@ -61,10 +69,24 @@ def equipment_detail(request, equipment_id):
         phone_number = request.POST['phone_number']
         email = request.POST['email']
         start_date = request.POST['start_date']
-        end_date = request.POST['end_date']
+        rental_period = request.POST['rental_period']
+        location = request.POST['location']
         # pickup_time = request.POST['pickup_time']
         # dropoff_time = request.POST['dropoff_time']
-        location = request.POST['location']
+
+        # calculate the end date based on start_date + rental period (perform type conversions first, then calculate, then revert back to str format)
+        rental_period = int(rental_period)
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        print("start_date!!!!")
+        print(start_date)
+
+        # perform calculation
+        end_date = start_date + timedelta(days=rental_period)
+
+        # revert back to str format
+        end_date = str(end_date)
+        start_date = str(start_date)
+        
         print('step 1 grabbed data complete')
 
         # Step 2: Save customer information
@@ -82,26 +104,21 @@ def equipment_detail(request, equipment_id):
         total_cost = calculate_total_cost(equipment, start_date, end_date)
         print('step 3 calculated total cost')
 
-        # Step 4: Save the rental order
-        RentalOrder.objects.create(
-            customer=customer,
-            equipment=equipment,
-            rental_start_date=start_date,
-            rental_end_date=end_date,
-            # pickup_time=pickup_time,
-            # dropoff_time=dropoff_time,
-            location=location,
-            total_cost=total_cost,
-        )
-        print('step 4 created rentalOrder object')
+        # Step 4: Create a dictionary to hold the data instead of saving it to the database
+        order_data = {
+            'customer': customer,
+            'equipment': equipment,
+            'rental_start_date': start_date,
+            'rental_period': rental_period,
+            'rental_end_date': end_date,
+            'location': location,
+            'total_cost': total_cost,
+        }
 
-        # Step 5: Grab the ID for the order just created:
-        lastOrder = RentalOrder.objects.last()
-        lastOrder_ID = lastOrder.id
-        print('step 5 completed (lastOrderID set) now going to order_summary')
-        print(lastOrder_ID)
+        print('step 4 created order data dictionary')
 
-        return redirect('order_summary', lastOrder_ID)
+        # Render the confirmation page and pass the order data as context
+        return render(request, 'order_summary.html', {'order_data': order_data})
     return render(request, 'equipment_detail.html', {'equipment': equipment})
 
 # Helper function to fetch unavailable dates for equipment
@@ -131,8 +148,8 @@ def get_unavailable_dates(request, equipment_id):
     # Create a list of all dates that fall between the start and end of each reservation
     unavailable_dates = []
     for order in unavailable_orders:
-        start_date = order['rental_start_date'] + timedelta(days=1) # this is incorrect--adjusting one day forward--to adjust for my bad timezone practices. TZ ISSUES
-        end_date = order['rental_end_date'] + timedelta(days=1) # this is incorrect--adjusting one day forward--to adjust for my bad timezone practices TZ ISSUES
+        start_date = order['rental_start_date'] + timedelta(days=0)
+        end_date = order['rental_end_date'] + timedelta(days=1) # need at least 1 day after the reservation for inspection/turnaround
         date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
         unavailable_dates.extend(date_range) # .extend() differs from .append(), which would add the entire date_range list as a single element. This way, each individual date from date_range gets added to unavailable_dates
 
@@ -155,13 +172,35 @@ def calculate_total_cost(equipment, start_date, end_date):
     total_cost = rental_days * equipment.cost_per_day
     return total_cost
 
-def order_summary(request, lastOrder_ID):
-    order = RentalOrder.objects.get(id=lastOrder_ID)
-    print('made it to order summary')
-    return render(request, 'order_summary.html', {'order': order})
+def order_summary(request):
+    return render(request, 'order_summary.html')
 
 def confirmation(request):
-    print('made it to order confirmation!!!')
+    # Get the Square client from the utility module
+    square_client = get_square_client()
+
+    # Access the client services, e.g., customers, payments
+    customers_api = square_client.customers
+    response = customers_api.create_customer(
+        body={
+            "given_name": "JohnnyBoy",
+            "family_name": "Dough",
+            "email_address": "john.doe@example.com"
+        }
+    )
+
+    if response.is_success():
+        customer_id = response.body['customer']['id']
+        message = customer_id
+        print("WE ARE TALKING TO SQUARE:")
+        print(message)
+        # Proceed with your logic, such as displaying a success message or redirecting
+    else:
+        # Handle errors appropriately
+        print(response.errors)
+        message = response.errors
+
+    #   EMAIL? #
     # send_mail(
     #         'Proceed to Payment',
     #         f'Please proceed to sign contracts and make payment. Equipment: {equipment.name}. URL: /confirm/{equipment_id}/',
@@ -170,4 +209,4 @@ def confirmation(request):
     #         fail_silently=False,
     #     )
     
-    return render(request, 'confirmation.html')
+    return render(request, 'confirmation.html', {'message': message})

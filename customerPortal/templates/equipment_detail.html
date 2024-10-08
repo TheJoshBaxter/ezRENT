@@ -6,12 +6,12 @@
     <h1 class="mt-5">{{ equipment.name }}</h1>
     <div class="row">
         <div class="col-md-6">
-            <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ equipment.name }}">
+            <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ equipmentType.name }}">
         </div>
         <div class="col-md-6">
-            <p><strong>Specifications:</strong> {{ equipment.specs }}</p>
-            <p><strong>Cost per day:</strong> ${{ equipment.cost_per_day }}</p>
-            <p><strong>Available:</strong> {{ equipment.available_quantity }} units</p>
+            <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
+            <p><strong>Cost per day:</strong> $</p>
+            <p><strong>Available:</strong> {{ equipmentType.available_quantity }} units</p>
 
             <form method="post" action="{% url 'equipment_detail' equipment.id %}">
                 {% csrf_token %}
@@ -20,21 +20,33 @@
                     <input type="text" class="form-control" id="start_date" name="start_date" required>
                 </div>
                 <div class="form-group">
-                    <label for="end_date">Rental End Date</label>
-                    <input type="text" class="form-control" id="end_date" name="end_date" required>
+                    <label for="rental_period">Rental Period</label>
+                    <select id="rental_period" name="rental_period" class="form-select">
+                        <option value="1">1 Day</option>
+                        <option value="2">2 Days</option>
+                        <option value="7">1 Week</option>
+                        <option value="14">2 Weeks</option>
+                        <option value="21">3 Weeks</option>
+                        <option value="30">1 Month</option>
+                    </select>
                 </div>
 
                 <!-- Trigger button for modal -->
-                <button type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal">
+                <button id="book_button" type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal" disabled>
                     Book Your Rental
-                </button>
+                </button>   
+                
+                <!-- Error message for button unavailability -->
+                <div id="error_message" class="text-danger mt-2" style="display: none;">
+                    Selected dates are not available for rental. Please adjust the start date or rental period, OR check for other available units.
+                </div>
 
                 <!-- Bootstrap Modal -->
                 <div class="modal fade" id="rentalModal" tabindex="-1" aria-labelledby="rentalModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="rentalModalLabel">Complete Your Rental</h5>
+                                <h5 class="modal-title" id="rentalModalLabel">Provide Contact Info</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
@@ -73,7 +85,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Confirm and Pay</button>
+                                <button type="submit" class="btn btn-primary">Proceed to Payment</button>
                             </div>
                         </div>
                     </div>
@@ -85,36 +97,63 @@
 
 <script type="text/javascript">
     $(document).ready(function() {
-        var equipmentId = {{ equipment.id }};  // Assuming you pass the equipment ID to the template
+        var equipmentId = {{ equipment.id }};
+        var unavailableDates = [];
 
         // Fetch unavailable dates from the server
         $.ajax({
-            url: "{% url 'get_unavailable_dates' equipment.id %}",  // Django URL for fetching unavailable dates
+            url: "{% url 'get_unavailable_dates' equipment.id %}",
             method: "GET",
             success: function(response) {
-                var unavailableDates = response.unavailable_dates;
-
-                // Convert unavailable dates to an array of string format 'YYYY-MM-DD'
-                var disabledDates = unavailableDates.map(function(dateStr) {
-                    var date = new Date(dateStr);
-                    var day = ("0" + date.getDate()).slice(-2);
-                    var month = ("0" + (date.getMonth() + 1)).slice(-2);
-                    return date.getFullYear() + '-' + month + '-' + day;
+                unavailableDates = response.unavailable_dates.map(function(dateStr) {
+                    return new Date(dateStr).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
                 });
-                console.log('Disabled dates:', disabledDates);  // Log disabled dates
-
+                console.log('Disabled dates:', unavailableDates);
 
                 // Initialize jQuery UI Datepicker and disable unavailable dates
-                $("#start_date, #end_date").datepicker({
-                    dateFormat: "yy-mm-dd",  // Format as 'YYYY-MM-DD'
+                $("#start_date").datepicker({
+                    dateFormat: "yy-mm-dd",
                     beforeShowDay: function(date) {
                         var dateString = $.datepicker.formatDate('yy-mm-dd', date);
-                        console.log('Date being checked:', dateString);  // Log the date being checked by the calendar
-                        return [disabledDates.indexOf(dateString) == -1];  // Return true if the date is not disabled
+                        return [unavailableDates.indexOf(dateString) == -1];  // Only enable available dates
                     }
                 });
+            }
+        });
 
+        function isPeriodAvailable(startDate, period) {
+            let start = new Date(startDate);
+            let end = new Date(start);
+            end.setDate(start.getDate() + parseInt(period));
+            console.log("HELLO!!!!!")
+            console.log(end)
 
+            // Check if any date in the rental period falls into unavailable dates
+            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+                let dateString = date.toISOString().split('T')[0];
+                if (unavailableDates.includes(dateString)) {
+                    return false;  // Conflict found
+                }
+            }
+            return true;  // No conflict
+        }
+
+        // Event listeners to check availability
+        $("#start_date, #rental_period").change(function() {
+            let startDate = $("#start_date").val();
+            let rentalPeriod = $("#rental_period").val();
+
+            if (startDate && rentalPeriod) {
+                if (isPeriodAvailable(startDate, rentalPeriod)) {
+                    $("#book_button").prop("disabled", false);  // Enable button if available
+                    $("#error_message").hide();  // Hide error message
+                } else {
+                    $("#book_button").prop("disabled", true);  // Disable button if unavailable
+                    $("#error_message").show();  // Show error message
+                }
+            } else {
+                $("#book_button").prop("disabled", true);  // Disable button if no date or period selected
+                $("#error_message").hide();  // Hide error message by default
             }
         });
     });

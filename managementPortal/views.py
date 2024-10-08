@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Equipment, RentalOrder, Inspection
+from .models import Equipment, RentalOrder, Inspection, Customer
 from datetime import date, timedelta
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -96,6 +96,19 @@ def todays_pickups_dropoffs(request):
         'selected_date': selected_date_str,
     })
 
+# Inspections view
+def inspections(request):
+
+    today = date.today()
+
+    orders_without_inspections = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today).order_by('rental_end_date')
+    orders_with_inspections = RentalOrder.objects.filter(inspection__isnull=False).order_by('rental_end_date')
+
+    return render(request, 'inspections.html', {
+        'orders_with_inspections': orders_with_inspections,
+        'orders_without_inspections': orders_without_inspections
+    })
+
 def perform_inspection(request, order_id):
     order = RentalOrder.objects.get(id=order_id)
     if request.method == 'POST':
@@ -114,7 +127,7 @@ def perform_inspection(request, order_id):
             extras_returned=extrasReturned,
             fuel_return_level=fuelReturnLevel
         )
-        return redirect('todays_pickups_dropoffs')
+        return redirect('inspections')
     return render(request, 'perform_inspection.html', {'order': order})
 
 def view_inspection(request, order_id):
@@ -146,15 +159,29 @@ def end_rental(request, order_id):
             return JsonResponse({'success': False}, status=400)
     return JsonResponse({'success': False}, status=405)
 
-# Inspections view
-def inspections(request):
+def customers(request):
+    customers = Customer.objects.all().order_by('first_name')
 
-    today = date.today()
+    return render(request, 'customers.html', {'customers': customers})
 
-    orders_without_inspections = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today).order_by('rental_end_date')
-    orders_with_inspections = RentalOrder.objects.filter(inspection__isnull=False).order_by('rental_end_date')
+def edit_customer(request, customer_id):
+    customer = get_object_or_404(Customer, id=customer_id)
 
-    return render(request, 'inspections.html', {
-        'orders_with_inspections': orders_with_inspections,
-        'orders_without_inspections': orders_without_inspections
-    })
+    if request.method == 'POST':
+        customer.first_name = request.POST['first_name']
+        customer.last_name = request.POST['last_name']
+        customer.company_name = request.POST.get('company_name', '')
+        customer.phone_number = request.POST['phone_number']
+        customer.email = request.POST['email']
+        customer.save()
+
+        return redirect('customers')  # Redirect to the customer list page after saving
+
+    return render(request, 'customers.html', {'customer': customer})
+
+def delete_customer(request, customer_id):
+    # Get the customer object or return 404 if it doesn't exist
+    customer = get_object_or_404(Customer, id=customer_id)
+    customer.delete()  # Delete the customer from the database
+
+    return redirect('customers')  # Redirect back to the customer list page

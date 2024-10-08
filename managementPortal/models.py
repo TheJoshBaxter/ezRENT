@@ -3,16 +3,22 @@ from customerPortal.models import Customer
 
 # Create your models here.
 
+class EquipmentType(models.Model):
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=100)
+    specs = models.TextField()
+    available_quantity = models.IntegerField()
+
+    manufacturer = models.CharField(max_length=100, blank=True, null=True)
 class Equipment(models.Model):
     name = models.CharField(max_length=100)
-    specs = models.TextField()
-    cost_per_day = models.DecimalField(max_digits=10, decimal_places=2)
-    available_quantity = models.IntegerField()
-    image = models.ImageField(upload_to='equipment_images/', null=True, blank=True)
+    daily_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    weekly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    equipment_type = models.ForeignKey(EquipmentType, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
-
 class RentalOrder(models.Model):
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)

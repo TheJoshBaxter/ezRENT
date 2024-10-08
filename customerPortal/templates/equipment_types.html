@@ -3,18 +3,18 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">Availability for {{equipment.0.equipment_type.name}} {{equipment.0.equipment_type.category}}s</h1>
+    <h1 class="mt-5">Choose Equipment Type</h1>
     <div class="row">
-        {% for item in equipment %}
+        {% for item in allEquipmentTypes %}
             <div class="col-md-4">
                 <div class="card mb-4">
                     <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ item.name }}">
                     <div class="card-body">
-                        <h5 class="card-title">{{ item.name }}</h5>
+                        <h5 class="card-title">{{ item.name }} {{ item.category }}</h5>
                         <p>{{ item.specs|truncatechars:100 }}</p>
-                        <p><strong>Cost per day:</strong> ${{ item.cost_per_day }}</p>
-                        <p><strong>Availability:</strong> {{ item.availability_message }}</p>
-                        <a href="{% url 'equipment_detail' item.id %}" class="btn btn-primary">View Details</a>
+                        <p><strong>Quantity:</strong> {{ item.available_quantity }}</p>
+                        <p><strong>Availability:</strong> </p>
+                        <a href="{% url 'equipment_list' item.id %}" class="btn btn-primary">View Availability</a>
                     </div>
                 </div>
             </div>
