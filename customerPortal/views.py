@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.timezone import localtime
+from decimal import Decimal
 
 from customerPortal.square_client import get_square_client
 
@@ -101,7 +102,7 @@ def equipment_detail(request, equipment_id):
         print('step 2, created new customer')
 
         # Step 3: Calculate total rental cost
-        total_cost = calculate_total_cost(equipment, start_date, end_date)
+        total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
         print('step 3 calculated total cost')
 
         # Step 4: Create a dictionary to hold the data instead of saving it to the database
@@ -160,16 +161,31 @@ def get_unavailable_dates(request, equipment_id):
     return JsonResponse({'unavailable_dates': unavailable_dates})
 
 # Helper function to calculate total cost
-def calculate_total_cost(equipment, start_date, end_date):
+def calculate_total_cost(equipment, start_date, end_date, rental_period):
+    # create some logic to check the app settings (a future settings page needs to be created) to determine the desired pricing system (daily only, or daily, weekly, monthly rates)
+
     # Convert the date strings to date objects
     rental_start = datetime.strptime(start_date, "%Y-%m-%d").date()
     rental_end = datetime.strptime(end_date, "%Y-%m-%d").date()
     
     # Calculate the number of rental days
     rental_days = (rental_end - rental_start).days + 1  # Inclusive of the last day
-    
+
+    if rental_days < 7:
+        rate = equipment.daily_rate
+        numPeriods = rental_days
+    elif rental_days >= 7 and rental_days < 28:
+        rate = equipment.weekly_rate
+        numPeriods = rental_days//7
+    else:
+        rate = equipment.monthly_rate
+        numPeriods = 1 # hard coded 1 because 1 month is the max time period option available to users
+        
     # Calculate the total cost
-    total_cost = rental_days * equipment.cost_per_day
+
+    # total_cost = rental_days * equipment.daily_rate # THIS LINE TO BE USED IF "DAILY ONLY RATES" SETTINGS IS CHECKED
+    total_cost = numPeriods * rate
+    
     return total_cost
 
 def order_summary(request):

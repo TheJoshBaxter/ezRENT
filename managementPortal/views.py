@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Equipment, RentalOrder, Inspection, Customer
+from .models import Equipment, RentalOrder, Inspection, Customer, RentalExtensions
 from datetime import date, timedelta
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -48,7 +48,6 @@ def logout_view(request):
 @login_required
 def employee_dashboard(request):
     today = date.today()  # Get the current date
-
     # print(date.today())                            THESE ARE THE SAME FOR THE RECORD
     # print(timezone.now().date())
 
@@ -66,10 +65,49 @@ def employee_dashboard(request):
 
     # Add days remaining information to each order
     for order in orders:
+        # get inspection data associated with an order (assuming inspection has been performed)
+        inspection = Inspection.objects.filter(rental_order_id=order.id)
+        order.inspection = inspection
+
+        # get all extensions associated with each order
+        extensions = get_extensions(order.id)
+        order.extensions = extensions
+        order.numExtensions = extensions.count()
+
+        # get days remaining for each order
         days_remaining = (order.rental_end_date - today).days
         order.days_remaining = days_remaining
 
+        # get the last inspection data for the equipment id associated with each order
+        try:
+            lastInspection = get_last_inspection(order.equipment_id)
+            order.starting_fuel_status = lastInspection.fuel_return_level
+            
+            if lastInspection.cleaned:
+                order.start_condition_status = "Clean"
+            else:
+                order.start_condition_status = "Dirty"
+        except:
+            order.start_condition_status = "Clean (first rental for this equipment)"
+            order.starting_fuel_status = "Full (first rental for this equipment)"
+
     return render(request, 'employee_dashboard.html', {'orders': orders, 'filter_option': filter_option})
+
+def get_extensions(rental_order_ID):
+    extensions = RentalExtensions.objects.filter(rental_order=rental_order_ID)
+
+    return extensions #returns a query set
+
+
+def get_last_inspection(equipment_id):
+    lastInspection = (
+        Inspection.objects
+        .filter(rental_order__equipment=equipment_id)  # Filter by equipment ID
+        .order_by('-inspection_date')  # Order by inspection date in descending order
+        .first()  # Get the first result (most recent inspection)
+    )
+
+    return lastInspection
 
 @login_required
 def todays_pickups_dropoffs(request):
@@ -97,6 +135,7 @@ def todays_pickups_dropoffs(request):
     })
 
 # Inspections view
+@login_required
 def inspections(request):
 
     today = date.today()
@@ -109,6 +148,7 @@ def inspections(request):
         'orders_without_inspections': orders_without_inspections
     })
 
+@login_required
 def perform_inspection(request, order_id):
     order = RentalOrder.objects.get(id=order_id)
     if request.method == 'POST':
@@ -130,24 +170,39 @@ def perform_inspection(request, order_id):
         return redirect('inspections')
     return render(request, 'perform_inspection.html', {'order': order})
 
+@login_required
 def view_inspection(request, order_id):
     inspection = Inspection.objects.filter(rental_order_id=order_id).get()
 
     return render(request, 'view_inspection.html', {'inspection': inspection})
 
+@login_required
 def extend_rental(request, order_id):
     if request.method == 'POST':
         try:
+            #first, update the RentalOrder data
             data = json.loads(request.body)
             days_to_extend = int(data.get('days_to_extend', 0))
             rental_order = RentalOrder.objects.get(id=order_id)
+            ogEndDate = rental_order.rental_end_date # saving for exension data creation
             rental_order.rental_end_date += timedelta(days=days_to_extend)
             rental_order.save()
+
+            # second, save extension data to the rental extensions table:
+            RentalExtensions.objects.create(
+                original_end_date = ogEndDate,
+                days_extended = days_to_extend,
+                new_end_date = rental_order.rental_end_date,
+                timestamp = date.today(),
+                rental_order_id = order_id
+            )
+
             return JsonResponse({'success': True})
         except (RentalOrder.DoesNotExist, ValueError):
             return JsonResponse({'success': False}, status=400)
     return JsonResponse({'success': False}, status=405)
 
+@login_required
 def end_rental(request, order_id):
     if request.method == 'POST':
         try:
@@ -159,11 +214,24 @@ def end_rental(request, order_id):
             return JsonResponse({'success': False}, status=400)
     return JsonResponse({'success': False}, status=405)
 
+@login_required
+def save_notes(request, order_id):
+    if request.method == 'POST':
+
+        orderToChange = RentalOrder.objects.filter(id=order_id).get()
+        orderToChange.notes = request.POST['notes']
+        orderToChange.save()
+        return redirect('employee_dashboard')
+    
+    return redirect('employee_dashboard')
+
+@login_required
 def customers(request):
     customers = Customer.objects.all().order_by('first_name')
 
     return render(request, 'customers.html', {'customers': customers})
 
+@login_required
 def edit_customer(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
@@ -179,6 +247,7 @@ def edit_customer(request, customer_id):
 
     return render(request, 'customers.html', {'customer': customer})
 
+@login_required
 def delete_customer(request, customer_id):
     # Get the customer object or return 404 if it doesn't exist
     customer = get_object_or_404(Customer, id=customer_id)

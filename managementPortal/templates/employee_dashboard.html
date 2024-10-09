@@ -7,10 +7,6 @@
         <div class="col-md-6">
             <h1 class="mt-3">Employee Dashboard:</h1>
         </div>
-        {% comment %} <div class="col-md-3"></div>
-        <div class="col-md-3 text-end"> {% endcomment %}
-
-        {% comment %} </div> {% endcomment %}
     </div>
     <hr>
 
@@ -30,7 +26,7 @@
     <div class="row">
         {% for order in orders %}
             <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
+                <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#editRentalModal-{{ order.id }}" style="cursor: pointer;">
                     <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
                         <!-- Rental Start Date -->
                         <div class="card-text" style="font-size: 14px; font-weight: bold;">
@@ -55,6 +51,15 @@
                             <strong>Equipment ID:</strong> {{ order.equipment.id }}
                         </div>
 
+                        <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
+                        {% if filter_option == 'past' %}
+                            {% if not order.inspection %}
+                                <div class="card-text text-warning">
+                                    <i class="fas fa-triangle-exclamation"></i>
+                                    Inspection has not been completed
+                                </div>
+                            {% endif %}
+                        {% endif %}
                         <br>
 
                         <!-- Equipment Location -->
@@ -69,9 +74,114 @@
                         <!-- Action Buttons -->
                         <div class="mt-auto">
                             <div class="d-flex justify-content-between">
-                                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
-                                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
+                                <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
+                                <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal for Editing Rental -->
+            <div class="modal fade" id="editRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="editRentalModalLabel-{{ order.id }}" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editRentalModalLabel-{{ order.id }}">Rental Details for Order #{{ order.id }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" action="{% url 'save_notes' order.id %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Rental Start Date:</strong> {{ order.rental_start_date }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Rental Term Agreement:</strong> {{ order.rental_term_agreement }} days
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Starting Fuel Status:</strong> {{ order.starting_fuel_status }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Start Condition Status:</strong> {{ order.start_condition_status }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong><label for="notes">Other Notes:</label></strong>
+                                    <br>
+                                    <textarea class="form-control" id="notes" name="notes" rows="2" style="resize: none;">{{ order.notes }}</textarea>
+                                </div>
+                                {% if filter_option == 'past' %}
+                                <div class="mb-3 txt txt-success">
+                                    <u><strong>Inspection Info:</strong></u>
+                                </div>
+                                    {% for inspection in order.inspection%}
+                                        <div class="mb-3">
+                                            <strong>Return Fuel Status</strong> {{ inspection.fuel_return_level }}
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Clean on Return?</strong> {{ inspection.cleaned }}
+                                        </div>
+                                        <div class="mb-3">
+                                            <strong>Extras Rented?</strong> {{ inspection.extras_rented }}
+                                        </div>
+                                        {% if inspection.extras_rented %}
+                                            <div class="mb-3">
+                                                <strong>Extras Returned</strong> {{ inspection.extras_returned }}
+                                            </div>
+                                        {% endif %}
+                                        <div class="mb-3">
+                                            <strong>Return Inspection Notes:</strong> {{ inspection.notes }}
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <a href="{% url 'view_inspection' order.id %}" class="btn btn-success">See Full Report</a>
+                                        </div>
+                                        <br>
+                                    {% endfor %}
+                                    {% if not order.inspection %}
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Not Yet Completed - Inspect Now</a>
+                                    </div>
+                                    <br>
+                                    {% endif %}
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <u><strong>Extensions Info:</strong></u> 
+                                    <br>
+                                    ({{order.numExtensions}} extensions so far)
+                                </div>
+                                <div class="mb-3">
+                                    {% if order.extensions %}
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Original End Date</th>
+                                                <th>Days Extended</th>
+                                                <th>New End Date</th>
+                                                <th>Time Stamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for extension in order.extensions %}
+                                            <tr>
+                                                <td>{{extension.original_end_date}}</td>
+                                                <td>{{extension.days_extended}}</td>
+                                                <td>{{extension.new_end_date}}</td>
+                                                <td>{{extension.timestamp}}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save Notes</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -121,6 +231,15 @@
         {% endfor %}
     </div>
 </div>
+
+<style>
+    /* Hover effect for highlighting the card */
+    .rental-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transform: scale(1.02);
+        transition: all 0.2s ease-in-out;
+    }
+</style>
 
 <script>
     // Function to apply the selected filter by reloading the page with the selected filter in the URL

@@ -30,14 +30,26 @@ class RentalOrder(models.Model):
     payment_status = models.BooleanField(default=False)
     contract_signed = models.BooleanField(default=False)
     location = models.CharField(max_length=255)
+    notes = models.TextField(null=True, blank=True)
+
+    @property
+    def rental_term_agreement(self): # (number of days until renewal or pick up)
+        return (self.rental_end_date - self.rental_start_date).days
 
     def __str__(self):
         return f"{self.customer.user.username} - {self.equipment.name}"
+    
+class RentalExtensions(models.Model):
+    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
+    original_end_date = models.DateField()
+    days_extended = models.IntegerField()
+    new_end_date = models.DateField()
+    timestamp = models.DateTimeField()
 
 class Inspection(models.Model):
     rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
     inspection_date = models.DateField(auto_now_add=True)
-    fuel_return_level = models.CharField(max_length=3)
+    fuel_return_level = models.CharField(max_length=5)
     cleaned = models.BooleanField(default=True)
     extras_rented = models.BooleanField(default=False)
     extras_returned = models.BooleanField(blank=True, null=True)
