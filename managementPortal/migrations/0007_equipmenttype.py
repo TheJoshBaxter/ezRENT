@@ -24,8 +24,8 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             """
             INSERT INTO managementPortal_equipmenttype (name, category, manufacturer, lift_capacity) VALUES
-            ('1', '8K', 'Forklift', '', '10,000 lbs'),
-            ('2', '9K', 'Forklift', '', '5,000 lbs');
+            ('8K', 'Forklift', '', '10,000 lbs'),
+            ('9K', 'Forklift', '', '5,000 lbs');
             """,
         ),
     ]

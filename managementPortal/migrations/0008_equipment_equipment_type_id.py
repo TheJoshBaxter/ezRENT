@@ -17,4 +17,18 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
             preserve_default=False,
         ),
+
+        migrations.RunSQL(
+            """
+            INSERT INTO managementPortal_equipment (equipment_type_id) VALUES
+            ('1'),
+            ('1'),
+            ('1'),
+            ('1'),
+            ('1'),
+            ('1'),
+            ('1'),
+            ('1');
+            """,
+        ),
     ]
