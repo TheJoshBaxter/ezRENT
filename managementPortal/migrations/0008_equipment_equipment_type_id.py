@@ -12,7 +12,7 @@ def update_equipment_type(apps, schema_editor):
     default_type = 1
 
     # Assign the default equipment_type_id to all Equipment records
-    Equipment.objects.all().update(equipment_type=default_type)
+    Equipment.objects.all().update(equipment_type_id=default_type)
 
 class Migration(migrations.Migration):
 
