@@ -3,6 +3,16 @@
 from django.db import migrations, models
 import django.db.models.deletion
 
+# Step 4: This function will set default equipment_type_id for existing Equipment entries
+def update_equipment_type(apps, schema_editor):
+    Equipment = apps.get_model('managementPortal', 'Equipment')
+    EquipmentType = apps.get_model('managementPortal', 'EquipmentType')
+
+    # Fetch the default equipment type
+    default_type = EquipmentType.objects.get(id=1)
+
+    # Assign the default equipment_type_id to all Equipment records
+    Equipment.objects.all().update(equipment_type=default_type)
 
 class Migration(migrations.Migration):
 
@@ -17,4 +27,6 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
             preserve_default=False,
         ),
+
+        migrations.RunPython(update_equipment_type),    # Step 4: Update existing Equipment entries
     ]
