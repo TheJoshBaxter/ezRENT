@@ -42,6 +42,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='equipment',
             name='equipment_type_id',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'), #change to FK now that data has been added
         ),
     ]

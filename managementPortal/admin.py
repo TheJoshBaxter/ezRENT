@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models import Equipment, RentalOrder, Inspection
+from .models import EquipmentType, Equipment, RentalOrder, Inspection, RentalExtensions
 
 # Register your models here.
 admin.site.register(Equipment)
 admin.site.register(RentalOrder)
 admin.site.register(Inspection)
+admin.site.register(EquipmentType)
+admin.site.register(RentalExtensions)
