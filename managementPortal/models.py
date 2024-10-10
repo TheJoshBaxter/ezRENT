@@ -8,13 +8,15 @@ class EquipmentType(models.Model):
     category = models.CharField(max_length=100)
     specs = models.TextField()
     available_quantity = models.IntegerField()
-
     manufacturer = models.CharField(max_length=100, blank=True, null=True)
-class Equipment(models.Model):
-    name = models.CharField(max_length=100)
     daily_rate = models.DecimalField(max_digits=10, decimal_places=2)
     weekly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+class Equipment(models.Model):
+    name = models.CharField(max_length=100)
     equipment_type = models.ForeignKey(EquipmentType, on_delete=models.CASCADE)
 
     def __str__(self):
