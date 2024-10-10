@@ -20,12 +20,4 @@ class Migration(migrations.Migration):
                 ('lift_capacity', models.CharField(blank=True, max_length=100, null=True)),
             ],
         ),
-
-        migrations.RunSQL(
-            """
-            INSERT INTO managementPortal_equipmenttype (name, category, manufacturer, lift_capacity) VALUES
-            ('8K', 'Forklift', '', '10,000 lbs'),
-            ('9K', 'Forklift', '', '5,000 lbs');
-            """,
-        ),
     ]

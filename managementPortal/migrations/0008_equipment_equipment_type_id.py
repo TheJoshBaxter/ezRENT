@@ -17,13 +17,4 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
             preserve_default=False,
         ),
-
-         # Update existing rows with a default equipment_type_id
-        migrations.RunSQL(
-            """
-            UPDATE managementPortal_equipment
-            SET equipment_type_id = 1
-            WHERE equipment_type_id IS NULL;
-            """,
-        ),
     ]
