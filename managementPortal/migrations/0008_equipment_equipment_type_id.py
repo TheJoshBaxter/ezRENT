@@ -8,8 +8,8 @@ def update_equipment_type(apps, schema_editor):
     Equipment = apps.get_model('managementPortal', 'Equipment')
     EquipmentType = apps.get_model('managementPortal', 'EquipmentType')
 
-    # Fetch the default equipment type
-    default_type = EquipmentType.objects.get(id=1)
+    # Set the default equipment type
+    default_type = 1
 
     # Assign the default equipment_type_id to all Equipment records
     Equipment.objects.all().update(equipment_type=default_type)
