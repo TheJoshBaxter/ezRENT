@@ -18,17 +18,12 @@ class Migration(migrations.Migration):
             preserve_default=False,
         ),
 
+         # Update existing rows with a default equipment_type_id
         migrations.RunSQL(
             """
-            INSERT INTO managementPortal_equipment (equipment_type_id) VALUES
-            ('1'),
-            ('1'),
-            ('1'),
-            ('1'),
-            ('1'),
-            ('1'),
-            ('1'),
-            ('1');
+            UPDATE managementPortal_equipment
+            SET equipment_type_id = 1
+            WHERE equipment_type_id IS NULL;
             """,
         ),
     ]
