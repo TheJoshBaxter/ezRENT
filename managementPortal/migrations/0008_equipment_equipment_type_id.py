@@ -24,9 +24,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='equipment',
             name='equipment_type_id',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
+            field=models.IntegerField(null=True),  # Initially nullable to avoid FK checks
             preserve_default=False,
         ),
 
         migrations.RunPython(update_equipment_type),    # Step 4: Update existing Equipment entries
+
+        migrations.AlterField(
+            model_name='equipment',
+            name='equipment_type_id',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='managementPortal.equipmenttype'),
+        ),
     ]
