@@ -2,16 +2,6 @@
 
 from django.db import migrations, models
 
-# Step 3: This function will insert the default EquipmentType into the table
-def populate_equipment_type(apps, schema_editor):
-    # We use the historical model so the migration can work without issues
-    EquipmentType = apps.get_model('managementPortal', 'EquipmentType')
-    
-    # Check if the EquipmentType table is empty, then add a default entry
-    if not EquipmentType.objects.filter(id=1).exists():
-        EquipmentType.objects.create(id=1, name='Default Type', category='Default Category')
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -29,6 +19,4 @@ class Migration(migrations.Migration):
                 ('lift_capacity', models.CharField(blank=True, max_length=100, null=True)),
             ],
         ),
-        
-        migrations.RunPython(populate_equipment_type),  # Step 2: Insert default EquipmentType
     ]

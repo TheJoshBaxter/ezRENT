@@ -14,6 +14,14 @@ def update_equipment_type(apps, schema_editor):
     # Assign the default equipment_type_id to all Equipment records
     Equipment.objects.all().update(equipment_type_id=default_type)
 
+def populate_equipment_type(apps, schema_editor):
+    # We use the historical model so the migration can work without issues
+    EquipmentType = apps.get_model('managementPortal', 'EquipmentType')
+    
+    # Check if the EquipmentType table is empty, then add a default entry
+    if not EquipmentType.objects.filter(id=1).exists():
+        EquipmentType.objects.create(id=1, name='Default Type', category='Default Category')
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -29,6 +37,7 @@ class Migration(migrations.Migration):
         ),
 
         migrations.RunPython(update_equipment_type),    # Step 4: Update existing Equipment entries
+        migrations.RunPython(populate_equipment_type),  # Step 2: Insert default EquipmentType
 
         migrations.AlterField(
             model_name='equipment',
