@@ -29,4 +29,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(populate_equipment_type),  # Step 2: Insert default EquipmentType
+        migrations.RunPython(update_equipment_type),    # Step 4: Update existing Equipment entries
     ]
+    
