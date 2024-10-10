@@ -6,11 +6,20 @@
     <h1 class="mt-5">{{ equipment.name }}</h1>
     <div class="row">
         <div class="col-md-6">
-            <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ equipmentType.name }}">
+            <div class="card mb-4">
+                <img class="card-img-top" src="{% static equipment.imgURL %}" alt="{{ equipmentType.name }}">
+            </div>
         </div>
         <div class="col-md-6">
-            <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
-            <p><strong>Cost per day:</strong> $</p>
+            <p><strong>Specifications:</strong> {{ equipment.equipment_type.specs }}</p>
+            <strong>Rental Rates:</strong>
+                        <ul>
+                        <li><strong>1 Day:</strong> ${{ equipment.equipment_type.daily_rate }}</li>
+                        <li><strong>1 Week:</strong> ${{ equipment.equipment_type.weekly_rate }}</li>
+                        <li><strong>1 Month:</strong> ${{ equipment.equipment_type.monthly_rate }} 
+                            <br>
+                            (one week free, plus one way delivery fee)</li>
+                        </ul>
             <p><strong>Available:</strong> {{ equipmentType.available_quantity }} units</p>
 
             <form method="post" action="{% url 'equipment_detail' equipment.id %}">

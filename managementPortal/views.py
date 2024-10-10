@@ -61,7 +61,7 @@ def employee_dashboard(request):
     elif filter_option == 'past':
         orders = RentalOrder.objects.filter(rental_end_date__lt=today).order_by('rental_end_date')
     else:
-        orders = RentalOrder.objects.all()  # 'all' or no filter
+        orders = RentalOrder.objects.all().order_by('rental_end_date')
 
     # Add days remaining information to each order
     for order in orders:

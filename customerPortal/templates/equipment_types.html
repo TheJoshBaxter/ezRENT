@@ -8,7 +8,7 @@
         {% for item in allEquipmentTypes %}
             <div class="col-md-4">
                 <div class="card mb-4">
-                    <img class="card-img-top" src="{% static 'img/forklift.webp' %}" alt="{{ item.name }}">
+                    <img class="card-img-top" src="{% static item.imgURL }} %}" alt="{{ item.name }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ item.name }} {{ item.category }}</h5>
                         <p>{{ item.specs|truncatechars:100 }}</p>

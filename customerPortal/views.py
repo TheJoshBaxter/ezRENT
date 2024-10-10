@@ -15,7 +15,7 @@ from customerPortal.square_client import get_square_client
 # Create your views here.
 
 def equipment_types(request):
-    allEquipmentTypes = EquipmentType.objects.all()
+    allEquipmentTypes = EquipmentType.objects.all().order_by('id')
 
     return render(request, 'equipment_types.html', {'allEquipmentTypes': allEquipmentTypes})
 
