@@ -13,7 +13,6 @@
                         <h5 class="card-title">{{ item.name }} {{ item.category }}</h5>
                         <p>{{ item.specs|truncatechars:100 }}</p>
                         <p><strong>Quantity:</strong> {{ item.available_quantity }}</p>
-                        <p><strong>Availability:</strong> </p>
                         <a href="{% url 'equipment_list' item.id %}" class="btn btn-primary">View Availability</a>
                     </div>
                 </div>
