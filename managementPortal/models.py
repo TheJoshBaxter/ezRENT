@@ -41,7 +41,7 @@ class RentalOrder(models.Model):
         return (self.rental_end_date - self.rental_start_date).days
 
     def __str__(self):
-        return f"{self.customer.user.username} - {self.equipment.name}"
+        return f"Order #{self.id} - {self.customer.first_name} {self.customer.last_name} - {self.equipment.name} - Ending on {self.rental_end_date}"
     
 class RentalExtensions(models.Model):
     rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
@@ -49,6 +49,9 @@ class RentalExtensions(models.Model):
     days_extended = models.IntegerField()
     new_end_date = models.DateField()
     timestamp = models.DateTimeField()
+
+    def __str__(self):
+        return f"Extension for {self.rental_order} originally, now {self.new_end_date}"
 
 class Inspection(models.Model):
     rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
