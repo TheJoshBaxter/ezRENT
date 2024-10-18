@@ -30,12 +30,12 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'equipment_types' %}">Customer View</a>
+                        <a class="nav-link" href="{% url 'equipment_types' %}">Book a Rental</a>
                     </li>
-                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'employee_dashboard' %}">Employee Dashboard</a>
                     </li>
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'todays_pickups_dropoffs' %}">Today's Pickups/Dropoffs</a>
                     </li>

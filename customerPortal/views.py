@@ -172,7 +172,7 @@ def calculate_total_cost(equipment, start_date, end_date, rental_period):
     rental_days = (rental_end - rental_start).days + 1  # Inclusive of the last day
 
     if rental_days < 7:
-        rate = equipment.daily_rate
+        rate = equipment.equipment_type.daily_rate
         numPeriods = rental_days
     elif rental_days >= 7 and rental_days < 28:
         rate = equipment.weekly_rate
