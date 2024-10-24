@@ -63,64 +63,175 @@ def equipment_detail(request, equipment_id):
     equipment = Equipment.objects.get(id=equipment_id)
 
     if request.method == 'POST':
-        # Step 1: Collect form data
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        company_name = request.POST.get('company_name', '')
-        phone_number = request.POST['phone_number']
-        email = request.POST['email']
-        start_date = request.POST['start_date']
-        rental_period = request.POST['rental_period']
-        location = request.POST['location']
-        # pickup_time = request.POST['pickup_time']
-        # dropoff_time = request.POST['dropoff_time']
 
-        # calculate the end date based on start_date + rental period (perform type conversions first, then calculate, then revert back to str format)
-        rental_period = int(rental_period)
-        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        print("start_date!!!!")
-        print(start_date)
+        # Check if an existing customer was selected or a new one is being created
+        if request.POST['first_name'].strip():  # If first_name from the DOM has contents and isn't an empty string, this is a New customer
+            print("this is a BRAND spanking new customer")
+            first_name = request.POST['first_name']
+            last_name = request.POST['last_name']
+            company_name = request.POST.get('company_name', '')
+            phone_number = request.POST['phone_number']
+            email = request.POST['email']
 
-        # perform calculation
-        end_date = start_date + timedelta(days=rental_period)
+            start_date = request.POST['start_date']
+            rental_period = int(request.POST['rental_period'])
+            location = request.POST['location']
 
-        # revert back to str format
-        end_date = str(end_date)
-        start_date = str(start_date)
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = start_date + timedelta(days=rental_period)
+
+            # revert back to str format
+            end_date = str(end_date)
+            start_date = str(start_date)
+
+            # Calculate total rental cost
+            total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
+            print("data grab completed!!!!!")
+
+            # Check if the user is an employee (authenticated)
+            if request.user.is_authenticated:  # Employee - create new customer
+                print("this user is authenticated...we should trust them to create the new customer if needed due to our awesome front end validations")
+                customer = Customer.objects.create(
+                    first_name=first_name,
+                    last_name=last_name,
+                    company_name=company_name,
+                    phone_number=phone_number,
+                    email=email
+                )
+
+                order_data = { # create an order for the newly created customer
+                        'customer': customer.id,
+                        'phone_number': phone_number,
+                        'email': email,
+                        'equipment': equipment.id,
+                        'rental_start_date': start_date,
+                        'rental_period': rental_period,
+                        'rental_end_date': end_date,
+                        'location': location,
+                        'total_cost': float(total_cost),
+                    }
+
+
+            else: # Non-employee - see if customer already exists in the DB
+                print("user is not authenticated...they're a customer theoretically...we should double check them to make sure they're not duplicating an existing customer record")
+                exists = Customer.objects.filter(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name).exists()
+
+                if exists: # create an order with the matching customer data
+                    print("CUSTOMER CHECK: customer already exists!")
+
+                    customer = Customer.objects.get(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name)
+
+                    order_data = {
+                        'customer': customer.id,
+                        'phone_number': phone_number,
+                        'email': email,
+                        'equipment': equipment.id,
+                        'rental_start_date': start_date,
+                        'rental_period': rental_period,
+                        'rental_end_date': end_date,
+                        'location': location,
+                        'total_cost': float(total_cost),
+                    }
+
+                else:
+                    print("CUSTOMER CHECK: customer doesn't exist yet!")
+
+                    try:
+                        customer = Customer.objects.create(
+                            first_name=first_name,
+                            last_name=last_name,
+                            company_name=company_name,
+                            phone_number=phone_number,
+                            email=email
+                        )
+
+                        order_data = { # then create a new order for the new customer
+                            'customer': customer.id,
+                            'phone_number': phone_number,
+                            'email': email,
+                            'equipment': equipment.id,
+                            'rental_start_date': start_date,
+                            'rental_period': rental_period,
+                            'rental_end_date': end_date,
+                            'location': location,
+                            'total_cost': float(total_cost),
+                        }
+                    except: # this isn't great error catching as the user can still procede...edit in the future
+                        order_data = {
+                            'customer': "ERROR",
+                            'phone_number': "ERROR: this phone number is already registered. Please EDIT INFO",
+                            'email': email,
+                            'equipment': equipment,
+                            'rental_start_date': start_date,
+                            'rental_period': rental_period,
+                            'rental_end_date': end_date,
+                            'location': location,
+                            'total_cost': float(total_cost),
+                        }
+
+        else:  # Existing customer!
+            print("You are using your fancy new customer dropdown functionality!")
+            customer_name = request.POST['customerSearch']  # Assuming it's in the format "First Last"
+            first_name, last_name = customer_name.split(' ')
+            customer = Customer.objects.get(first_name=first_name, last_name=last_name)
+            phone_number = request.POST['phone_number']
+            email = request.POST['email']
+
+            start_date = request.POST['start_date']
+            rental_period = int(request.POST['rental_period'])
+            location = request.POST['location']
+
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = start_date + timedelta(days=rental_period)
+
+            # revert back to str format
+            end_date = str(end_date)
+            start_date = str(start_date)
+
+            # Calculate total rental cost
+            total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
+
+            print("HELLO")
+            print(customer.id)
+            order_data = {
+                'customer': customer.id,
+                'phone_number': phone_number,
+                'email': email,
+                'equipment': equipment.id,
+                'rental_start_date': start_date,
+                'rental_period': rental_period,
+                'rental_end_date': end_date,
+                'location': location,
+                'total_cost': float(total_cost),
+            }
+
+            # Store order_data in the session
+            request.session['order_data'] = order_data
+
+
+            return render(request, 'order_summary.html', {'order_data': order_data})
         
-        print('step 1 grabbed data complete')
-
-        # Step 2: Save customer information
-        customer = Customer.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            company_name=company_name,
-            phone_number=phone_number,
-            email=email
-
-        )
-        print('step 2, created new customer')
-
-        # Step 3: Calculate total rental cost
-        total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
-        print('step 3 calculated total cost')
-
-        # Step 4: Create a dictionary to hold the data instead of saving it to the database
-        order_data = {
-            'customer': customer,
-            'equipment': equipment,
-            'rental_start_date': start_date,
-            'rental_period': rental_period,
-            'rental_end_date': end_date,
-            'location': location,
-            'total_cost': total_cost,
-        }
-
-        print('step 4 created order data dictionary')
-
-        # Render the confirmation page and pass the order data as context
+        # Store order_data in the session
+        request.session['order_data'] = order_data
         return render(request, 'order_summary.html', {'order_data': order_data})
+
     return render(request, 'equipment_detail.html', {'equipment': equipment})
+
+def search_customers(request):
+    if request.method == 'GET':
+        query = request.GET.get('query', '')
+        customers = Customer.objects.filter(first_name__icontains=query) | Customer.objects.filter(last_name__icontains=query)
+        results = [
+            {
+                'id': customer.id,
+                'first_name': customer.first_name,
+                'last_name': customer.last_name,
+                'company_name': customer.company_name,
+                'phone_number': customer.phone_number,
+                'email_address': customer.email,
+            } for customer in customers
+        ]
+        return JsonResponse({'results': results})
 
 # Helper function to fetch unavailable dates for equipment
 def get_unavailable_dates(request, equipment_id):
@@ -175,7 +286,7 @@ def calculate_total_cost(equipment, start_date, end_date, rental_period):
         rate = equipment.equipment_type.daily_rate
         numPeriods = rental_days
     elif rental_days >= 7 and rental_days < 28:
-        rate = equipment.weekly_rate
+        rate = equipment.equipment_type.daily_rate
         numPeriods = rental_days//7
     else:
         rate = equipment.monthly_rate
@@ -192,6 +303,22 @@ def order_summary(request):
     return render(request, 'order_summary.html')
 
 def confirmation(request):
+
+    # Retrieve order_data from session
+    order_data = request.session.get('order_data', None)
+
+    RentalOrder.objects.create(
+        customer_id=order_data['customer'],
+        equipment_id=order_data['equipment'],
+        rental_start_date=order_data['rental_start_date'],
+        rental_end_date=order_data['rental_end_date'],
+        location=order_data['location'],
+        total_cost=order_data['total_cost'],
+    )
+                                     
+    # Store order_data in the session
+    request.session['order_data'] = order_data
+
     # Get the Square client from the utility module
     square_client = get_square_client()
 

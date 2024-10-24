@@ -31,7 +31,7 @@ class RentalOrder(models.Model):
     pickup_time = models.TimeField(null=True, blank=True) # not necessary
     dropoff_time = models.TimeField(null=True, blank=True) # not necessary
     total_cost = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_status = models.BooleanField(default=False)
+    paid = models.BooleanField(default=False)
     contract_signed = models.BooleanField(default=False)
     location = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)

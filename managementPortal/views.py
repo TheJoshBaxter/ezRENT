@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Equipment, RentalOrder, Inspection, Customer, RentalExtensions
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
@@ -88,10 +88,35 @@ def employee_dashboard(request):
             else:
                 order.start_condition_status = "Dirty"
         except:
-            order.start_condition_status = "Clean (first rental for this equipment)"
-            order.starting_fuel_status = "Full (first rental for this equipment)"
+            order.start_condition_status = "Clean"
+            order.starting_fuel_status = "Full"
 
     return render(request, 'employee_dashboard.html', {'orders': orders, 'filter_option': filter_option})
+
+@login_required
+def save_notes(request, order_id):
+    if request.method == 'POST':
+
+        orderToChange = RentalOrder.objects.filter(id=order_id).get()
+
+        # Update Customer fields
+        customer = orderToChange.customer  # Access the related Customer instance
+        customer.first_name = request.POST['customerFN']
+        customer.last_name = request.POST['customerLN']
+        customer.save()  # Save changes to the Customer model
+
+        # Update RentalOrder fields
+        stringStartDate = request.POST['startDate']
+        orderToChange.rental_start_date = datetime.strptime(stringStartDate, "%Y-%m-%d") # convert to datetime object
+        rentalTerm = int(request.POST['rentalTerm'])
+        orderToChange.rental_end_date = orderToChange.rental_start_date + timedelta(days=rentalTerm)  # Adjust start date if necessary
+        orderToChange.location = request.POST['rentalLocation']
+        orderToChange.notes = request.POST['notes']
+        orderToChange.save()  # Save changes to the RentalOrder model
+
+        return redirect('employee_dashboard')
+    
+    return redirect('employee_dashboard')
 
 def get_extensions(rental_order_ID):
     extensions = RentalExtensions.objects.filter(rental_order=rental_order_ID)
@@ -213,17 +238,6 @@ def end_rental(request, order_id):
         except (RentalOrder.DoesNotExist, ValueError):
             return JsonResponse({'success': False}, status=400)
     return JsonResponse({'success': False}, status=405)
-
-@login_required
-def save_notes(request, order_id):
-    if request.method == 'POST':
-
-        orderToChange = RentalOrder.objects.filter(id=order_id).get()
-        orderToChange.notes = request.POST['notes']
-        orderToChange.save()
-        return redirect('employee_dashboard')
-    
-    return redirect('employee_dashboard')
 
 @login_required
 def customers(request):

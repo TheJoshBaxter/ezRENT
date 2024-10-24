@@ -94,19 +94,39 @@
                             <form method="post" action="{% url 'save_notes' order.id %}">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                                    <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}"></input>
                                 </div>
                                 <div class="mb-3">
-                                    <strong>Rental Start Date:</strong> {{ order.rental_start_date }}
+                                    <strong><label for="customerFN">Customer Last Name:</label></strong> <input class="form-control" id="customerLN" name="customerLN" value="{{ order.customer.last_name }}"></input>
                                 </div>
                                 <div class="mb-3">
-                                    <strong>Rental Term Agreement:</strong> {{ order.rental_term_agreement }} days
+                                    <strong><label for="rentalLocation">Equipment Location: </label></strong>
+                                    <input class="form-control" id="rentalLocation" name="rentalLocation" value="{{ order.location }}"></input> 
                                 </div>
                                 <div class="mb-3">
-                                    <strong>Starting Fuel Status:</strong> {{ order.starting_fuel_status }}
+                                    <strong><label for="startDate">Rental Start Date:</label></strong>
+                                    <input type="date" id="startDate" name="startDate" value="{{ order.rental_start_date|date:"Y-m-d"}}"></input>
                                 </div>
                                 <div class="mb-3">
-                                    <strong>Start Condition Status:</strong> {{ order.start_condition_status }}
+                                    <strong><label for="rentalTerm">Rental Term Agreement:</label></strong>
+                                    <input type="number" id="rentalTerm" name="rentalTerm" value="{{ order.rental_term_agreement }}" style="width: 50px;"> days</input>
+                                </div>
+                                <div class="mb-3">
+                                    <strong><label for="fuelStartStatus">Starting Fuel Status:</label></strong> {{order.starting_fuel_status}}
+                                    {% comment %} <select name="fuelStartStatus" id="fuelStartStatus" class="form-select">
+                                        <option value="Full" {% if order.starting_fuel_status == "Full" %}selected{% endif %}>Full Tank</option>
+                                        <option value="3/4" {% if order.starting_fuel_status == "3/4" %}selected{% endif %}>3/4 Tank</option>
+                                        <option value="1/2" {% if order.starting_fuel_status == "1/2" %}selected{% endif %}>1/2 Tank</option>
+                                        <option value="1/4" {% if order.starting_fuel_status == "1/4" %}selected{% endif %}>1/4 Tank</option>
+                                        <option value="Empty" {% if order.starting_fuel_status == "Empty" %}selected{% endif %}>Empty Tank</option>
+                                    </select> {% endcomment %}
+                                </div>
+                                <div class="mb-3">
+                                    <strong><label for="cleaned">Start Condition Status:</label></strong> {{order.start_condition_status}}
+                                    {% comment %} <select name="cleaned" id="cleaned" class="form-select">
+                                        <option value="True" {% if order.start_condition_status == "Clean" %}selected{% endif %}>Clean</option>
+                                        <option value="False" {% if order.start_condition_status == "Dirty" %}selected{% endif %}>Dirty</option>
+                                    </select> {% endcomment %}
                                 </div>
                                 <div class="mb-3">
                                     <strong><label for="notes">Other Notes:</label></strong>
@@ -179,7 +199,7 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Save Notes</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
                                 </div>
                             </form>
                         </div>

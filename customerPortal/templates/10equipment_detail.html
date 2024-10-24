@@ -59,46 +59,37 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                {% if user.is_authenticated %}
                                 <!-- Customer Name Search Field -->
-                                <div class="mb-3 position-relative" id="custSearchDiv" >
+                                <div class="mb-3 position-relative">
                                     <label for="customerSearch" class="form-label">Customer Name</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="customerSearch" name="customerSearch" autocomplete="new-password" aria-autocomplete="list" aria-controls="customerDropdown" aria-expanded="false" aria-label="Customer" placeholder="Enter customer name">
-                                        <button class="btn btn-outline-secondary" type="button" id="clearSearch"><i class="fas fa-times"></i></button>
-                                    </div>
-                                    <ul id="customerDropdown" class="dropdown-menu show" style="width: 100%; display: none;" role="listbox">
+                                    <input type="text" class="form-control" id="customerSearch" placeholder="Enter customer name" autocomplete="off">
+                                    <ul id="customerDropdown" class="dropdown-menu show" style="width: 100%; display: none;">
                                         <!-- Create new customer button always visible -->
-                                        <li id="newCustomerOption" class="dropdown-item text-primary" role="listbox" tabindex="-1" style="cursor: pointer;">
+                                        <li id="newCustomerOption" class="dropdown-item text-primary" style="cursor: pointer;">
                                             <i class="fas fa-user-plus"></i> Create New Customer
                                         </li>
                                         <!-- Customer search results will be appended here -->
                                     </ul>
                                 </div>
-                                <!-- Fields for new customer (already visible fields will be updated by JS for existing customers) -->
-                                <div id="new-customer-fields" style="display: none;">
+                                
+                                <!-- Fields for selected customer -->
+                                <div id="existing-customer-fields" style="display: none;">
                                     <div class="form-group">
-                                        <label for="first_name">First Name</label>
-                                        <input type="text" class="form-control" id="first_name" name="first_name">
+                                        <label for="company_name">Company Name (optional)</label>
+                                        <input type="text" class="form-control" id="company_name" name="company_name" readonly>
                                     </div>
                                     <div class="form-group">
-                                        <label for="last_name">Last Name</label>
-                                        <input type="text" class="form-control" id="last_name" name="last_name">
+                                        <label for="phone_number">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone_number" name="phone_number" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="email">Email Address</label>
+                                        <input type="email" class="form-control" id="email" name="email" readonly>
                                     </div>
                                 </div>
-                                {% else %}
-                                <div class="form-group">
-                                    <label for="first_name">First Name</label>
-                                    <input type="text" class="form-control" id="first_name" name="first_name">
-                                </div>
-                                <div class="form-group">
-                                    <label for="last_name">Last Name</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name">
-                                </div>
-                                {% endif %}
 
-                                <!-- Fields that will always be visible -->
-                                <div class="form-group">
+                                 <!-- Fields that will always be visible -->
+                                 <div class="form-group">
                                     <label for="company_name">Company Name (optional)</label>
                                     <input type="text" class="form-control" id="company_name" name="company_name">
                                 </div>
@@ -111,11 +102,30 @@
                                     <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
 
+                                <!-- Fields for new customer (already visible fields will be updated by JS for existing customers) -->
+                                <div id="new-customer-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="first_name">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="last_name">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name">
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label for="location">Rental Dropoff Location</label>
                                     <input type="text" class="form-control" name="location" required>
                                 </div>
 
+                                {% comment %} <div class="form-group">
+                                    <label for="pickup_time">Pick-up Time</label>
+                                    <input type="time" class="form-control" name="pickup_time" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dropoff_time">Drop-off Time</label>
+                                    <input type="time" class="form-control" name="dropoff_time" required>
+                                </div> {% endcomment %}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -192,118 +202,72 @@
             }
         });
 
-        let selectedIndex = -1;
-        let customerList = [];
-        let searchField = document.getElementById('customerSearch');
-        let customerDropdown = document.getElementById('customerDropdown');
+        // event listener that listens for the focus event is in addition to the input event listener below
+        document.getElementById('customerSearch').addEventListener('focus', function() {
+            const dropdown = document.getElementById('customerDropdown');
+            dropdown.style.display = 'block'; // Show dropdown on focus
+        });
 
-        searchField.addEventListener('input', function() {
+        document.getElementById('customerSearch').addEventListener('input', function() {
             const query = this.value;
-
-            // Reset dropdown and selectedIndex
-            selectedIndex = -1;
-            updateDropdownSelection(customerDropdown.getElementsByTagName('li'));
-            customerList = [];
-
+    
             if (query.length === 0) {
-                customerDropdown.style.display = 'none';  // Hide dropdown when input is empty
+                document.getElementById('customerDropdown').style.display = 'block';
                 return;
             }
-
+    
             fetch(`/search_customers/?query=${query}`)
                 .then(response => response.json())
                 .then(data => {
-                    customerDropdown.innerHTML = '';
-
-                    // Add "Create New Customer" option at the top
+                    const dropdown = document.getElementById('customerDropdown');
+                    dropdown.innerHTML = '';
+    
                     const newCustomerOption = document.createElement('li');
                     newCustomerOption.classList.add('dropdown-item', 'text-primary');
                     newCustomerOption.innerHTML = '<i class="fas fa-user-plus"></i> Create New Customer';
                     newCustomerOption.style.cursor = 'pointer';
-                    newCustomerOption.role = 'listbox';
-                    newCustomerOption.tabIndex = -1;
-                    newCustomerOption.addEventListener('click', () => {
+                    newCustomerOption.addEventListener('click', function() {
+                        // Hide the customer search input and dropdown
+                        document.getElementById('customerSearch').style.display = 'none';
+                        document.getElementById('customerDropdown').style.display = 'none';
+                    
+                        // Show new customer fields
                         document.getElementById('new-customer-fields').style.display = 'block';
-                        customerDropdown.style.display = 'none';
-                        document.getElementById('custSearchDiv').style.display = 'none';
+                    
+                        // Clear existing values in case user switches back to new customer
+                        document.getElementById('first_name').value = '';
+                        document.getElementById('last_name').value = '';
+                        document.getElementById('company_name').value = '';
+                        document.getElementById('phone_number').value = '';
+                        document.getElementById('email').value = '';
                     });
-                    customerDropdown.appendChild(newCustomerOption);
-
-                    // Populate dropdown with customer results
+                    dropdown.appendChild(newCustomerOption);
+    
                     if (data.results.length > 0) {
-                        customerList = data.results;
-                        data.results.forEach((customer, index) => {
+                        data.results.forEach(customer => {
                             const li = document.createElement('li');
                             li.classList.add('dropdown-item');
-                            li.style.cursor = 'pointer';
-                            li.role = 'option';
-                            li.tabIndex = index;
                             li.textContent = `${customer.first_name} ${customer.last_name}`;
-                            li.addEventListener('mousedown', () => {
-                                selectCustomer(customer);
+                        
+                            li.addEventListener('mousedown', function() {
+                                document.getElementById('customerSearch').value = this.textContent;
+                                
+                                // Assuming customer data is available as expected
+                                document.getElementById('company_name').value = customer.company_name || '';
+                                document.getElementById('phone_number').value = customer.phone_number || '';
+                                document.getElementById('email').value = customer.email || '';
+                                
+                                document.getElementById('new-customer-fields').style.display = 'none';  // Hide new customer fields
+                                dropdown.style.display = 'none';  // Hide dropdown
                             });
-                            customerDropdown.appendChild(li);
+                        
+                            // Adding cursor style for easy selection
+                            dropdown.appendChild(li);
                         });
-                    } else {
-                        const noResultsOption = document.createElement('li');
-                        noResultsOption.classList.add('dropdown-item', 'text-muted');
-                        noResultsOption.textContent = 'No results found';
-                        customerDropdown.appendChild(noResultsOption);
                     }
-
-                    customerDropdown.style.display = 'block';
-                    searchField.setAttribute('aria-expanded', 'true');
+    
+                    dropdown.style.display = 'block';
                 });
-        });
-
-        // Function to populate form fields with selected customer data
-        function selectCustomer(customer) {
-            document.getElementById('customerSearch').value = `${customer.first_name} ${customer.last_name}`;
-            document.getElementById('company_name').value = customer.company_name || '';
-            document.getElementById('phone_number').value = customer.phone_number;
-            document.getElementById('email').value = customer.email_address;
-
-            document.getElementById('new-customer-fields').style.display = 'none';
-            customerDropdown.style.display = 'none';
-        }
-
-        // Handle keyboard navigation
-        searchField.addEventListener('keydown', function(event) {
-            const items = customerDropdown.getElementsByTagName('li');
-
-            if (event.key === 'ArrowDown') {
-                selectedIndex = (selectedIndex + 1) % items.length;
-                updateDropdownSelection(items);
-            } else if (event.key === 'ArrowUp') {
-                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-                updateDropdownSelection(items);
-            } else if (event.key === 'Enter') {
-                if (selectedIndex === -1 && items.length > 0) {
-                    selectedIndex = 0;  // Default to the first item if none is selected
-                }
-                if (selectedIndex >= 0) {
-                    items[selectedIndex].click();
-                    event.preventDefault();  // Prevent form submission
-                }
-            }
-        });
-
-        function updateDropdownSelection(items) {
-            for (let i = 0; i < items.length; i++) {
-                items[i].classList.remove('active');
-            }
-            if (items[selectedIndex]) {
-                items[selectedIndex].classList.add('active');
-            }
-        }
-
-        // Clear search input and reset fields
-        document.getElementById('clearSearch').addEventListener('click', () => {
-            searchField.value = '';
-            document.getElementById('company_name').value = '';
-            document.getElementById('phone_number').value = '';
-            document.getElementById('email').value = '';
-            customerDropdown.style.display = 'none';  // Hide dropdown when cleared
         });
     });
 </script>
