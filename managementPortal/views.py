@@ -60,6 +60,8 @@ def employee_dashboard(request):
         orders = RentalOrder.objects.filter(rental_start_date__gt=today).order_by('rental_end_date')
     elif filter_option == 'past':
         orders = RentalOrder.objects.filter(rental_end_date__lt=today).order_by('rental_end_date')
+    elif filter_option == 'new':
+        orders = RentalOrder.objects.all().order_by('-created_at')
     else:
         orders = RentalOrder.objects.all().order_by('rental_end_date')
 

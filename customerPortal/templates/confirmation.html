@@ -3,8 +3,19 @@
 {% block content %}
 <div class="container">
     <h1 class="mt-5">Almost done...</h1>
-    <p>Please make payment by checking your email for our payment link. Once payment has been confirmed and the documents have been signed, your order will be approved. </p>
+    <h4>Please make payment by checking your email for our payment link. Once payment has been confirmed and the documents have been signed, your order will be approved. </h5>
+    <br>
     <a href="{% url 'equipment_types' %}" class="btn btn-primary">Back to Equipment List</a>
+    <br>
+    <hr>
+    <br>
+    {% if user.is_authenticated %}
+    <br>
+    <h5>Notes: (visible to employees only)</h5>
+    <p> - {{ customerMessage }}</p>
+    <p> - {{ invoiceMessage }}</p>
+    <a href="{{squareDashLink}}" class="btn btn-success" target="_blank" rel="noopener noreferrer">Square Dashboard: Send Invoice</a>
+    {% endif %}
     <br>
 </div>
 {% endblock %}

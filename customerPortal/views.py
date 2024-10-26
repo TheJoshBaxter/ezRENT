@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.timezone import localtime
 from decimal import Decimal
+import uuid
 
 from customerPortal.square_client import get_square_client
 
@@ -52,9 +53,9 @@ def equipment_list(request, equipmentTypeID):
             next_available_date += timedelta(days=1)
 
         if next_available_date == today:
-            item.availability_message = "Available now"
+            item.availability_customerMessage = "Available now"
         else:
-            item.availability_message = f"Not available until {next_available_date}"
+            item.availability_customerMessage = f"Not available until {next_available_date}"
 
     return render(request, 'equipment_list.html', {'equipment': equipment})
 
@@ -101,6 +102,9 @@ def equipment_detail(request, equipment_id):
 
                 order_data = { # create an order for the newly created customer
                         'customer': customer.id,
+                        'customer_fName': customer.first_name,
+                        'customer_lName': customer.last_name,
+                        'company': customer.company_name,
                         'phone_number': phone_number,
                         'email': email,
                         'equipment': equipment.id,
@@ -109,6 +113,7 @@ def equipment_detail(request, equipment_id):
                         'rental_end_date': end_date,
                         'location': location,
                         'total_cost': float(total_cost),
+                        'new_cust': True
                     }
 
 
@@ -123,6 +128,9 @@ def equipment_detail(request, equipment_id):
 
                     order_data = {
                         'customer': customer.id,
+                        'customer_fName': customer.first_name,
+                        'customer_lName': customer.last_name,
+                        'company': customer.company_name,
                         'phone_number': phone_number,
                         'email': email,
                         'equipment': equipment.id,
@@ -131,6 +139,7 @@ def equipment_detail(request, equipment_id):
                         'rental_end_date': end_date,
                         'location': location,
                         'total_cost': float(total_cost),
+                        'new_cust': False
                     }
 
                 else:
@@ -147,6 +156,9 @@ def equipment_detail(request, equipment_id):
 
                         order_data = { # then create a new order for the new customer
                             'customer': customer.id,
+                            'customer_fName': customer.first_name,
+                            'customer_lName': customer.last_name,
+                            'company': customer.company_name,
                             'phone_number': phone_number,
                             'email': email,
                             'equipment': equipment.id,
@@ -155,11 +167,12 @@ def equipment_detail(request, equipment_id):
                             'rental_end_date': end_date,
                             'location': location,
                             'total_cost': float(total_cost),
+                            'new_cust': True
                         }
-                    except: # this isn't great error catching as the user can still procede...edit in the future
+                    except: 
                         order_data = {
                             'customer': "ERROR",
-                            'phone_number': "ERROR: this phone number is already registered. Please EDIT INFO",
+                            'phone_number': "ERROR: something went wrong. Please EDIT INFO to make sure information is correct.",
                             'email': email,
                             'equipment': equipment,
                             'rental_start_date': start_date,
@@ -191,10 +204,11 @@ def equipment_detail(request, equipment_id):
             # Calculate total rental cost
             total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
 
-            print("HELLO")
-            print(customer.id)
             order_data = {
                 'customer': customer.id,
+                'customer_fName': customer.first_name,
+                'customer_lName': customer.last_name,
+                'company': customer.company_name,
                 'phone_number': phone_number,
                 'email': email,
                 'equipment': equipment.id,
@@ -203,6 +217,7 @@ def equipment_detail(request, equipment_id):
                 'rental_end_date': end_date,
                 'location': location,
                 'total_cost': float(total_cost),
+                'new_cust': False
             }
 
             # Store order_data in the session
@@ -289,7 +304,7 @@ def calculate_total_cost(equipment, start_date, end_date, rental_period):
         rate = equipment.equipment_type.daily_rate
         numPeriods = rental_days//7
     else:
-        rate = equipment.monthly_rate
+        rate = equipment.equipment_type.monthly_rate
         numPeriods = 1 # hard coded 1 because 1 month is the max time period option available to users
         
     # Calculate the total cost
@@ -307,7 +322,7 @@ def confirmation(request):
     # Retrieve order_data from session
     order_data = request.session.get('order_data', None)
 
-    RentalOrder.objects.create(
+    new_order = RentalOrder.objects.create(
         customer_id=order_data['customer'],
         equipment_id=order_data['equipment'],
         rental_start_date=order_data['rental_start_date'],
@@ -315,41 +330,162 @@ def confirmation(request):
         location=order_data['location'],
         total_cost=order_data['total_cost'],
     )
-                                     
-    # Store order_data in the session
-    request.session['order_data'] = order_data
+
+    equipment_type = new_order.equipment.equipment_type.name
+    cost_in_cents = new_order.total_cost * 100
+    tomorrow = date.today() + timedelta(days=1)
+    equipment_location = order_data['location']
+    rental_end_date=order_data['rental_end_date']
 
     # Get the Square client from the utility module
     square_client = get_square_client()
 
     # Access the client services, e.g., customers, payments
     customers_api = square_client.customers
-    response = customers_api.create_customer(
-        body={
-            "given_name": "JohnnyBoy",
-            "family_name": "Dough",
-            "email_address": "john.doe@example.com"
+    invoices_api = square_client.invoices
+    locations_api = square_client.locations
+    orders_api = square_client.orders
+
+    # retreive locations from locations API
+    locationResponse = locations_api.list_locations()
+    print("LOCATIONS PRINT OUT:")
+
+    if locationResponse.is_success():
+        location_id = []
+        for location in locationResponse.body['locations']:
+            print(f"Location Name: {location['name']}, Location ID: {location['id']}")
+            location_id = location['id']
+
+    else:
+        print(f"Error retrieving locations: {locationResponse.errors}")
+
+    # IF this is a new customer, create customer using the customers api
+    if order_data['new_cust']:
+        custResponse = customers_api.create_customer(
+            body={
+                "given_name": order_data['customer_fName'],
+                "family_name": order_data['customer_lName'],
+                "company_name": order_data['company'],
+                "phone_number": order_data['phone_number'],
+                "email_address": order_data['email']
+            }
+        )
+
+        # Print customer response to the user and console
+        if custResponse.is_success():
+            customer_id = custResponse.body['customer']['id']
+            customerMessage = "Customer id " + customer_id + " has been added to square! And an order has been created for this customer in ezRENT"
+            print("WE ARE TALKING TO SQUARE:")
+            print(customerMessage)
+            # Proceed with your logic, such as displaying a success customerMessage or redirecting
+        else:
+            # Handle errors appropriately
+            print(custResponse.errors)
+            customerMessage = custResponse.errors
+    else: # not a new customer, Retrieve the customer ID from the customers api
+        searchedCust = customers_api.search_customers(
+            body = {
+                "query": {
+                    "filter": {
+                        "phone_number": {
+                            "exact": f"+1-{order_data['phone_number']}"
+                        }
+                    }
+                }
+            }
+        )
+
+        if searchedCust.is_success():
+            print("Got customerID:")
+            customer_id = searchedCust.body['customers'][0]['id']
+            customerMessage = "Retrieved customer id from existing customer record in square"
+            print(customer_id)
+        elif searchedCust.is_error():
+            print(searchedCust.errors)
+
+    # CREATE A NEW ORDER for the invoice to be attached to:
+
+    orderResult = orders_api.create_order(
+        body = {
+            "order": {
+            "location_id": location_id,
+            "line_items": [
+                {
+                "name": equipment_type + " Forklift Rental",
+                "quantity": "1",
+                "modifiers": [
+                    {
+                    "name": "extras",
+                    "quantity": "0",
+                    "base_price_money": {
+                        "amount": 0,
+                        "currency": "USD"
+                    }
+                    }
+                ],
+                "base_price_money": {
+                    "amount": cost_in_cents,
+                    "currency": "USD"
+                }
+                }
+            ]
+            },
+            "idempotency_key": str(uuid.uuid4())
         }
     )
 
-    if response.is_success():
-        customer_id = response.body['customer']['id']
-        message = customer_id
-        print("WE ARE TALKING TO SQUARE:")
-        print(message)
-        # Proceed with your logic, such as displaying a success message or redirecting
-    else:
-        # Handle errors appropriately
-        print(response.errors)
-        message = response.errors
+    if orderResult.is_error():
+        print("Order Creation resulted in an error")
+    elif orderResult.is_success():
+        print("Order Creation SUCCESSFUL!!!")
 
-    #   EMAIL? #
-    # send_mail(
-    #         'Proceed to Payment',
-    #         f'Please proceed to sign contracts and make payment. Equipment: {equipment.name}. URL: /confirm/{equipment_id}/',
-    #         settings.DEFAULT_FROM_EMAIL,
-    #         [email],
-    #         fail_silently=False,
-    #     )
+        order_id = orderResult.body['order']['id']
+
+        # if order was created successfully, create the invoice
+        try:
+            invoice_request = {
+                "invoice": {
+                    "order_id": order_id,
+                    "primary_recipient": {
+                        "customer_id": customer_id,  # Existing customer ID from the Square response
+                    },
+                    "payment_requests": [
+                        {
+                            "request_type": "BALANCE",
+                            "due_date": str(tomorrow)  # Ensure the date is formatted correctly as a string
+                        }
+                    ],
+                    "delivery_method": "EMAIL",
+                    "title": equipment_type + " Forklift Rental",
+                    "description": "Equipment Location - " + equipment_location,
+                    "sale_or_service_date": rental_end_date,
+                    "accepted_payment_methods": {
+                        "card": True
+                    }
+                },
+                "idempotency_key": str(uuid.uuid4()),  # Unique key to prevent duplicates
+            } 
+
+            # Call the invoice API and pass the data
+            invoiceResponse = invoices_api.create_invoice(invoice_request)
+
+        except Exception as e:
+            print(f"An exception occurred: {e}")
+
+    # Print invoice response to the user and console
+    if invoiceResponse.is_success():
+        invoice_id = invoiceResponse.body['invoice']['id']
+        invoiceMessage = f"Invoice created successfully: {invoice_id}"
+        print(invoiceMessage)
+    elif invoiceResponse.is_error():
+        invoiceMessage = f"Error creating invoice: {invoiceResponse.errors}"
+        print(invoiceMessage)
+    else:
+        print("didn't attempt invoice creation")
     
-    return render(request, 'confirmation.html', {'message': message})
+    context = {}
+    context['customerMessage'] = customerMessage
+    context['invoiceMessage'] = invoiceMessage
+    context['squareDashLink'] = f"https://app.squareupsandbox.com/dashboard/invoices/{invoice_id}/edit"
+
+    return render(request, 'confirmation.html', context)

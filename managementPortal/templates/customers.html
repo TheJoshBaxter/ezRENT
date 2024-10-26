@@ -70,12 +70,12 @@
                             <!-- First Name -->
                             <div class="mb-3">
                                 <label for="firstName-{{ customer.id }}" class="form-label">First Name</label>
-                                <input type="text" class="form-control" id="firstName-{{ customer.id }}" name="first_name" value="{{ customer.first_name }}" required>
+                                <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="firstName-{{ customer.id }}" name="first_name" value="{{ customer.first_name }}" required>
                             </div>
                             <!-- Last Name -->
                             <div class="mb-3">
                                 <label for="lastName-{{ customer.id }}" class="form-label">Last Name</label>
-                                <input type="text" class="form-control" id="lastName-{{ customer.id }}" name="last_name" value="{{ customer.last_name }}" required>
+                                <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="lastName-{{ customer.id }}" name="last_name" value="{{ customer.last_name }}" required>
                             </div>
                             <!-- Company Name -->
                             <div class="mb-3">
@@ -85,7 +85,7 @@
                             <!-- Phone Number -->
                             <div class="mb-3">
                                 <label for="phoneNumber-{{ customer.id }}" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phoneNumber-{{ customer.id }}" name="phone_number" value="{{ customer.phone_number }}" required>
+                                <input type="tel" class="form-control" id="phoneNumber-{{ customer.id }}" name="phone_number" value="{{ customer.phone_number }}" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890" required>
                             </div>
                             <!-- Email -->
                             <div class="mb-3">

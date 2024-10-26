@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <h1 class="mt-5">Order Summary</h1>
-    <p><strong>Customer:</strong> {{ order_data.customer }}</p>
+    <p><strong>Customer:</strong> {{ order_data.customer_fName }} {{ order_data.customer_lName }}</p>
     <p><strong>Phone Number:</strong> {{ order_data.phone_number }}</p>
     <p><strong>Email:</strong> {{ order_data.email }}</p>
     <p><strong>Equipment:</strong> {{ order_data.equipment }}</p>
@@ -15,7 +15,9 @@
     <form method="post" action="{% url 'confirmation' %}">
         {% csrf_token %}
         <button onclick="window.history.back()"type="button" class="btn btn-danger">Edit Info</button>
+        {% if order_data.customer != "ERROR" %}
         <button type="submit" class="btn btn-primary">Confirm and Pay</button>
+        {% endif %}
     </form>
 </div>
 {% endblock %}

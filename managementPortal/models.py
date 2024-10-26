@@ -35,6 +35,7 @@ class RentalOrder(models.Model):
     contract_signed = models.BooleanField(default=False)
     location = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
     @property
     def rental_term_agreement(self): # (number of days until renewal or pick up)

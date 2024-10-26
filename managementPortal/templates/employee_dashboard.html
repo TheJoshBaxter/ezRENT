@@ -17,6 +17,7 @@
                 <option value="current" {% if filter_option == 'current' %}selected{% endif %}>Current Rentals</option>
                 <option value="past" {% if filter_option == 'past' %}selected{% endif %}>Past Rentals</option>
                 <option value="upcoming" {% if filter_option == 'upcoming' %}selected{% endif %}>Upcoming Rentals</option>
+                <option value="new" {% if filter_option == 'new' %}selected{% endif %}>Newly Added</option>
                 <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
             </select>
         </div>
@@ -94,10 +95,10 @@
                             <form method="post" action="{% url 'save_notes' order.id %}">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}"></input>
+                                    <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}" ></input>
                                 </div>
                                 <div class="mb-3">
-                                    <strong><label for="customerFN">Customer Last Name:</label></strong> <input class="form-control" id="customerLN" name="customerLN" value="{{ order.customer.last_name }}"></input>
+                                    <strong><label for="customerFN">Customer Last Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerLN" name="customerLN" value="{{ order.customer.last_name }}"></input>
                                 </div>
                                 <div class="mb-3">
                                     <strong><label for="rentalLocation">Equipment Location: </label></strong>
