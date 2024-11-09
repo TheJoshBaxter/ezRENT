@@ -154,6 +154,7 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
 LOGIN_URL = '/managementPortal/login/'
 
 SQUARE_ACCESS_TOKEN = os.environ.get('SQUARE_ACCESS_TOKEN')
+SQUARE_LOCATION_ID = os.environ.get('SQUARE_LOCATION_ID')
 
 # enhance security (BUT THIS BREAKS MY LOGIN FUNCTIONALITY)
 # CSRF_COOKIE_SECURE = True

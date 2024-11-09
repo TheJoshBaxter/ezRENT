@@ -9,6 +9,12 @@ from django.contrib import messages
 from .forms import UserRegisterForm
 import json
 from django.http import JsonResponse
+from customerPortal.square_client import get_square_client
+from django.conf import settings
+
+# webhookstuff
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 def register(request):
@@ -44,6 +50,7 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+
 # Backend dashboard for business to manage orders and equipment
 @login_required
 def employee_dashboard(request):
@@ -51,19 +58,26 @@ def employee_dashboard(request):
     # print(date.today())                            THESE ARE THE SAME FOR THE RECORD
     # print(timezone.now().date())
 
+    context = {}
+
+    pendingOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
+
+    for order in pendingOrders:
+        order.unavailableDates = get_unavailable_dates(order.equipment_id)
+
     filter_option = request.GET.get('filter', 'current')  # Get the filter option from query parameters, default to 'current'
 
     # Filter the RentalOrder queryset based on the selected filter option
     if filter_option == 'current':
-        orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today).order_by('rental_end_date')
+        orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today, rental_approved=True).order_by('rental_end_date')
     elif filter_option == 'upcoming':
-        orders = RentalOrder.objects.filter(rental_start_date__gt=today).order_by('rental_end_date')
+        orders = RentalOrder.objects.filter(rental_start_date__gt=today, rental_approved=True).order_by('rental_end_date')
     elif filter_option == 'past':
-        orders = RentalOrder.objects.filter(rental_end_date__lt=today).order_by('rental_end_date')
+        orders = RentalOrder.objects.filter(rental_end_date__lt=today, rental_approved=True).order_by('rental_end_date')
     elif filter_option == 'new':
-        orders = RentalOrder.objects.all().order_by('-created_at')
+        orders = RentalOrder.objects.filter(rental_approved=True).order_by('-created_at')
     else:
-        orders = RentalOrder.objects.all().order_by('rental_end_date')
+        orders = RentalOrder.objects.filter(rental_approved=True).order_by('rental_end_date')
 
     # Add days remaining information to each order
     for order in orders:
@@ -78,7 +92,7 @@ def employee_dashboard(request):
 
         # get days remaining for each order
         days_remaining = (order.rental_end_date - today).days
-        order.days_remaining = days_remaining
+        order.days_remaining = days_remaining # used to color icons based on proximity of end date
 
         # get the last inspection data for the equipment id associated with each order
         try:
@@ -93,7 +107,24 @@ def employee_dashboard(request):
             order.start_condition_status = "Clean"
             order.starting_fuel_status = "Full"
 
-    return render(request, 'employee_dashboard.html', {'orders': orders, 'filter_option': filter_option})
+    context['orders'] = orders
+    context['filter_option'] = filter_option
+    context['pendingOrders'] = pendingOrders
+    context['today'] = today
+
+    return render(request, 'employee_dashboard.html', context)
+
+def approve_rental(request, order_id):
+    # Get the RentalOrder instance
+    order = get_object_or_404(RentalOrder, id=order_id)
+    
+    if request.method == 'POST':
+        # Mark the rental as approved (you can update any field in your model)
+        order.rental_approved = True
+        order.save()
+
+        # Redirect to a confirmation page or the updated rental order page
+        return redirect('employee_dashboard')
 
 @login_required
 def save_notes(request, order_id):
@@ -143,8 +174,8 @@ def todays_pickups_dropoffs(request):
     selected_date = timezone.datetime.strptime(selected_date_str, '%Y-%m-%d').date() # convert to datetime object and format
 
     # filter data according to user-selected date
-    outgoing_orders = RentalOrder.objects.filter(rental_start_date=selected_date).order_by('pickup_time') 
-    returning_orders = RentalOrder.objects.filter(rental_end_date=selected_date).order_by('dropoff_time')
+    outgoing_orders = RentalOrder.objects.filter(rental_start_date=selected_date) 
+    returning_orders = RentalOrder.objects.filter(rental_end_date=selected_date)
 
     # this block determines if each returning item has already been inspected or not
     for item in returning_orders:
@@ -167,8 +198,8 @@ def inspections(request):
 
     today = date.today()
 
-    orders_without_inspections = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today).order_by('rental_end_date')
-    orders_with_inspections = RentalOrder.objects.filter(inspection__isnull=False).order_by('rental_end_date')
+    orders_without_inspections = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today, rental_returned=True).order_by('rental_end_date')
+    orders_with_inspections = RentalOrder.objects.filter(inspection__isnull=False).order_by('-rental_end_date')
 
     return render(request, 'inspections.html', {
         'orders_with_inspections': orders_with_inspections,
@@ -233,9 +264,15 @@ def extend_rental(request, order_id):
 def end_rental(request, order_id):
     if request.method == 'POST':
         try:
+            data = json.loads(request.body)
+            end_date_str = data.get('end_date')
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+
             rental_order = RentalOrder.objects.get(id=order_id)
-            rental_order.rental_end_date = date.today()
+            rental_order.rental_end_date = end_date
+            rental_order.rental_returned = True
             rental_order.save()
+
             return JsonResponse({'success': True})
         except (RentalOrder.DoesNotExist, ValueError):
             return JsonResponse({'success': False}, status=400)
@@ -270,3 +307,22 @@ def delete_customer(request, customer_id):
     customer.delete()  # Delete the customer from the database
 
     return redirect('customers')  # Redirect back to the customer list page
+
+def get_unavailable_dates(equipment_id):
+    today = date.today()
+
+    # Fetch all reservations for this equipment starting from today
+    unavailable_orders = RentalOrder.objects.filter(
+        equipment_id=equipment_id,
+        rental_end_date__gte=today,
+        rental_approved=True
+    )
+
+    unavailablePeriods = []
+
+    for order in unavailable_orders:
+        formattedStart = order.rental_start_date.strftime('%b %d')
+        formattedEnd = order.rental_end_date.strftime('%b %d, %Y')
+        unavailablePeriods.append(f"{formattedStart} - {formattedEnd}")
+
+    return unavailablePeriods

@@ -3,7 +3,10 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">Choose Equipment Type</h1>
+    <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
+    <p>&nbsp If you have any questions or concerns, please call <a href="tel:(801)-123-1234" class="">(801)-123-1234</a>.</p>
+    <hr>
+    <h2 class="mt-5">Start by Selecting Equipment Type:</h2>
     <div class="row">
         {% for item in allEquipmentTypes %}
             <div class="col-md-4">
@@ -11,9 +14,9 @@
                     <img class="card-img-top" src="{% static item.imgURL }} %}" alt="{{ item.name }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ item.name }} {{ item.category }}</h5>
-                        <p>{{ item.specs|truncatechars:100 }}</p>
-                        <p><strong>Quantity:</strong> {{ item.available_quantity }}</p>
-                        <a href="{% url 'equipment_list' item.id %}" class="btn btn-primary">View Availability</a>
+                        <p>{{ item.specs|truncatechars:145 }}</p>
+                        {% comment %} <p><strong>Quantity:</strong> {{ item.available_quantity }}</p> {% endcomment %}
+                        <a href="{% url 'equipment_detail' item.id %}" class="btn btn-primary">View Availability</a>
                     </div>
                 </div>
             </div>

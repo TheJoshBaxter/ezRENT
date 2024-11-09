@@ -1,21 +1,320 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-5">
     <h1 class="mt-5">Almost done...</h1>
-    <h4>Please make payment by checking your email for our payment link. Once payment has been confirmed and the documents have been signed, your order will be approved. </h5>
-    <br>
-    <a href="{% url 'equipment_types' %}" class="btn btn-primary">Back to Equipment List</a>
-    <br>
+    <p>Your rental request is being reviewed. Before approval, the following tasks must be completed:</p>
     <hr>
-    <br>
-    {% if user.is_authenticated %}
-    <br>
-    <h5>Notes: (visible to employees only)</h5>
-    <p> - {{ customerMessage }}</p>
-    <p> - {{ invoiceMessage }}</p>
-    <a href="{{squareDashLink}}" class="btn btn-success" target="_blank" rel="noopener noreferrer">Square Dashboard: Send Invoice</a>
+
+    <!-- Checklist Items -->
+    <div class="checklist">
+        <div class="checklist-item d-flex align-items-center mb-3">
+            <!-- Task 1: Sign Rental Agreement -->
+            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal">Sign Rental Agreement</a>
+        </div>
+        
+        <div class="checklist-item d-flex align-items-center mb-3">
+            <!-- Task 2: Make Payment -->
+            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">Complete Payment</a>
+        </div>
+    </div>
+
+    <!-- Sign Agreement Modal -->
+    <div class="modal fade" id="signAgreementModal" tabindex="-1" aria-labelledby="signAgreementModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="signAgreementModalLabel">Sign Rental Agreement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Custom code for agreement signing goes here -->
+                    <h2 class="text-center">Forklift Rental Agreement</h2>
+                    <p>Agreement made on <strong>{{ today_date }}</strong> between <strong>{{ customer_name }}</strong> ("Customer") and <strong>Your Company Name</strong> ("Company"). This agreement outlines the terms and conditions for renting the forklift described below.</p>
+                    
+                    <hr>
+
+                    <h4>Equipment Details</h4>
+                    <p><strong>Equipment ID:</strong> {{ equipment.id }}</p>
+                    <p><strong>Model:</strong> {{ equipment.model }}</p>
+                    <p><strong>Rental Period:</strong> {{ rental_start_date }} to {{ rental_end_date }}</p>
+
+                    <hr>
+
+                    <h4><u>Terms</u></h4>
+                    <br>
+                    <h5>Definitions</h5>
+                    
+                    <p>The following definitions are used but not otherwise defined in this Agreement:</p>
+                    <ul>
+                        <li><b>“Casualty Value”</b> means the market value of the Equipment at the end of the Term or, in relation to a Total Loss, the market value the Equipment would have had at the end of the Term but for the Total Loss. The Casualty Value may be less than but will not exceed the original purchase price of the Equipment.</li>
+                        <li><b>“Equipment”</b> means Skytrak 8042, which has an approximate value of $43,000.00.</li>
+                        <li><b>“Total Loss”</b> means any loss or damage that is not repairable or that would cost more to repair than the market value of the Equipment.</li>
+                    </ul>
+
+                    <h5>Lease</h5>
+                    <p>The Lessor agrees to lease the Equipment to the Lessee, and the Lessee agrees to lease the Equipment from the Lessor in accordance with the terms set out in the Agreement.</p>
+
+                    <h5>Term</h5>
+                    <p>The Agreement commences on and concludes on the dates specified in the corresponding invoice, unless additional rental agreements supersede.</p>
+
+                    <h5>Rent</h5>
+                    <p>Rent will be paid prior to the Lessee taking possession of the Equipment.</p>
+
+                    <h5>Delivery of Equipment</h5>
+                    <p>The Lessor will deliver the Equipment to the Lessee at the agreed locations specified in the corresponding invoice.</p>
+
+                    <h5>Use of Equipment</h5>
+                    <p>Use the equipment carefully and for its intended purpose. Comply with all manufacturer requirements/recommendations and applicable laws. Do not alter/modify the equipment without the owner’s permission. Equipment may not be moved from the specified job site or driven on the road any distance exceeding 1⁄2 mile.</p>
+
+                    <h5>Warranties</h5>
+                    <ul>
+                        <li>The Equipment will be in good working order and condition upon delivery.</li>
+                        <li>The Equipment is of merchantable quality and is fit for the purposes it is ordinarily used.</li>
+                    </ul>
+
+                    <h5>Loss and Damage / Customer Responsibilities</h5>
+                    <p>To the extent permitted by law, the Lessee will be responsible for the risk of loss, theft, damage, or destruction to the Equipment from any cause. Includes tire, engine, chassis, seat control, hand control, and forklift carriage due to misuse or negligence.</p>
+                    <p><b>Lessee is required to:</b></p>
+                    <ul>
+                        <li>Perform regular fluid checks and top off as necessary, including coolant, fuel, hydraulic, engine, differential, and axle.</li>
+                        <li>Maintain at least 1/4 tank fuel level (#2 Diesel only).</li>
+                        <li>Repair or replace hydraulic hoses and fittings as needed.</li>
+                        <li>Keep the machine clean and free of mud and debris.</li>
+                    </ul>
+                    <p><b>Lessee is required to prevent:</b></p>
+                    <ul>
+                        <li>Overloading of the starter motor.</li>
+                        <li>Shock loading of driveline and transmission components.</li>
+                        <li>Critical discharge of the battery.</li>
+                        <li>Damage to the key switch.</li>
+                        <li>Tire slipping resulting in chunking or tearing of tread.</li>
+                        <li>Driving in mud or loose material beyond axle depth.</li>
+                        <li>Contacting overhead power lines.</li>
+                        <li>Machine tip-over.</li>
+                        <li>Glass and vinyl cracking or breakage.</li>
+                        <li>Damage to machine controls and switches.</li>
+                    </ul>
+
+                    <h5>Loss and Damage / Customer Responsibilities</h5>
+                    <p>If the Equipment is lost or damaged, the Lessee will continue paying Rent, and will provide the Lessor with prompt written notice of such loss or damage and will pay to the Lessor all unpaid Rent for the Term plus the Casualty Value of the Equipment. 10. In the event of Total Loss of the Equipment, the Lessee will provide the Lessor with prompt written notice of such loss and will pay to the Lessor all unpaid Rent for the Term plus the Casualty Value of the Equipment.</p>
+
+                    <h5>Ownership, Right to Lease and Quiet Enjoyment</h5>
+                    <ul>
+                        <li>The Equipment is the property of the Lessor and will remain the property of the Lessor.</li>
+                        <li>The Lessee will not encumber the Equipment or pledge it as security.</li>
+                        <li>The Lessee warrants the Lessor's right to lease the Equipment under this Agreement.</li>
+                        <li>The Lessor warrants that, provided no Event of Default has occurred, they will not disturb the Lessee’s peaceful possession or use of the Equipment.</li>
+                    </ul>
+
+                    <h5>Surrender</h5>
+                    <p>At the end of the Term or upon earlier termination, the Lessee will make the Equipment available for pick-up within 100ft of the Equipment drop-off address.</p>
+
+                    <h5>Indemnity</h5>
+                    <p>The Lessee will indemnify and hold harmless the Lessor against claims, actions, costs, damages, and liabilities, including attorney’s fees, arising from the Lessee’s use of the Equipment.</p>
+
+                    <h5>Default</h5>
+                    <p>An Event of Default includes:</p>
+                    <ul>
+                        <li>Failure to pay amounts due.</li>
+                        <li>Becoming insolvent or filing for bankruptcy.</li>
+                        <li>A writ of attachment on the Equipment not released within 10 days.</li>
+                    </ul>
+
+                    <h5>Remedies</h5>
+                    <p>On an Event of Default, the Lessor may:</p>
+                    <ul>
+                        <li>Declare all Rent for the Term immediately due.</li>
+                        <li>Commence legal proceedings for recovery.</li>
+                        <li>Take possession of the Equipment.</li>
+                        <li>Terminate the Agreement.</li>
+                        <li>Pursue other legal or equitable remedies.</li>
+                    </ul>
+
+                    <h5>Assignment</h5>
+                    <p>The Lessee may not assign this Agreement or their interest in the Equipment without the Lessor's consent.</p>
+
+                    <h5>Additional Documents</h5>
+                    <p>The Lessee will execute and deliver documents required by the Lessor to protect the Lessor’s interest.</p>
+
+                    <h5>Entire Agreement</h5>
+                    <p>This Agreement constitutes the entire agreement between the Parties.</p>
+
+                    <h5>Governing Law</h5>
+                    <p>This Agreement will be governed by the laws of the State of Utah.</p>
+
+                    <h5>Severability</h5>
+                    <p>If any provision is invalid, the remainder of the Agreement will still be enforceable.</p>
+
+                    <h5>General Terms</h5>
+                    <ul>
+                        <li>The Agreement may be executed in counterparts.</li>
+                        <li>Time is of the essence.</li>
+                        <li>Neither Party is liable for delays caused by conditions beyond their control.</li>
+                    </ul>
+
+                    <h5>Notice to Lessee</h5>
+                    <p>This is a lease. Do not sign before reading. You are entitled to a completed copy of this Agreement upon signing.</p>
+
+                    <h5>Signatures</h5>
+                    <p>This contract may be signed electronically or in hard copy. By typing names as signatures below, both parties agree to the terms.</p>
+
+                    <hr>
+
+                    <!-- Agreement Checkbox and Signature -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mt-4">
+                            <label for="signature">Signature:</label>
+                            <input type="text" class="form-control" id="signature" name="signature" placeholder="Type your name as a signature" required>
+                        </div>
+                        <br>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">I agree to the terms and conditions outlined in this rental agreement.</label>
+                        </div>
+
+                        {% comment %} <div class="agreement-section">
+                            <label for="signatureBox">Signature:</label>
+                            <canvas id="signatureBox" class="signature"></canvas>
+                            <input type="hidden" id="signature_data" name="signature_data">
+                            <button type="button" id="clear_signature">Clear</button>
+                        </div> {% endcomment %}
+
+                    <!-- Custom code for agreement signing ENDS here -->
+                </div>
+                <div class="modal-footer">
+                    <!-- Submission Button -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit Agreement</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Complete Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Custom code for payment process goes here -->
+                    <div id="payment-form">
+                        <div class="cost-display">
+                            <h3 class="description">Total Cost for Your Order:</h3>
+                            {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
+                            <p class="price">${{total_cost}}</p>
+                        
+                            <div id="payment-status-container"></div>
+                            <div id="card-container"></div>
+                            <button id="card-button" type="button" class="btn btn-primary w-100">Pay</button>
+                            <br>
+                            <br>
+                            ***
+                            <h5><u>For Testing Only:</u></h5>
+                            <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
+                            <p><strong>CVV:</strong> 111</p>
+                            <p><strong>Expiration:</strong> Any future date</p>
+                            <p><strong>Zip Code:</strong> Any valid zip</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if paid and contract_signed %}
+    <button class="btn btn-success mt-3" action="SOMETHING">DO SOMETHING NEXT</button>
+    {% else %}
+    <button class="btn btn-success mt-3" action="SOMETHING" disabled>DO SOMETHING NEXT</button>
     {% endif %}
-    <br>
 </div>
+<style>
+    .cost-display {
+      background-color: #f8f9fa;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: auto;
+      margin: auto;
+      text-align: center;
+    }
+    .total-cost {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #28a745;
+    }
+    .description {
+      font-size: 1.1rem;
+      color: #6c757d;
+    }
+    .price {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #343a40;
+    }
+</style>
+
+<script type="module">
+    const orderId = {{ order_id }}
+
+    const payments = Square.payments('sandbox-sq0idb-RT3u-HhCpNdbMiGg5aXuVg', 'TC4Z3ZEBKRXRH');
+    const card = await payments.card();
+    await card.attach('#card-container');
+
+    const cardButton = document.getElementById('card-button');
+    cardButton.addEventListener('click', async () => {
+        const statusContainer = document.getElementById('payment-status-container');
+
+        try {
+        const result = await card.tokenize();
+        if (result.status === 'OK') {
+            console.log(`Payment token is ${result.token}`);
+            statusContainer.innerHTML = "Payment Successful";
+
+            // trigger Django backend action:
+            await updatePaymentStatus(orderId);
+
+        } else {
+            let errorMessage = `Tokenization failed with status: ${result.status}`;
+            if (result.errors) {
+            errorMessage += ` and errors: ${JSON.stringify(
+                result.errors
+            )}`;
+            }
+
+            throw new Error(errorMessage);
+        }
+        } catch (e) {
+        console.error(e);
+        statusContainer.innerHTML = "Payment Failed";
+        }
+    });
+
+    // Function to make an AJAX request to the Django server to update the payment status in the database
+    async function updatePaymentStatus(orderId) {
+        try {
+            // Send GET request with 'order_id' as a URL parameter
+            const response = await fetch(`/update_payment_status/?orderId=${orderId}`, {
+                method: 'GET',  // Using GET request
+            });
+            // close the modal and refresh the page
+            const paymentModal = document.getElementById('paymentModal');
+            const modalInstance = bootstrap.Modal.getInstance(paymentModal);
+            modalInstance.hide();
+            location.reload();
+        } catch (error) {
+            console.error('Error triggering Django view', error);
+        }
+    }
+</script>
 {% endblock %}

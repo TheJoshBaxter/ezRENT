@@ -10,248 +10,368 @@
     </div>
     <hr>
 
-    <!-- Row for Filter Selector -->
-    <div class="row align-items-center mb-3">
-        <div class="col-md-3">
-            <select id="rental-filter" class="form-select" onchange="applyFilter()">
-                <option value="current" {% if filter_option == 'current' %}selected{% endif %}>Current Rentals</option>
-                <option value="past" {% if filter_option == 'past' %}selected{% endif %}>Past Rentals</option>
-                <option value="upcoming" {% if filter_option == 'upcoming' %}selected{% endif %}>Upcoming Rentals</option>
-                <option value="new" {% if filter_option == 'new' %}selected{% endif %}>Newly Added</option>
-                <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
-            </select>
+    <!-- Cards for Pending Rental Orders -->
+    <div class="card mt-3">
+        <div class="card-header">
+            Rentals Pending Approval
+        </div>
+        <div class="card-body row">
+            {% if pendingOrders %}
+                {% for order in pendingOrders %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#approveRentalModal-{{ order.id }}" style="cursor: pointer;">
+                        <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
+                            <!-- Rental Start Date -->
+                            <div class="card-text" style="font-size: 14px; font-weight: bold;">
+                                <u>Pending Dates:</u>
+                            </div>
+                            <div class="card-text text-warning" style="font-size: 20px; font-weight: bold;">
+                                {{ order.rental_start_date }}-{{ order.rental_end_date }}
+                            </div>
+
+                            <br>
+    
+                            {% comment %} <!-- SAVING THIS Rental End Date FOR THE Color Coding -->
+                            <div class="{% if order.days_remaining <= 0 %}text-danger{% elif order.days_remaining <= 3 %}text-warning{% else %}text-success{% endif %}" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
+                                <i class="{% if order.days_remaining <= 0 %}fa fas fa-triangle-exclamation{% elif order.days_remaining <= 3 %}fa fas fa-hourglass-half{% else %}fa fas fa-check-circle{% endif %}" style="font-size: 20px;"></i>
+                                {{ order.rental_end_date }}
+                            </div> {% endcomment %}
+    
+                            <!-- Equipment ID -->
+                            <div class="card-text" style="font-size: 14px; font-weight: bold;">
+                                <u>Equipment ID:</u>
+                            </div>
+                            <div class="card-text text-warning" style="font-size: 20px; font-weight: bold;">
+                                {{ order.equipment.id }}
+                            </div>
+
+                            <br>
+
+                            <!-- Customer Name -->
+                            <div class="card-text" style="font-size: 16px;">
+                                <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                            </div>
+    
+                            <!-- Equipment Location -->
+                            <div class="card-text" style="font-size: 14px;">
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ order.location|urlencode }}" target="_blank">
+                                        {{ order.location }}
+                                    </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal for Approving Rentals -->
+                <div class="modal fade" id="approveRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="approveRentalModalLabel-{{ order.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="aproveRentalModalLabel-{{ order.id }}">Approve Rental for {{ order.equipment.name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Customer and Rental Information -->
+                                <p><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong> is requesting to rent:</p>
+                                <ul>
+                                    <li><strong>{{order.equipment.name}}</strong></li>
+                                </ul>
+                                <ul>
+                                    <li><strong>{{ order.rental_start_date }}</strong> to <strong>{{ order.rental_end_date }}</strong></li>
+                                </ul>
+
+                                <!-- Unavailable Dates -->
+                                <p>Make sure requested dates don't conflict with unavailable dates:</p>
+                                <ul>
+                                    {% for period in order.unavailableDates %}
+                                        <li><strong>{{ period }}</strong></li>
+                                    {% empty %}
+                                        <li><strong>No unavailable dates.</strong></li>
+                                    {% endfor %}
+                                </ul>
+
+                                <!-- Transportation and Location Information -->
+                                <p>The machine will need to be transported to:</p>
+                                <ul>
+                                    <li>
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ order.location|urlencode }}" target="_blank">
+                                            <strong>{{ order.location }}</strong>
+                                        </a>
+                                    </li>
+                                </ul>
+                                
+            <form method="POST" action="{% url 'approve_rental' order_id=order.id %}">
+            {% csrf_token %}
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                                    <label class="form-check-label" for="agreeTerms">I certify there are no schedule conflicts.</label>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Approve Rental</button>
+            </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p>There are no pending rental orders.</p>
+            {% endif %}
         </div>
     </div>
 
     <!-- Cards for Each Rental Order -->
-    <div class="row">
-        {% for order in orders %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#editRentalModal-{{ order.id }}" style="cursor: pointer;">
-                    <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
-                        <!-- Rental Start Date -->
-                        <div class="card-text" style="font-size: 14px; font-weight: bold;">
-                            {{ order.rental_start_date }}
-                        </div>
+    <div class="card mt-3">
+        <div class="card-header mt-auto">
+            {% comment %} <div class="d-flex justify-content-between"> {% endcomment %}
+                Approved Rentals:
+                <div class="col-md-3">
+                    <select id="rental-filter" class="form-select" onchange="applyFilter()">
+                        <option value="current" {% if filter_option == 'current' %}selected{% endif %}>Current Rentals</option>
+                        <option value="past" {% if filter_option == 'past' %}selected{% endif %}>Past Rentals</option>
+                        <option value="upcoming" {% if filter_option == 'upcoming' %}selected{% endif %}>Upcoming Rentals</option>
+                        <option value="new" {% if filter_option == 'new' %}selected{% endif %}>Newly Added</option>
+                        <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
+                    </select>
+                </div>
+            {% comment %} </div> {% endcomment %}
+        </div>
+        <div class="card-body row">
+            {% for order in orders %}
+            {% if not order.rental_returned %}
+                <div class="col-md-4 mb-4">
+                    <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#editRentalModal-{{ order.id }}" style="cursor: pointer;">
+                        <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
+                            <!-- Rental Start Date -->
+                            <div class="card-text" style="font-size: 14px; font-weight: bold;">
+                                {{ order.rental_start_date }}
+                            </div>
 
-                        <!-- Rental End Date with Color Coding -->
-                        <div class="{% if order.days_remaining <= 0 %}text-danger{% elif order.days_remaining <= 3 %}text-warning{% else %}text-success{% endif %}" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
-                            <i class="{% if order.days_remaining <= 0 %}fa fas fa-triangle-exclamation{% elif order.days_remaining <= 3 %}fa fas fa-hourglass-half{% else %}fa fas fa-check-circle{% endif %}" style="font-size: 20px;"></i>
-                            {{ order.rental_end_date }}
-                        </div>
+                            <!-- Rental End Date with Color Coding -->
+                            <div class="{% if order.days_remaining <= 0 %}text-danger{% elif order.days_remaining <= 3 %}text-warning{% else %}text-success{% endif %}" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
+                                <i class="{% if order.days_remaining <= 0 %}fa fas fa-triangle-exclamation{% elif order.days_remaining <= 3 %}fa fas fa-hourglass-half{% else %}fa fas fa-check-circle{% endif %}" style="font-size: 20px;"></i>
+                                {{ order.rental_end_date }}
+                            </div>
 
-                        <br>
+                            <br>
 
-                        <!-- Customer Name -->
-                        <div class="card-text" style="font-size: 21px;">
-                            <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
-                        </div>
+                            <!-- Customer Name -->
+                            <div class="card-text" style="font-size: 21px;">
+                                <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                            </div>
 
-                        <!-- Equipment ID -->
-                        <div class="card-text" style="font-size: 14px; opacity: 0.6">
-                            <strong>Equipment ID:</strong> {{ order.equipment.id }}
-                        </div>
+                            <!-- Equipment ID -->
+                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                                <strong>Equipment ID:</strong> {{ order.equipment.id }}
+                            </div>
 
-                        <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
-                        {% if filter_option == 'past' %}
-                            {% if not order.inspection %}
-                                <div class="card-text text-warning">
-                                    <i class="fas fa-triangle-exclamation"></i>
-                                    Inspection has not been completed
-                                </div>
+                            <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
+                            {% if filter_option == 'past' %}
+                                {% if not order.inspection %}
+                                    <div class="card-text text-warning">
+                                        <i class="fas fa-triangle-exclamation"></i>
+                                        Inspection has not been completed
+                                    </div>
+                                {% endif %}
                             {% endif %}
-                        {% endif %}
-                        <br>
+                            <br>
 
-                        <!-- Equipment Location -->
-                        <div class="card-text" style="font-size: 14px;">
-                                <a href="https://www.google.com/maps/search/?api=1&query={{ order.location|urlencode }}" target="_blank">
-                                    {{ order.location }}
-                                </a>
-                        </div>
+                            <!-- Equipment Location -->
+                            <div class="card-text" style="font-size: 14px;">
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ order.location|urlencode }}" target="_blank">
+                                        {{ order.location }}
+                                    </a>
+                            </div>
 
-                        <br>
+                            <br>
 
-                        <!-- Action Buttons -->
-                        <div class="mt-auto">
-                            <div class="d-flex justify-content-between">
-                                <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
-                                <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
+                            <!-- Action Buttons -->
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
+                                    <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            {% endif %}
 
-            <!-- Modal for Editing Rental -->
-            <div class="modal fade" id="editRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="editRentalModalLabel-{{ order.id }}" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editRentalModalLabel-{{ order.id }}">Rental Details for Order #{{ order.id }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form method="post" action="{% url 'save_notes' order.id %}">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}" ></input>
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="customerFN">Customer Last Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerLN" name="customerLN" value="{{ order.customer.last_name }}"></input>
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="rentalLocation">Equipment Location: </label></strong>
-                                    <input class="form-control" id="rentalLocation" name="rentalLocation" value="{{ order.location }}"></input> 
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="startDate">Rental Start Date:</label></strong>
-                                    <input type="date" id="startDate" name="startDate" value="{{ order.rental_start_date|date:"Y-m-d"}}"></input>
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="rentalTerm">Rental Term Agreement:</label></strong>
-                                    <input type="number" id="rentalTerm" name="rentalTerm" value="{{ order.rental_term_agreement }}" style="width: 50px;"> days</input>
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="fuelStartStatus">Starting Fuel Status:</label></strong> {{order.starting_fuel_status}}
-                                    {% comment %} <select name="fuelStartStatus" id="fuelStartStatus" class="form-select">
-                                        <option value="Full" {% if order.starting_fuel_status == "Full" %}selected{% endif %}>Full Tank</option>
-                                        <option value="3/4" {% if order.starting_fuel_status == "3/4" %}selected{% endif %}>3/4 Tank</option>
-                                        <option value="1/2" {% if order.starting_fuel_status == "1/2" %}selected{% endif %}>1/2 Tank</option>
-                                        <option value="1/4" {% if order.starting_fuel_status == "1/4" %}selected{% endif %}>1/4 Tank</option>
-                                        <option value="Empty" {% if order.starting_fuel_status == "Empty" %}selected{% endif %}>Empty Tank</option>
-                                    </select> {% endcomment %}
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="cleaned">Start Condition Status:</label></strong> {{order.start_condition_status}}
-                                    {% comment %} <select name="cleaned" id="cleaned" class="form-select">
-                                        <option value="True" {% if order.start_condition_status == "Clean" %}selected{% endif %}>Clean</option>
-                                        <option value="False" {% if order.start_condition_status == "Dirty" %}selected{% endif %}>Dirty</option>
-                                    </select> {% endcomment %}
-                                </div>
-                                <div class="mb-3">
-                                    <strong><label for="notes">Other Notes:</label></strong>
-                                    <br>
-                                    <textarea class="form-control" id="notes" name="notes" rows="2" style="resize: none;">{{ order.notes }}</textarea>
-                                </div>
-                                {% if filter_option == 'past' %}
-                                <div class="mb-3 txt txt-success">
-                                    <u><strong>Inspection Info:</strong></u>
-                                </div>
-                                    {% for inspection in order.inspection%}
-                                        <div class="mb-3">
-                                            <strong>Return Fuel Status</strong> {{ inspection.fuel_return_level }}
-                                        </div>
-                                        <div class="mb-3">
-                                            <strong>Clean on Return?</strong> {{ inspection.cleaned }}
-                                        </div>
-                                        <div class="mb-3">
-                                            <strong>Extras Rented?</strong> {{ inspection.extras_rented }}
-                                        </div>
-                                        {% if inspection.extras_rented %}
+                <!-- Modal for Editing Rental -->
+                <div class="modal fade" id="editRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="editRentalModalLabel-{{ order.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editRentalModalLabel-{{ order.id }}">Rental Details for Order #{{ order.id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="post" action="{% url 'save_notes' order.id %}">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}" ></input>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="customerFN">Customer Last Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerLN" name="customerLN" value="{{ order.customer.last_name }}"></input>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="rentalLocation">Equipment Location: </label></strong>
+                                        <input class="form-control" id="rentalLocation" name="rentalLocation" value="{{ order.location }}"></input> 
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="startDate">Rental Start Date:</label></strong>
+                                        <input type="date" id="startDate" name="startDate" value="{{ order.rental_start_date|date:"Y-m-d"}}"></input>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="rentalTerm">Rental Term Agreement:</label></strong>
+                                        <input type="number" id="rentalTerm" name="rentalTerm" value="{{ order.rental_term_agreement }}" style="width: 50px;"> days</input>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="fuelStartStatus">Starting Fuel Status:</label></strong> {{order.starting_fuel_status}}
+                                        {% comment %} <select name="fuelStartStatus" id="fuelStartStatus" class="form-select">
+                                            <option value="Full" {% if order.starting_fuel_status == "Full" %}selected{% endif %}>Full Tank</option>
+                                            <option value="3/4" {% if order.starting_fuel_status == "3/4" %}selected{% endif %}>3/4 Tank</option>
+                                            <option value="1/2" {% if order.starting_fuel_status == "1/2" %}selected{% endif %}>1/2 Tank</option>
+                                            <option value="1/4" {% if order.starting_fuel_status == "1/4" %}selected{% endif %}>1/4 Tank</option>
+                                            <option value="Empty" {% if order.starting_fuel_status == "Empty" %}selected{% endif %}>Empty Tank</option>
+                                        </select> {% endcomment %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="cleaned">Start Condition Status:</label></strong> {{order.start_condition_status}}
+                                        {% comment %} <select name="cleaned" id="cleaned" class="form-select">
+                                            <option value="True" {% if order.start_condition_status == "Clean" %}selected{% endif %}>Clean</option>
+                                            <option value="False" {% if order.start_condition_status == "Dirty" %}selected{% endif %}>Dirty</option>
+                                        </select> {% endcomment %}
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong><label for="notes">Other Notes:</label></strong>
+                                        <br>
+                                        <textarea class="form-control" id="notes" name="notes" rows="2" style="resize: none;">{{ order.notes }}</textarea>
+                                    </div>
+                                    {% if filter_option == 'past' %}
+                                    <div class="mb-3 txt txt-success">
+                                        <u><strong>Inspection Info:</strong></u>
+                                    </div>
+                                        {% for inspection in order.inspection%}
                                             <div class="mb-3">
-                                                <strong>Extras Returned</strong> {{ inspection.extras_returned }}
+                                                <strong>Return Fuel Status</strong> {{ inspection.fuel_return_level }}
                                             </div>
-                                        {% endif %}
-                                        <div class="mb-3">
-                                            <strong>Return Inspection Notes:</strong> {{ inspection.notes }}
-                                        </div>
+                                            <div class="mb-3">
+                                                <strong>Clean on Return?</strong> {{ inspection.cleaned }}
+                                            </div>
+                                            <div class="mb-3">
+                                                <strong>Extras Rented?</strong> {{ inspection.extras_rented }}
+                                            </div>
+                                            {% if inspection.extras_rented %}
+                                                <div class="mb-3">
+                                                    <strong>Extras Returned</strong> {{ inspection.extras_returned }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="mb-3">
+                                                <strong>Return Inspection Notes:</strong> {{ inspection.notes }}
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <a href="{% url 'view_inspection' order.id %}" class="btn btn-success">See Full Report</a>
+                                            </div>
+                                            <br>
+                                        {% endfor %}
+                                        {% if not order.inspection %}
                                         <div class="d-flex justify-content-between">
-                                            <a href="{% url 'view_inspection' order.id %}" class="btn btn-success">See Full Report</a>
+                                            <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Not Yet Completed - Inspect Now</a>
                                         </div>
                                         <br>
-                                    {% endfor %}
-                                    {% if not order.inspection %}
-                                    <div class="d-flex justify-content-between">
-                                        <a href="{% url 'perform_inspection' order.id %}" class="btn btn-warning">Not Yet Completed - Inspect Now</a>
+                                        {% endif %}
+                                    {% endif %}
+
+                                    <div class="mb-3">
+                                        <u><strong>Extensions Info:</strong></u> 
+                                        <br>
+                                        ({{order.numExtensions}} extensions so far)
                                     </div>
-                                    <br>
-                                    {% endif %}
-                                {% endif %}
-
-                                <div class="mb-3">
-                                    <u><strong>Extensions Info:</strong></u> 
-                                    <br>
-                                    ({{order.numExtensions}} extensions so far)
-                                </div>
-                                <div class="mb-3">
-                                    {% if order.extensions %}
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Original End Date</th>
-                                                <th>Days Extended</th>
-                                                <th>New End Date</th>
-                                                <th>Time Stamp</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for extension in order.extensions %}
-                                            <tr>
-                                                <td>{{extension.original_end_date}}</td>
-                                                <td>{{extension.days_extended}}</td>
-                                                <td>{{extension.new_end_date}}</td>
-                                                <td>{{extension.timestamp}}</td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                    {% endif %}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal for Extending Rental -->
-            <div class="modal fade" id="extendRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="extendRentalModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="extendRentalModalLabel">Extend Rental for {{ order.equipment.name }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="input-group mb-3">
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeDays(-1, {{ order.id }})">-</button>
-                                <input type="text" id="daysToExtend-{{ order.id }}" class="form-control text-center" value="0" min="1">
-                                <button class="btn btn-outline-secondary" type="button" onclick="changeDays(1, {{ order.id }})">+</button>
+                                    <div class="mb-3">
+                                        {% if order.extensions %}
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Original End Date</th>
+                                                    <th>Days Extended</th>
+                                                    <th>New End Date</th>
+                                                    <th>Time Stamp</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for extension in order.extensions %}
+                                                <tr>
+                                                    <td>{{extension.original_end_date}}</td>
+                                                    <td>{{extension.days_extended}}</td>
+                                                    <td>{{extension.new_end_date}}</td>
+                                                    <td>{{extension.timestamp}}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                        {% endif %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary" onclick="extendRental({{ order.id }})">Save</button>
-                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Modal for Ending Rental -->
-            <div class="modal fade" id="endRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="endRentalModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="endRentalModalLabel">End Rental for {{ order.equipment.name }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            Are you sure you want to end this rental? This will set the end date to today.
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-danger" onclick="endRental({{ order.id }})">Yes, End Rental</button>
+                <!-- Modal for Extending Rental -->
+                <div class="modal fade" id="extendRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="extendRentalModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="extendRentalModalLabel">Extend Rental for {{ order.equipment.name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="input-group mb-3">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="changeDays(-1, {{ order.id }})">-</button>
+                                    <input type="text" id="daysToExtend-{{ order.id }}" class="form-control text-center" value="0" min="1">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="changeDays(1, {{ order.id }})">+</button>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary" onclick="extendRental({{ order.id }})">Save</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+
+                <!-- Modal for Ending Rental -->
+                <div class="modal fade" id="endRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="endRentalModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="endRentalModalLabel">End Rental for {{ order.equipment.name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to end this rental? Select an end date:</p>
+                                <input type="date" id="endDateInput-{{ order.id }}" class="form-control" value="{{ today|date:"Y-m-d" }}">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-danger" onclick="endRental({{ order.id }})">Yes, End Rental</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
+<br>
+<br>
 
 <style>
     /* Hover effect for highlighting the card */
@@ -308,27 +428,36 @@
 
     // Function to handle the "end rental" button
     function endRental(orderId) {
-            // Make an AJAX request to end the rental
-            fetch(`/managementPortal/end_rental/${orderId}/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Close the modal and refresh the page
-                    let modal = document.getElementById(`endRentalModal-${orderId}`);
-                    let modalInstance = bootstrap.Modal.getInstance(modal);
-                    modalInstance.hide();
-                    location.reload();
-                } else {
-                    alert('Failed to end rental');
-                }
-            });
+        // grab the end date input
+        const endDate = document.getElementById(`endDateInput-${orderId}`).value;
+
+        if (!endDate) {
+            alert("Please select a valid end date.");
+            return;
         }
+        
+        // Make an AJAX request to end the rental
+        fetch(`/managementPortal/end_rental/${orderId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
+            },
+            body: JSON.stringify({ end_date: endDate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close the modal and refresh the page
+                let modal = document.getElementById(`endRentalModal-${orderId}`);
+                let modalInstance = bootstrap.Modal.getInstance(modal);
+                modalInstance.hide();
+                location.reload();
+            } else {
+                alert('Failed to end rental');
+            }
+        });
+    }
 
 </script>
 {% endblock %}

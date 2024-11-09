@@ -19,6 +19,7 @@ class EquipmentType(models.Model):
 class Equipment(models.Model):
     name = models.CharField(max_length=100)
     equipment_type = models.ForeignKey(EquipmentType, on_delete=models.CASCADE)
+    out_for_repairs = models.BooleanField(default=False, null=True)
     imgURL = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
@@ -28,17 +29,17 @@ class RentalOrder(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     rental_start_date = models.DateField()
     rental_end_date = models.DateField()
-    pickup_time = models.TimeField(null=True, blank=True) # not necessary
-    dropoff_time = models.TimeField(null=True, blank=True) # not necessary
     total_cost = models.DecimalField(max_digits=10, decimal_places=2)
     paid = models.BooleanField(default=False)
     contract_signed = models.BooleanField(default=False)
     location = models.CharField(max_length=255)
     notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
+    rental_approved = models.BooleanField(default=False, null=True)
+    rental_returned = models.BooleanField(default=False, null=True)
 
     @property
-    def rental_term_agreement(self): # (number of days until renewal or pick up)
+    def rental_term_agreement(self): # (number of days until renewal or return)
         return (self.rental_end_date - self.rental_start_date).days
 
     def __str__(self):

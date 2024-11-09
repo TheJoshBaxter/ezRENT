@@ -3,26 +3,26 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">{{ equipment.name }}</h1>
+    <h1 class="mt-5">{{ equipmentType.name }} {{ equipmentType.category }} Rental Details</h1>
     <div class="row">
         <div class="col-md-6">
             <div class="card mb-4">
-                <img class="card-img-top" src="{% static equipment.imgURL %}" alt="{{ equipmentType.name }}">
+                <img class="card-img-top" src="{% static equipmentType.imgURL %}" alt="{{ equipmentType.name }}">
             </div>
         </div>
         <div class="col-md-6">
-            <p><strong>Specifications:</strong> {{ equipment.equipment_type.specs }}</p>
+            <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
             <strong>Rental Rates:</strong>
             <ul>
-                <li><strong>1 Day:</strong> ${{ equipment.equipment_type.daily_rate }}</li>
-                <li><strong>1 Week:</strong> ${{ equipment.equipment_type.weekly_rate }}</li>
-                <li><strong>1 Month:</strong> ${{ equipment.equipment_type.monthly_rate }} 
+                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate }}</li>
+                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate }}</li>
+                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate }} 
                     <br>(one week free, plus one way delivery fee)
                 </li>
             </ul>
-            <p><strong>Available:</strong> {{ equipmentType.available_quantity }} units</p>
+            <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
-            <form method="post" action="{% url 'equipment_detail' equipment.id %}">
+            <form method="post" action="{% url 'equipment_detail' equipmentType.id %}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="start_date">Rental Start Date</label>
@@ -43,9 +43,9 @@
                 <!-- Trigger button for modal -->
                 <button id="book_button" type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal" disabled>
                     Book Your Rental
-                </button>   
-                
-                <!-- Error message for button unavailability -->
+                </button>
+                <br>
+                <!-- Error message for button unavailability - does not display at first -->
                 <div id="error_message" class="text-danger mt-2" style="display: none;">
                     Selected dates are not available for rental. Please adjust the start date or rental period, OR check for other available units.
                 </div>
@@ -103,23 +103,36 @@
                                     <input type="text" class="form-control" id="company_name" name="company_name">
                                 </div>
                                 <div class="form-group">
+                                    <label for="company_address">Company Address (optional)</label>
+                                    <input type="text" class="form-control" id="company_address" name="company_address">
+                                </div>
+                                <div class="form-group">
                                     <label for="phone_number">Phone Number</label>
-                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890" required>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" maxlength="14" placeholder="(123)-456-7890" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="email">Email Address</label>
                                     <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
-
+                                <div class="form-group">
+                                    <label for="custNotificationPreference">Preferred Approval Notification Method:</label>
+                                    <select name="custNotificationPreference" id="custNotificationPreference" class="form-select">
+                                        <option value="email" selected>Email</option>
+                                        <option value="text">Text</option>
+                                    </select>
+                                </div>
                                 <div class="form-group">
                                     <label for="location">Rental Dropoff Location</label>
-                                    <input type="text" class="form-control" name="location" required>
+                                    <input type="text" class="form-control" id="location" name="location" required>
                                 </div>
+
+                                <!-- this is a hidden field used in conjunction with js to pass the equipment id to the view -->
+                                <input type="hidden" name="equipmentIdField" id="equipmentIdField">
 
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+                                <button type="submit" class="btn btn-primary">Submit Info</button>
                             </div>
                         </div>
                     </div>
@@ -132,65 +145,97 @@
 <script type="text/javascript">
 
     $(document).ready(function() {
-        var equipmentId = {{ equipment.id }};
-        var unavailableDates = [];
 
-        // Fetch unavailable dates from the server
-        $.ajax({
-            url: "{% url 'get_unavailable_dates' equipment.id %}",
-            method: "GET",
-            success: function(response) {
-                unavailableDates = response.unavailable_dates.map(function(dateStr) {
-                    return new Date(dateStr).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
-                });
-                console.log('Disabled dates:', unavailableDates);
+        // Initialize jQuery UI Datepicker
+        const earliestDate = new Date("{{ aggregateAvailabilityContext.aggregateEarliestDate|date:'Y-m-d' }}").toISOString().split('T')[0];  // Only grab the Y-m-d portion (not timestamp), then toISOString converts to 'YYYY-MM-DD' format;
+        console.log("EARLIESET DATE")
+        console.log(earliestDate)
+        tryThis = new Date(earliestDate).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
+        console.log(tryThis)
 
-                // Initialize jQuery UI Datepicker and disable unavailable dates
-                $("#start_date").datepicker({
-                    dateFormat: "yy-mm-dd",
-                    beforeShowDay: function(date) {
-                        var dateString = $.datepicker.formatDate('yy-mm-dd', date);
-                        return [unavailableDates.indexOf(dateString) == -1];  // Only enable available dates
-                    }
-                });
+
+        $("#start_date").datepicker({
+            dateFormat: "yy-mm-dd",
+            minDate: tryThis,
+            beforeShowDay: function(date) {
+                const day = date.getDay();
+                return [(day != 0 && day != 6), ""];  // Disable Sundays (0) and Saturdays (6)
             }
         });
-
-        function isPeriodAvailable(startDate, period) {
-            let start = new Date(startDate);
-            let end = new Date(start);
-            end.setDate(start.getDate() + parseInt(period));
-            console.log("HELLO!!!!!")
-            console.log(end)
-
-            // Check if any date in the rental period falls into unavailable dates
-            for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-                let dateString = date.toISOString().split('T')[0];
-                if (unavailableDates.includes(dateString)) {
-                    return false;  // Conflict found
-                }
-            }
-            return true;  // No conflict
-        }
-
+            
         // Event listeners to check availability
         $("#start_date, #rental_period").change(function() {
-            let startDate = $("#start_date").val();
-            let rentalPeriod = $("#rental_period").val();
+            const equipmentTypeId = {{ equipmentType.id }};
+            const startDate = $("#start_date").val();
+            const rentalPeriod = parseInt($("#rental_period").val());
 
-            if (startDate && rentalPeriod) {
-                if (isPeriodAvailable(startDate, rentalPeriod)) {
-                    $("#book_button").prop("disabled", false);  // Enable button if available
-                    $("#error_message").hide();  // Hide error message
-                } else {
-                    $("#book_button").prop("disabled", true);  // Disable button if unavailable
-                    $("#error_message").show();  // Show error message
+            // If startDate or rentalPeriod is empty, an alert message prompts the user to select a start date and rental period, then exits the function with return.
+            if (!startDate || !rentalPeriod) {
+                alert("Please select a start date and rental period.");
+                return;
+            }
+
+        // Set rental end date by creating a new date from startDate, setting its day value forward by rentalPeriod, resulting in requestedEndDate.
+        const requestedEndDate = new Date(new Date(startDate).setDate(new Date(startDate).getDate() + rentalPeriod));
+
+        // AJAX request to get unavailable dates for equipment of this type
+        $.ajax({
+            url: `{% url 'get_unavailable_dates' equipmentType.id %}`,
+            method: "GET",
+            success: function(response) {
+                let isAvailable = false; // Flag to track availability
+                console.log("Checking each equipment of type:")
+                console.log({{equipmentType.id}})
+
+                // Iterate through each equipment item returned in the response
+                for (const equipment of response.equipment) {
+                    const equipmentId = equipment.id; // Get the current equipment item's ID
+                    const unavailableDates = response.unavailable_dates_by_item[equipmentId] || []; // Get unavailable dates for this equipment item
+                    
+                    let available = true; // Flag for individual equipment availability
+
+                    console.log("Checking rental equipment id:")
+                    console.log(equipmentId)
+                    console.log("Unavailable dates:")
+                    console.log(unavailableDates)
+
+                    // Check availability for each date in the requested range
+                    for (let d = new Date(startDate); d <= requestedEndDate; d.setDate(d.getDate() + 1)) {
+                        const dateStr = d.toISOString().split('T')[0]; // Format dateStr
+                        if (unavailableDates.includes(dateStr)) { // If dateStr is in unavailable dates,
+                            available = false; // Set available to false
+                            console.log(equipmentId + " is not available because it is already rented out on " + dateStr)
+                            break; // Break if one of the dates is not available
+                        }
+                    }
+
+                    if (available) { // If all requested dates for this item are available
+                        isAvailable = true; // Set isAvailable to true
+                        console.log(equipmentId + " is available!")
+
+                        // Set the hidden field's value to the equipment ID so that id can be passed to view to save order to DB
+                        document.getElementById("equipmentIdField").value = equipmentId;
+
+
+                        break; // Exit the loop as we found an available item
+                    }
                 }
-            } else {
-                $("#book_button").prop("disabled", true);  // Disable button if no date or period selected
-                $("#error_message").hide();  // Hide error message by default
+
+                // Display results based on availability
+                if (isAvailable) {
+                    $("#book_button").prop("disabled", false);  // Enable button if available
+                    $("#error_message").hide();
+                } else {
+                    $("#book_button").prop("disabled", true);  // Disable button if not available
+                    $("#error_message").show().text("Selected dates are not available. Try adjusting your start date or rental period.");
+                }
+            },
+            error: function() {
+                alert("There was an error checking availability. Please try again.");
             }
         });
+    });
+    
 
         let selectedIndex = -1;
         let customerList = [];
@@ -260,8 +305,10 @@
         function selectCustomer(customer) {
             document.getElementById('customerSearch').value = `${customer.first_name} ${customer.last_name}`;
             document.getElementById('company_name').value = customer.company_name || '';
+            document.getElementById('company_address').value = customer.company_address || '';
             document.getElementById('phone_number').value = customer.phone_number;
             document.getElementById('email').value = customer.email_address;
+            document.getElementById('custNotificationPreference').value = customer.cust_notification_preference;
 
             document.getElementById('new-customer-fields').style.display = 'none';
             customerDropdown.style.display = 'none';
@@ -301,9 +348,25 @@
         document.getElementById('clearSearch').addEventListener('click', () => {
             searchField.value = '';
             document.getElementById('company_name').value = '';
+            document.getElementById('company_address').value = '';
             document.getElementById('phone_number').value = '';
             document.getElementById('email').value = '';
+            document.getElementById('custNotificationPreference').value = '';
             customerDropdown.style.display = 'none';  // Hide dropdown when cleared
+        });
+
+        // Function to auto-format a phone number input field while the user types
+        document.getElementById("phone_number").addEventListener("input", function (e) {
+            // Remove all non-numeric characters
+            let input = e.target.value.replace(/\D/g, '');
+            
+            // Format the number according to (000)-000-0000
+            if (input.length > 0) input = '(' + input;
+            if (input.length > 4) input = input.slice(0, 4) + ') ' + input.slice(4);
+            if (input.length > 9) input = input.slice(0, 9) + '-' + input.slice(9);
+            if (input.length > 14) input = input.slice(0, 14);  // Limit input length
+        
+            e.target.value = input;
         });
     });
 </script>

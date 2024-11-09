@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.utils.timezone import localtime
 from decimal import Decimal
 import uuid
-
+import re
 from customerPortal.square_client import get_square_client
 
 # Create your views here.
@@ -22,14 +22,18 @@ def equipment_types(request):
 
 
 def equipment_list(request, equipmentTypeID):
-    equipment = Equipment.objects.filter(equipment_type_id=equipmentTypeID)
+    equipment = calc_availability_by_item(equipmentTypeID)
+    # this function returns the equipment objects associated with equipmentTypeID WITH an item-unique availability message
 
+    return render(request, 'equipment_list.html', {'equipment': equipment})
 
-    ### NEW AVAILABILITY CALCULATOR ###
+def calc_availability_by_item(equipmentTypeID):
+    equipment = Equipment.objects.filter(equipment_type_id=equipmentTypeID, out_for_repairs=False) # grab all equipment of the requested equipment type EXCEPT those items marked as "out for repairs."
 
     today = date.today()
 
     for item in equipment:
+
         # Fetch all reservations for each item starting from today
         unavailable_orders = RentalOrder.objects.filter(
             equipment_id=item.id,
@@ -39,31 +43,86 @@ def equipment_list(request, equipmentTypeID):
         # Create a list of all dates that fall between the start and end of each reservation for each item
         unavailable_dates = []
         for order in unavailable_orders:
-            start_date = order['rental_start_date'] + timedelta(days=1) # this is incorrect--adjusting one day forward--to adjust for my bad timezone practices. TZ ISSUES
-            end_date = order['rental_end_date'] + timedelta(days=1) # this is incorrect--adjusting one day forward--to adjust for my bad timezone practices TZ ISSUES
+            start_date = order['rental_start_date']
+            end_date = order['rental_end_date'] + timedelta(days=1) # add an extra day of unavailability to account for equipment transportation
             date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
             unavailable_dates.extend(date_range) # .extend() differs from .append(), which would add the entire date_range list as a single element. This way, each individual date from date_range gets added to unavailable_dates 
 
         # Sort the list to ensure chronological order
         unavailable_dates.sort()
+        print(unavailable_dates)
 
         # Increment day by day and check if the date is unavailable
         next_available_date = today # Start checking from today
         while next_available_date in unavailable_dates:
             next_available_date += timedelta(days=1)
 
-        if next_available_date == today:
-            item.availability_customerMessage = "Available now"
-        else:
-            item.availability_customerMessage = f"Not available until {next_available_date}"
+        # Check if the day is Saturday (5) or Sunday (6)
+        if next_available_date.weekday() == 5:  # Saturday
+            # Add 2 days to move to Monday
+            next_available_date += timedelta(days=2)
+        elif next_available_date.weekday() == 6:  # Sunday
+            # Add 1 day to move to Monday
+            next_available_date += timedelta(days=1)
 
-    return render(request, 'equipment_list.html', {'equipment': equipment})
+        print("Item " + str(item.id) + " is available on " + str(next_available_date))
+
+        if next_available_date == today:
+            item.availability_message = "Available now"
+            item.nextAvailableDate = today
+        else:
+            item.availability_message = f"Not available until {next_available_date}"
+            item.nextAvailableDate = next_available_date
+
+    return equipment
+
+def calc_aggregate_availability(equipmentTypeID):
+    # for each equipment (item), get the availability message and compile availability:
+    equipment_with_availability = calc_availability_by_item(equipmentTypeID)
+    today = date.today()
+
+    # get the earliest available date
+    earliest_available_item = min(
+        (item for item in equipment_with_availability if item.nextAvailableDate is not None),
+        key=lambda x: x.nextAvailableDate, # The min() function takes an optional parameter called key, which expects a function that tells min() which part of each object it should use for comparison.
+        default=None
+    )
+
+    if earliest_available_item:
+        earliest_date = earliest_available_item.nextAvailableDate
+        equipment_id = earliest_available_item.id # determine which item has the first available date
+    else:
+        earliest_date = None
+        equipment_id = None
+    
+    # count any other items with the same availability date
+    earliest_available_itemS = [item for item in equipment_with_availability if item.nextAvailableDate == earliest_date]
+    num_available = len(earliest_available_itemS)
+    
+    # create one singular message for the type of equipment:
+    if earliest_date == today:
+        theAvailabilityMessage = f"{num_available} forklift(s) available starting today."
+    else:
+        theAvailabilityMessage = f"{num_available} forklift(s) available starting on {earliest_date}"
+
+    print("AGGREGATE AVAILABILITY: earliest_available_itemS")
+    print(earliest_available_itemS)
+    
+    context = {}
+    context['aggregateEarliestDate'] = earliest_date
+    context['theAvailabilityMessage'] = theAvailabilityMessage
+
+    return context
 
 # Equipment detail view for customerPortal
-def equipment_detail(request, equipment_id):
-    equipment = Equipment.objects.get(id=equipment_id)
+def equipment_detail(request, equipmentType_id):
+    equipmentType = EquipmentType.objects.get(id=equipmentType_id)
+    aggregateAvailabilityContext = calc_aggregate_availability(equipmentType_id)
 
     if request.method == 'POST':
+        # grab the selected rentalEquipment ID that was identified as available for rental
+        equipment_id = request.POST['equipmentIdField']
+        print(equipment_id)
 
         # Check if an existing customer was selected or a new one is being created
         if request.POST['first_name'].strip():  # If first_name from the DOM has contents and isn't an empty string, this is a New customer
@@ -73,6 +132,7 @@ def equipment_detail(request, equipment_id):
             company_name = request.POST.get('company_name', '')
             phone_number = request.POST['phone_number']
             email = request.POST['email']
+            custNotificationPreference = request.POST['custNotificationPreference']
 
             start_date = request.POST['start_date']
             rental_period = int(request.POST['rental_period'])
@@ -86,7 +146,7 @@ def equipment_detail(request, equipment_id):
             start_date = str(start_date)
 
             # Calculate total rental cost
-            total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
+            total_cost = calculate_total_cost(equipmentType, start_date, end_date, rental_period)
             print("data grab completed!!!!!")
 
             # Check if the user is an employee (authenticated)
@@ -97,7 +157,8 @@ def equipment_detail(request, equipment_id):
                     last_name=last_name,
                     company_name=company_name,
                     phone_number=phone_number,
-                    email=email
+                    email=email,
+                    cust_notification_preference=custNotificationPreference
                 )
 
                 order_data = { # create an order for the newly created customer
@@ -107,13 +168,15 @@ def equipment_detail(request, equipment_id):
                         'company': customer.company_name,
                         'phone_number': phone_number,
                         'email': email,
-                        'equipment': equipment.id,
+                        'equipmentType': equipmentType.name + " " + equipmentType.category,
+                        'equipment': equipment_id,
                         'rental_start_date': start_date,
                         'rental_period': rental_period,
                         'rental_end_date': end_date,
                         'location': location,
                         'total_cost': float(total_cost),
-                        'new_cust': True
+                        'new_cust': True,
+                        'cust_notification_preference': custNotificationPreference
                     }
 
 
@@ -133,13 +196,15 @@ def equipment_detail(request, equipment_id):
                         'company': customer.company_name,
                         'phone_number': phone_number,
                         'email': email,
-                        'equipment': equipment.id,
+                        'equipmentType': equipmentType.name + " " + equipmentType.category,
+                        'equipment': equipment_id,
                         'rental_start_date': start_date,
                         'rental_period': rental_period,
                         'rental_end_date': end_date,
                         'location': location,
                         'total_cost': float(total_cost),
-                        'new_cust': False
+                        'new_cust': False,
+                        'cust_notification_preference': customer.cust_notification_preference
                     }
 
                 else:
@@ -151,7 +216,8 @@ def equipment_detail(request, equipment_id):
                             last_name=last_name,
                             company_name=company_name,
                             phone_number=phone_number,
-                            email=email
+                            email=email,
+                            cust_notification_preference=custNotificationPreference
                         )
 
                         order_data = { # then create a new order for the new customer
@@ -161,20 +227,23 @@ def equipment_detail(request, equipment_id):
                             'company': customer.company_name,
                             'phone_number': phone_number,
                             'email': email,
-                            'equipment': equipment.id,
+                            'equipmentType': equipmentType.name + " " + equipmentType.category,
+                            'equipment': equipment_id,
                             'rental_start_date': start_date,
                             'rental_period': rental_period,
                             'rental_end_date': end_date,
                             'location': location,
                             'total_cost': float(total_cost),
-                            'new_cust': True
+                            'new_cust': True,
+                            'cust_notification_preference': custNotificationPreference
                         }
                     except: 
                         order_data = {
                             'customer': "ERROR",
                             'phone_number': "ERROR: something went wrong. Please EDIT INFO to make sure information is correct.",
                             'email': email,
-                            'equipment': equipment,
+                            'equipmentType': equipmentType.name + " " + equipmentType.category,
+                            'equipment': equipment_id,
                             'rental_start_date': start_date,
                             'rental_period': rental_period,
                             'rental_end_date': end_date,
@@ -189,6 +258,7 @@ def equipment_detail(request, equipment_id):
             customer = Customer.objects.get(first_name=first_name, last_name=last_name)
             phone_number = request.POST['phone_number']
             email = request.POST['email']
+            custNotificationPreference = request.POST['custNotificationPreference']
 
             start_date = request.POST['start_date']
             rental_period = int(request.POST['rental_period'])
@@ -202,7 +272,7 @@ def equipment_detail(request, equipment_id):
             start_date = str(start_date)
 
             # Calculate total rental cost
-            total_cost = calculate_total_cost(equipment, start_date, end_date, rental_period)
+            total_cost = calculate_total_cost(equipmentType, start_date, end_date, rental_period)
 
             order_data = {
                 'customer': customer.id,
@@ -211,26 +281,28 @@ def equipment_detail(request, equipment_id):
                 'company': customer.company_name,
                 'phone_number': phone_number,
                 'email': email,
-                'equipment': equipment.id,
+                'equipmentType': equipmentType.name + " " + equipmentType.category,
+                'equipment': equipment_id,
                 'rental_start_date': start_date,
                 'rental_period': rental_period,
                 'rental_end_date': end_date,
                 'location': location,
                 'total_cost': float(total_cost),
-                'new_cust': False
+                'new_cust': False,
+                'cust_notification_preference': custNotificationPreference
             }
 
             # Store order_data in the session
             request.session['order_data'] = order_data
 
-
-            return render(request, 'order_summary.html', {'order_data': order_data})
+            return redirect('order_summary', )
         
         # Store order_data in the session
         request.session['order_data'] = order_data
-        return render(request, 'order_summary.html', {'order_data': order_data})
 
-    return render(request, 'equipment_detail.html', {'equipment': equipment})
+        return redirect('order_summary', )
+
+    return render(request, 'equipment_detail.html', {'equipmentType': equipmentType, 'aggregateAvailabilityContext': aggregateAvailabilityContext})
 
 def search_customers(request):
     if request.method == 'GET':
@@ -244,67 +316,63 @@ def search_customers(request):
                 'company_name': customer.company_name,
                 'phone_number': customer.phone_number,
                 'email_address': customer.email,
+                'cust_notification_preference': customer.cust_notification_preference
             } for customer in customers
         ]
         return JsonResponse({'results': results})
 
-# Helper function to fetch unavailable dates for equipment
-def get_unavailable_dates(request, equipment_id):
+def get_unavailable_dates(request, equipmentType_id):
     today = date.today()
+    unavailable_dates_by_item = {}
 
-    ### TZ ISSUES ###
-    # print("HEYO")
-    # print(today)
+    # Retrieve all equipment items of the specified type
+    equipment_items = Equipment.objects.filter(equipment_type_id=equipmentType_id)
 
-    # current_time = timezone.localtime()
-    # current_timezone = current_time.tzinfo
-    # print(f"Current Time: {current_time}")
-    # print(f"Timezone: {current_timezone}")
-    ### TZ ISSUES ###
+    # Loop through each equipment item
+    for equipment in equipment_items:
+        # Fetch all active or upcoming rental orders for this equipment item
+        unavailable_orders = RentalOrder.objects.filter(
+            equipment_id=equipment.id,
+            rental_end_date__gte=today
+        ).values('rental_start_date', 'rental_end_date')
 
-    # Fetch all reservations for this equipment starting from today
-    unavailable_orders = RentalOrder.objects.filter(
-        equipment_id=equipment_id,
-        rental_end_date__gte=today
-    ).values('rental_start_date', 'rental_end_date')
+        # Create a list to store unavailable dates for the current equipment item
+        item_unavailable_dates = []
+        for order in unavailable_orders:
+            start_date = order['rental_start_date']
+            end_date = order['rental_end_date'] + timedelta(days=1)  # Adjust for turnaround time
+            date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
+            item_unavailable_dates.extend(date_range)
 
-    # print(equipment_id)
-    # print("unavailable orders")
-    # print(unavailable_orders)
+        # Remove duplicates and sort dates for the current equipment item
+        item_unavailable_dates = sorted(set(item_unavailable_dates))
+        
+        # Store the unavailable dates for this item in the dictionary
+        unavailable_dates_by_item[equipment.id] = [date.strftime('%Y-%m-%d') for date in item_unavailable_dates]
 
-    # Create a list of all dates that fall between the start and end of each reservation
-    unavailable_dates = []
-    for order in unavailable_orders:
-        start_date = order['rental_start_date'] + timedelta(days=0)
-        end_date = order['rental_end_date'] + timedelta(days=1) # need at least 1 day after the reservation for inspection/turnaround
-        date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days + 1)]
-        unavailable_dates.extend(date_range) # .extend() differs from .append(), which would add the entire date_range list as a single element. This way, each individual date from date_range gets added to unavailable_dates
-
-    # print("unavailable dates")
-    # print(unavailable_dates) 
-
-    # Return the unavailable dates as JSON for use in front-end manipulation of the date selectors on the equipment_detail template
-    return JsonResponse({'unavailable_dates': unavailable_dates})
+    # Return JSON response with unavailable dates organized by equipment ID
+    return JsonResponse({
+        'unavailable_dates_by_item': unavailable_dates_by_item,
+        'equipment': list(equipment_items.values('id'))
+    })
 
 # Helper function to calculate total cost
-def calculate_total_cost(equipment, start_date, end_date, rental_period):
+def calculate_total_cost(equipmentType, start_date, end_date, rental_period):
     # create some logic to check the app settings (a future settings page needs to be created) to determine the desired pricing system (daily only, or daily, weekly, monthly rates)
 
-    # Convert the date strings to date objects
-    rental_start = datetime.strptime(start_date, "%Y-%m-%d").date()
-    rental_end = datetime.strptime(end_date, "%Y-%m-%d").date()
-    
-    # Calculate the number of rental days
-    rental_days = (rental_end - rental_start).days + 1  # Inclusive of the last day
-
-    if rental_days < 7:
-        rate = equipment.equipment_type.daily_rate
-        numPeriods = rental_days
-    elif rental_days >= 7 and rental_days < 28:
-        rate = equipment.equipment_type.daily_rate
-        numPeriods = rental_days//7
+    if rental_period < 7:
+        rate = equipmentType.daily_rate
+        numPeriods = rental_period
+        # print("Rental period is less than 7 days")
+        # print("Num Periods:")
+        # print(numPeriods)
+        # print("Rate:")
+        # print(rate)
+    elif rental_period >= 7 and rental_period < 30:
+        rate = equipmentType.weekly_rate
+        numPeriods = rental_period//7
     else:
-        rate = equipment.equipment_type.monthly_rate
+        rate = equipmentType.monthly_rate
         numPeriods = 1 # hard coded 1 because 1 month is the max time period option available to users
         
     # Calculate the total cost
@@ -315,177 +383,55 @@ def calculate_total_cost(equipment, start_date, end_date, rental_period):
     return total_cost
 
 def order_summary(request):
-    return render(request, 'order_summary.html')
 
-def confirmation(request):
+    context = {}
 
     # Retrieve order_data from session
     order_data = request.session.get('order_data', None)
+    context['order_data'] = order_data
 
-    new_order = RentalOrder.objects.create(
-        customer_id=order_data['customer'],
-        equipment_id=order_data['equipment'],
-        rental_start_date=order_data['rental_start_date'],
-        rental_end_date=order_data['rental_end_date'],
-        location=order_data['location'],
-        total_cost=order_data['total_cost'],
-    )
+    if request.method == 'POST':
 
-    equipment_type = new_order.equipment.equipment_type.name
-    cost_in_cents = new_order.total_cost * 100
-    tomorrow = date.today() + timedelta(days=1)
-    equipment_location = order_data['location']
-    rental_end_date=order_data['rental_end_date']
-
-    # Get the Square client from the utility module
-    square_client = get_square_client()
-
-    # Access the client services, e.g., customers, payments
-    customers_api = square_client.customers
-    invoices_api = square_client.invoices
-    locations_api = square_client.locations
-    orders_api = square_client.orders
-
-    # retreive locations from locations API
-    locationResponse = locations_api.list_locations()
-    print("LOCATIONS PRINT OUT:")
-
-    if locationResponse.is_success():
-        location_id = []
-        for location in locationResponse.body['locations']:
-            print(f"Location Name: {location['name']}, Location ID: {location['id']}")
-            location_id = location['id']
-
-    else:
-        print(f"Error retrieving locations: {locationResponse.errors}")
-
-    # IF this is a new customer, create customer using the customers api
-    if order_data['new_cust']:
-        custResponse = customers_api.create_customer(
-            body={
-                "given_name": order_data['customer_fName'],
-                "family_name": order_data['customer_lName'],
-                "company_name": order_data['company'],
-                "phone_number": order_data['phone_number'],
-                "email_address": order_data['email']
-            }
+        # # Save the new order to the DB
+        new_order = RentalOrder.objects.create(
+            customer_id=order_data['customer'],
+            equipment_id=order_data['equipment'],
+            rental_start_date=order_data['rental_start_date'],
+            rental_end_date=order_data['rental_end_date'],
+            location=order_data['location'],
+            total_cost=order_data['total_cost'],
         )
 
-        # Print customer response to the user and console
-        if custResponse.is_success():
-            customer_id = custResponse.body['customer']['id']
-            customerMessage = "Customer id " + customer_id + " has been added to square! And an order has been created for this customer in ezRENT"
-            print("WE ARE TALKING TO SQUARE:")
-            print(customerMessage)
-            # Proceed with your logic, such as displaying a success customerMessage or redirecting
-        else:
-            # Handle errors appropriately
-            print(custResponse.errors)
-            customerMessage = custResponse.errors
-    else: # not a new customer, Retrieve the customer ID from the customers api
-        searchedCust = customers_api.search_customers(
-            body = {
-                "query": {
-                    "filter": {
-                        "phone_number": {
-                            "exact": f"+1-{order_data['phone_number']}"
-                        }
-                    }
-                }
-            }
-        )
-
-        if searchedCust.is_success():
-            print("Got customerID:")
-            customer_id = searchedCust.body['customers'][0]['id']
-            customerMessage = "Retrieved customer id from existing customer record in square"
-            print(customer_id)
-        elif searchedCust.is_error():
-            print(searchedCust.errors)
-
-    # CREATE A NEW ORDER for the invoice to be attached to:
-
-    orderResult = orders_api.create_order(
-        body = {
-            "order": {
-            "location_id": location_id,
-            "line_items": [
-                {
-                "name": equipment_type + " Forklift Rental",
-                "quantity": "1",
-                "modifiers": [
-                    {
-                    "name": "extras",
-                    "quantity": "0",
-                    "base_price_money": {
-                        "amount": 0,
-                        "currency": "USD"
-                    }
-                    }
-                ],
-                "base_price_money": {
-                    "amount": cost_in_cents,
-                    "currency": "USD"
-                }
-                }
-            ]
-            },
-            "idempotency_key": str(uuid.uuid4())
-        }
-    )
-
-    if orderResult.is_error():
-        print("Order Creation resulted in an error")
-    elif orderResult.is_success():
-        print("Order Creation SUCCESSFUL!!!")
-
-        order_id = orderResult.body['order']['id']
-
-        # if order was created successfully, create the invoice
-        try:
-            invoice_request = {
-                "invoice": {
-                    "order_id": order_id,
-                    "primary_recipient": {
-                        "customer_id": customer_id,  # Existing customer ID from the Square response
-                    },
-                    "payment_requests": [
-                        {
-                            "request_type": "BALANCE",
-                            "due_date": str(tomorrow)  # Ensure the date is formatted correctly as a string
-                        }
-                    ],
-                    "delivery_method": "EMAIL",
-                    "title": equipment_type + " Forklift Rental",
-                    "description": "Equipment Location - " + equipment_location,
-                    "sale_or_service_date": rental_end_date,
-                    "accepted_payment_methods": {
-                        "card": True
-                    }
-                },
-                "idempotency_key": str(uuid.uuid4()),  # Unique key to prevent duplicates
-            } 
-
-            # Call the invoice API and pass the data
-            invoiceResponse = invoices_api.create_invoice(invoice_request)
-
-        except Exception as e:
-            print(f"An exception occurred: {e}")
-
-    # Print invoice response to the user and console
-    if invoiceResponse.is_success():
-        invoice_id = invoiceResponse.body['invoice']['id']
-        invoiceMessage = f"Invoice created successfully: {invoice_id}"
-        print(invoiceMessage)
-    elif invoiceResponse.is_error():
-        invoiceMessage = f"Error creating invoice: {invoiceResponse.errors}"
-        print(invoiceMessage)
-    else:
-        print("didn't attempt invoice creation")
+        print("Order created in ezRENT successfully")
     
+        # Redirect to the confirmation view and pass the order ID
+        return redirect('confirmation', orderID=new_order.id)
+
+    # this return is called on the inital load of the page, since the inital load is a GET not a POST
+    return render(request, 'order_summary.html', context)
+
+def confirmation(request, orderID):
+
+    newOrder = RentalOrder.objects.get(id=orderID)
+
+    # If the request method is POST, this means that the user has submitted their signed rental contract
+    if request.method == 'POST':
+        newOrder.contract_signed = True # mark contract signed as true in DB
+        newOrder.save()
+
     context = {}
-    context['customerMessage'] = customerMessage
-    context['invoiceMessage'] = invoiceMessage
-    context['squareDashLink'] = f"https://app.squareupsandbox.com/dashboard/invoices/{invoice_id}/edit"
+    context['today'] = date.today()
+    context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
+    context['paid'] = newOrder.paid # if order has been paid for, this will contain true
+    context['total_cost'] = newOrder.total_cost
+    context['order_id'] = orderID
 
     return render(request, 'confirmation.html', context)
+
+def update_payment_status(request):
+    if request.method == 'GET':
+        orderId = request.GET.get('orderId', '')
+        order = RentalOrder.objects.get(id=orderId)
+        order.paid = True
+        order.save()
+        return redirect('confirmation', orderID=orderId)

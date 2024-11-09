@@ -7,8 +7,10 @@ class Customer(models.Model):
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     company_name = models.CharField(max_length=100, blank=True)
+    company_address = models.CharField(max_length=255, blank=True)
     phone_number = models.CharField(max_length=15, unique=True) # Enforce uniqueness (phone number is unique id)
     email = models.EmailField()
+    cust_notification_preference = models.CharField(max_length=10, blank=True, null=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

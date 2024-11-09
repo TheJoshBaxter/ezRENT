@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h2>Customers</h2>
+    <h1>Customers</h1>
 
     <div class="mb-4">
         <input type="text" id="customerSearch" class="form-control" placeholder="Search customers by name...">
@@ -84,8 +84,8 @@
                             </div>
                             <!-- Phone Number -->
                             <div class="mb-3">
-                                <label for="phoneNumber-{{ customer.id }}" class="form-label">Phone Number</label>
-                                <input type="tel" class="form-control" id="phoneNumber-{{ customer.id }}" name="phone_number" value="{{ customer.phone_number }}" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890" required>
+                                <label for="phone_number-{{ customer.id }}" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number-{{ customer.id }}" name="phone_number" value="{{ customer.phone_number }}" placeholder="(123)-456-7890" required>
                             </div>
                             <!-- Email -->
                             <div class="mb-3">
@@ -117,6 +117,24 @@
                 customerCards[i].style.display = 'none';
             }
         }
+    });
+
+    
+    // Function to auto-format a phone number input field while the user types
+    document.querySelectorAll('[id^="phone_number-"]').forEach(input => {
+        input.addEventListener("input", function (e) {
+
+        // Remove all non-numeric characters
+        let input = e.target.value.replace(/\D/g, '');
+        
+        // Format the number according to (000)-000-0000
+        if (input.length > 0) input = '(' + input;
+        if (input.length > 4) input = input.slice(0, 4) + ') ' + input.slice(4);
+        if (input.length > 9) input = input.slice(0, 9) + '-' + input.slice(9);
+        if (input.length > 14) input = input.slice(0, 14);  // Limit input length
+    
+        e.target.value = input;
+        });
     });
 </script>
 {% endblock %}

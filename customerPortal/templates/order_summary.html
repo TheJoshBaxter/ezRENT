@@ -6,13 +6,14 @@
     <p><strong>Customer:</strong> {{ order_data.customer_fName }} {{ order_data.customer_lName }}</p>
     <p><strong>Phone Number:</strong> {{ order_data.phone_number }}</p>
     <p><strong>Email:</strong> {{ order_data.email }}</p>
-    <p><strong>Equipment:</strong> {{ order_data.equipment }}</p>
+    <p><strong>Customer Notification Preference:</strong> {{ order_data.cust_notification_preference }}</p>
+    <p><strong>Equipment:</strong> {{ order_data.equipmentType }}</p>
     <p><strong>Rental Start Date:</strong> {{ order_data.rental_start_date }}</p>
     <p><strong>Rental End Date:</strong> {{ order_data.rental_end_date }}</p>
     <p><strong>Rental Period</strong> {{ order_data.rental_period }} days</p>
     <p><strong>Location for Equipment Dropoff:</strong> {{ order_data.location }}</p>
     <p><strong>Total Cost:</strong> ${{ order_data.total_cost }}</p>
-    <form method="post" action="{% url 'confirmation' %}">
+    <form method="post">
         {% csrf_token %}
         <button onclick="window.history.back()"type="button" class="btn btn-danger">Edit Info</button>
         {% if order_data.customer != "ERROR" %}
