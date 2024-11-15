@@ -51,6 +51,8 @@ class RentalExtensions(models.Model):
     days_extended = models.IntegerField()
     new_end_date = models.DateField()
     timestamp = models.DateTimeField()
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
+    paid = models.BooleanField(default=False, null=True)
 
     def __str__(self):
         return f"Extension for {self.rental_order} originally, now {self.new_end_date}"
@@ -67,3 +69,11 @@ class Inspection(models.Model):
 
     def __str__(self):
         return f"Inspection for {self.rental_order.equipment.name} on {self.inspection_date}"
+
+class ManagementAlertNumber(models.Model):
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
+    phone_number = models.CharField(max_length=15, unique=True) # Enforce uniqueness (phone number is unique id)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"

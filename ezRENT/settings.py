@@ -55,17 +55,20 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'ezRENT.urls'
 
+# TEMPLATE CONFIGURATION
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # Add the global templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                # Default context processors...
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'managementPortal.context_processors.global_notifications',
             ],
         },
     },
@@ -126,24 +129,6 @@ STATICFILES_DIRS = [
     BASE_DIR / "managementPortal/static",
 ]
 
-# TEMPLATE CONFIGURATION
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Add the global templates folder
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                # Default context processors...
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -155,6 +140,13 @@ LOGIN_URL = '/managementPortal/login/'
 
 SQUARE_ACCESS_TOKEN = os.environ.get('SQUARE_ACCESS_TOKEN')
 SQUARE_LOCATION_ID = os.environ.get('SQUARE_LOCATION_ID')
+
+ACCOUNT_SID = os.environ.get('account_sid')
+AUTH_TOKEN = os.environ.get('auth_token')
+
+G_APP_PASS = os.environ.get('G_APP_PASS')
+
+BASE_SITE_URL = os.environ.get('BASE_SITE_URL')
 
 # enhance security (BUT THIS BREAKS MY LOGIN FUNCTIONALITY)
 # CSRF_COOKIE_SECURE = True

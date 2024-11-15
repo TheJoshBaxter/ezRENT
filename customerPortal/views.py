@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import Customer
-from managementPortal.models import Equipment, EquipmentType, RentalOrder
+from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions
 from datetime import datetime, date, timedelta
 from django.core.mail import send_mail
 from django.conf import settings
@@ -11,7 +11,9 @@ from django.utils.timezone import localtime
 from decimal import Decimal
 import uuid
 import re
-from customerPortal.square_client import get_square_client
+# from customerPortal.square_client import get_square_client
+from customerPortal.twilioClient import send_text_alert
+from customerPortal.emailClient import send_customer_email
 
 # Create your views here.
 
@@ -146,7 +148,7 @@ def equipment_detail(request, equipmentType_id):
             start_date = str(start_date)
 
             # Calculate total rental cost
-            total_cost = calculate_total_cost(equipmentType, start_date, end_date, rental_period)
+            total_cost = calculate_total_cost(equipmentType, rental_period)
             print("data grab completed!!!!!")
 
             # Check if the user is an employee (authenticated)
@@ -272,7 +274,7 @@ def equipment_detail(request, equipmentType_id):
             start_date = str(start_date)
 
             # Calculate total rental cost
-            total_cost = calculate_total_cost(equipmentType, start_date, end_date, rental_period)
+            total_cost = calculate_total_cost(equipmentType, rental_period)
 
             order_data = {
                 'customer': customer.id,
@@ -357,7 +359,7 @@ def get_unavailable_dates(request, equipmentType_id):
     })
 
 # Helper function to calculate total cost
-def calculate_total_cost(equipmentType, start_date, end_date, rental_period):
+def calculate_total_cost(equipmentType, rental_period):
     # create some logic to check the app settings (a future settings page needs to be created) to determine the desired pricing system (daily only, or daily, weekly, monthly rates)
 
     if rental_period < 7:
@@ -390,7 +392,7 @@ def order_summary(request):
     order_data = request.session.get('order_data', None)
     context['order_data'] = order_data
 
-    if request.method == 'POST':
+    if request.method == 'POST': # this if is triggered when the user hits confirm and pay on the order summary page
 
         # # Save the new order to the DB
         new_order = RentalOrder.objects.create(
@@ -403,6 +405,9 @@ def order_summary(request):
         )
 
         print("Order created in ezRENT successfully")
+
+        # send text notification to manager(s)
+        send_text_alert()
     
         # Redirect to the confirmation view and pass the order ID
         return redirect('confirmation', orderID=new_order.id)
@@ -413,6 +418,7 @@ def order_summary(request):
 def confirmation(request, orderID):
 
     newOrder = RentalOrder.objects.get(id=orderID)
+    orderExtensions = newOrder.rentalextensions_set.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
 
     # If the request method is POST, this means that the user has submitted their signed rental contract
     if request.method == 'POST':
@@ -421,17 +427,27 @@ def confirmation(request, orderID):
 
     context = {}
     context['today'] = date.today()
+    context['order'] = newOrder
     context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
     context['paid'] = newOrder.paid # if order has been paid for, this will contain true
     context['total_cost'] = newOrder.total_cost
     context['order_id'] = orderID
+    context['extensions'] = orderExtensions
 
     return render(request, 'confirmation.html', context)
 
 def update_payment_status(request):
     if request.method == 'GET':
+        extensionId = request.GET.get('extensionId', '')
+        token = request.GET.get('token', '') # to be used for payment API
         orderId = request.GET.get('orderId', '')
-        order = RentalOrder.objects.get(id=orderId)
-        order.paid = True
-        order.save()
+
+        if orderId == 'extensionPayment': # if orderId contains the default 'extensionPayment' (set in the call in js), this is a rental extension payment, not an intial order payment.
+            extension = RentalExtensions.objects.get(id=extensionId)
+            extension.paid = True
+            extension.save()
+        else:
+            order = RentalOrder.objects.get(id=orderId)
+            order.paid = True
+            order.save()
         return redirect('confirmation', orderID=orderId)

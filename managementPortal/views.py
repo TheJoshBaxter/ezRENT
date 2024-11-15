@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Equipment, RentalOrder, Inspection, Customer, RentalExtensions
+from .models import Equipment, RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType
 from datetime import date, timedelta, datetime
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -9,8 +9,11 @@ from django.contrib import messages
 from .forms import UserRegisterForm
 import json
 from django.http import JsonResponse
-from customerPortal.square_client import get_square_client
+# from customerPortal.square_client import get_square_client
 from django.conf import settings
+from customerPortal.views import calculate_total_cost
+from customerPortal.emailClient import send_customer_email
+from customerPortal.twilioClient import send_customer_text
 
 # webhookstuff
 from django.views.decorators.csrf import csrf_exempt
@@ -122,6 +125,21 @@ def approve_rental(request, order_id):
         # Mark the rental as approved (you can update any field in your model)
         order.rental_approved = True
         order.save()
+
+        # Send email or text notification to customer depending on preference
+        customerPreference = order.customer.cust_notification_preference
+
+        if customerPreference == 'text':
+            # send an alert text
+            phone = order.customer.phone_number
+            messageBody = f"Hello, {order.customer.first_name} 👋, your rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} has been approved! For next steps, please visit {settings.BASE_SITE_URL}/confirmation/{order.id}"
+            send_customer_text(phone, messageBody)
+        else:
+            # send an email alert
+            receiver = order.customer.email
+            subject = "Rental Order Approval Notification"
+            body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            send_customer_email(receiver, subject, body)
 
         # Redirect to a confirmation page or the updated rental order page
         return redirect('employee_dashboard')
@@ -246,14 +264,23 @@ def extend_rental(request, order_id):
             rental_order.rental_end_date += timedelta(days=days_to_extend)
             rental_order.save()
 
+            # grab equipment type, and feed it and rental extension period to the calculate_total_cost method (from other views file)
+            equipmentTypeId = rental_order.equipment.equipment_type.id # grab the type id in order to grab the instance
+            equipmentType = EquipmentType.objects.get(id=equipmentTypeId) # grab instance (contains the three rates)
+            extensionCost = calculate_total_cost(equipmentType, days_to_extend)
+
             # second, save extension data to the rental extensions table:
             RentalExtensions.objects.create(
                 original_end_date = ogEndDate,
                 days_extended = days_to_extend,
                 new_end_date = rental_order.rental_end_date,
                 timestamp = date.today(),
-                rental_order_id = order_id
+                rental_order_id = order_id,
+                extension_cost = extensionCost
             )
+
+            # then mark the order as not fully paid
+            # notify customer of outstanding payment
 
             return JsonResponse({'success': True})
         except (RentalOrder.DoesNotExist, ValueError):

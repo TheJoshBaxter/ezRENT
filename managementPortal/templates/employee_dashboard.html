@@ -99,6 +99,21 @@
                                         </a>
                                     </li>
                                 </ul>
+
+                                <!-- Payment Information -->
+                                <p>Customer Paid?</p>
+                                <ul>
+                                    <li><strong>{{order.paid}}</strong></li>
+                                </ul>
+                                <hr>
+                                {% comment %} {% if order.extensions%}
+                                <p>Extensions have been paid for:</p>
+                                {% for extension in order.extensions%}
+                                <ul>
+                                    <li><strong>Extension to {{extension.new_end_date}}: {{extension.extension_paid}}</strong></li>
+                                </ul>
+                                {%endfor%}
+                                {%endif%} {% endcomment %}
                                 
             <form method="POST" action="{% url 'approve_rental' order_id=order.id %}">
             {% csrf_token %}
@@ -140,6 +155,7 @@
         </div>
         <div class="card-body row">
             {% for order in orders %}
+            {% if order %}
             {% if not order.rental_returned %}
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#editRentalModal-{{ order.id }}" style="cursor: pointer;">
@@ -197,6 +213,9 @@
                         </div>
                     </div>
                 </div>
+            {% endif %}
+            {% else %}
+            <p>No {{filter_option}} to show.</p>
             {% endif %}
 
                 <!-- Modal for Editing Rental -->
@@ -299,6 +318,7 @@
                                                     <th>Days Extended</th>
                                                     <th>New End Date</th>
                                                     <th>Time Stamp</th>
+                                                    <th>Paid?</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -308,6 +328,7 @@
                                                     <td>{{extension.days_extended}}</td>
                                                     <td>{{extension.new_end_date}}</td>
                                                     <td>{{extension.timestamp}}</td>
+                                                    <td>{{extension.extension_paid}}</td>
                                                 </tr>
                                                 {% endfor %}
                                             </tbody>
