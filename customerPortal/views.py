@@ -400,7 +400,7 @@ def order_summary(request):
         print("Order created in ezRENT successfully")
 
         # send text notification to manager(s)
-        send_text_alert()
+        # send_text_alert()
     
         # Redirect to the confirmation view and pass the order ID
         return redirect('confirmation', orderID=new_order.id)
