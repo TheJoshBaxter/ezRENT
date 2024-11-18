@@ -42,7 +42,7 @@
                                 <u>Equipment ID:</u>
                             </div>
                             <div class="card-text text-warning" style="font-size: 20px; font-weight: bold;">
-                                {{ order.equipment.id }}
+                                {{ order.equipment.name }}
                             </div>
 
                             <br>
@@ -151,12 +151,10 @@
                         <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
                     </select>
                 </div>
-            {% comment %} </div> {% endcomment %}
         </div>
         <div class="card-body row">
+            {% if orders %}
             {% for order in orders %}
-            {% if order %}
-            {% if not order.rental_returned %}
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm h-100 rental-card" data-bs-toggle="modal" data-bs-target="#editRentalModal-{{ order.id }}" style="cursor: pointer;">
                         <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
@@ -180,7 +178,7 @@
 
                             <!-- Equipment ID -->
                             <div class="card-text" style="font-size: 14px; opacity: 0.6">
-                                <strong>Equipment ID:</strong> {{ order.equipment.id }}
+                                <strong>Equipment ID:</strong> {{ order.equipment.name }}
                             </div>
 
                             <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
@@ -213,10 +211,6 @@
                         </div>
                     </div>
                 </div>
-            {% endif %}
-            {% else %}
-            <p>No {{filter_option}} to show.</p>
-            {% endif %}
 
                 <!-- Modal for Editing Rental -->
                 <div class="modal fade" id="editRentalModal-{{ order.id }}" tabindex="-1" aria-labelledby="editRentalModalLabel-{{ order.id }}" aria-hidden="true">
@@ -378,7 +372,7 @@
                             </div>
                             <div class="modal-body">
                                 <p>Are you sure you want to end this rental? Select an end date:</p>
-                                <input type="date" id="endDateInput-{{ order.id }}" class="form-control" value="{{ today|date:"Y-m-d" }}">
+                                <input type="date" id="endDateInput-{{ order.id }}" class="form-control" value="{{ order.potential_end_date|date:"Y-m-d" }}">
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -388,6 +382,9 @@
                     </div>
                 </div>
             {% endfor %}
+            {% else %}
+            <p>No rentals to show with this filter.</p>
+            {% endif %}
         </div>
     </div>
 </div>

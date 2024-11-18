@@ -1,19 +1,12 @@
 from django.shortcuts import render, redirect
+from django.conf import settings
 from .models import Customer
 from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions
 from datetime import datetime, date, timedelta
-from django.core.mail import send_mail
-from django.conf import settings
-from django.db.models import Q
 from django.http import JsonResponse
-from django.utils import timezone
-from django.utils.timezone import localtime
-from decimal import Decimal
-import uuid
-import re
-# from customerPortal.square_client import get_square_client
+from customerPortal.square_client import create_payment
 from customerPortal.twilioClient import send_text_alert
-from customerPortal.emailClient import send_customer_email
+# from customerPortal.emailClient import send_customer_email
 
 # Create your views here.
 
@@ -433,6 +426,8 @@ def confirmation(request, orderID):
     context['total_cost'] = newOrder.total_cost
     context['order_id'] = orderID
     context['extensions'] = orderExtensions
+    context['squareAppId'] = settings.SQUARE_APP_ID
+    context['squareLocationId'] = settings.SQUARE_LOCATION_ID
 
     return render(request, 'confirmation.html', context)
 
@@ -444,10 +439,14 @@ def update_payment_status(request):
 
         if orderId == 'extensionPayment': # if orderId contains the default 'extensionPayment' (set in the call in js), this is a rental extension payment, not an intial order payment.
             extension = RentalExtensions.objects.get(id=extensionId)
+            cost_in_cents = extension.cost * 100
+            create_payment(token, cost_in_cents)
             extension.paid = True
             extension.save()
         else:
             order = RentalOrder.objects.get(id=orderId)
+            cost_in_cents = int(order.total_cost * 100)
+            create_payment(token, cost_in_cents)
             order.paid = True
             order.save()
         return redirect('confirmation', orderID=orderId)

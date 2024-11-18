@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Equipment, RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType
+from .models import RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType
 from datetime import date, timedelta, datetime
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -14,10 +14,6 @@ from django.conf import settings
 from customerPortal.views import calculate_total_cost
 from customerPortal.emailClient import send_customer_email
 from customerPortal.twilioClient import send_customer_text
-
-# webhookstuff
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 
 # Create your views here.
 def register(request):
@@ -72,7 +68,7 @@ def employee_dashboard(request):
 
     # Filter the RentalOrder queryset based on the selected filter option
     if filter_option == 'current':
-        orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today, rental_approved=True).order_by('rental_end_date')
+        orders = RentalOrder.objects.filter(rental_end_date__gte=today, rental_start_date__lte=today, rental_approved=True, rental_returned=False).order_by('rental_end_date')
     elif filter_option == 'upcoming':
         orders = RentalOrder.objects.filter(rental_start_date__gt=today, rental_approved=True).order_by('rental_end_date')
     elif filter_option == 'past':
@@ -96,6 +92,12 @@ def employee_dashboard(request):
         # get days remaining for each order
         days_remaining = (order.rental_end_date - today).days
         order.days_remaining = days_remaining # used to color icons based on proximity of end date
+
+        # grab the potential end date to be populated in the end_rental modal
+        if order.rental_end_date <= today:
+            order.potential_end_date = order.rental_end_date
+        else:
+            order.potential_end_date = today
 
         # get the last inspection data for the equipment id associated with each order
         try:
@@ -280,7 +282,19 @@ def extend_rental(request, order_id):
             )
 
             # then mark the order as not fully paid
+
             # notify customer of outstanding payment
+            if rental_order.customer.cust_notification_preference == 'text':
+                # send an alert text
+                phone = rental_order.customer.phone_number
+                messageBody = f"Hello, {rental_order.customer.first_name} 👋, your request for an extension on your rental ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}) has been approved! Please confirm details and complete payment by visiting {settings.BASE_SITE_URL}/confirmation/{rental_order.id}."
+                send_customer_text(phone, messageBody)
+            else:
+                # send an email alert
+                receiver = rental_order.customer.email
+                subject = "Rental Order Approval Notification"
+                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting {settings.BASE_SITE_URL}/confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+                send_customer_email(receiver, subject, body)
 
             return JsonResponse({'success': True})
         except (RentalOrder.DoesNotExist, ValueError):
