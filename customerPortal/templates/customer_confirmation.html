@@ -5,7 +5,11 @@
     <h1 class="mt-5">Almost done...</h1>
     <hr>
 
+    {% if contract_signed and paid %}
+    <p>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</p>
+    {% else %}
     <p>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, the following tasks must be completed:</p>
+    {% endif %}
 
     <!-- Checklist Items -->
     <div class="checklist">
@@ -263,6 +267,11 @@
     <hr>
     <h4>Extension Requests:</h4>
     {% for extension in extensions%}
+    {% if extension.paid %}
+    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Thank you for your extension payment!</p>
+    {% else %}
+    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Before approval, please complete payment!</p>
+    {% endif %}
     <div class="checklist-item d-flex align-items-center mb-3">
         <!-- Task 2: Make Payment -->
         <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>

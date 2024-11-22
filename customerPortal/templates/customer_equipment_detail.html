@@ -22,7 +22,7 @@
             </ul>
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
-            <form method="post" action="{% url 'equipment_detail' equipmentType.id %}">
+            <form method="post" action="{% url 'customer_equipment_detail' equipmentType.id %}" id="infoSubmissionForm">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="start_date">Rental Start Date</label>
@@ -59,7 +59,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                {% if user.is_authenticated %}
+                                {% comment %} {% if user.is_authenticated %}
                                 <!-- Customer Name Search Field -->
                                 <div class="mb-3 position-relative" id="custSearchDiv" >
                                     <label for="customerSearch" class="form-label">Customer Name</label>
@@ -86,7 +86,7 @@
                                         <input type="text" class="form-control" id="last_name" name="last_name">
                                     </div>
                                 </div>
-                                {% else %}
+                                {% else %} {% endcomment %}
                                 <div class="form-group">
                                     <label for="first_name">First Name</label>
                                     <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="first_name" name="first_name">
@@ -95,7 +95,7 @@
                                     <label for="last_name">Last Name</label>
                                     <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="last_name" name="last_name">
                                 </div>
-                                {% endif %}
+                                {% comment %} {% endif %} {% endcomment %}
 
                                 <!-- Fields that will always be visible -->
                                 <div class="form-group">
@@ -251,6 +251,8 @@
             }
         });
     });
+
+
     
 
         let selectedIndex = -1;

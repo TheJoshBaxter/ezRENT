@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from customerPortal.square_client import create_payment
 from customerPortal.twilioClient import send_text_alert
-# from customerPortal.emailClient import send_customer_email
+from customerPortal.emailClient import send_customer_email
 
 # Create your views here.
 
@@ -26,6 +26,7 @@ def calc_availability_by_item(equipmentTypeID):
     equipment = Equipment.objects.filter(equipment_type_id=equipmentTypeID, out_for_repairs=False) # grab all equipment of the requested equipment type EXCEPT those items marked as "out for repairs."
 
     today = date.today()
+    print("Today isssssssssssss " + str(today))
 
     for item in equipment:
 
@@ -39,26 +40,36 @@ def calc_availability_by_item(equipmentTypeID):
         unavailable_dates = []
         for order in unavailable_orders:
             start_date = order['rental_start_date']
-            end_date = order['rental_end_date'] + timedelta(days=1) # add an extra day of unavailability to account for equipment transportation
+            end_date = order['rental_end_date'] + timedelta(days=1) # add an extra day of unavailability to account for the list comprehension stopping one day before end date. Could add one more for equipment transportation.
             date_range = [start_date + timedelta(days=x) for x in range((end_date - start_date).days)]
             unavailable_dates.extend(date_range) # .extend() differs from .append(), which would add the entire date_range list as a single element. This way, each individual date from date_range gets added to unavailable_dates 
 
         # Sort the list to ensure chronological order
         unavailable_dates.sort()
-        print(unavailable_dates)
 
         # Increment day by day and check if the date is unavailable
         next_available_date = today # Start checking from today
         while next_available_date in unavailable_dates:
-            next_available_date += timedelta(days=1)
+            # print("checked " + str(next_available_date) + " and no good")
 
-        # Check if the day is Saturday (5) or Sunday (6)
-        if next_available_date.weekday() == 5:  # Saturday
-            # Add 2 days to move to Monday
-            next_available_date += timedelta(days=2)
-        elif next_available_date.weekday() == 6:  # Sunday
-            # Add 1 day to move to Monday
-            next_available_date += timedelta(days=1)
+            # Check if the day is Saturday (5) or Sunday (6)
+            if next_available_date.weekday() == 5:  # Saturday
+                # Add 2 days to move to Monday
+                # print("This is a saturday, adding two days to make it Monday (0)")
+                next_available_date += timedelta(days=2)
+                # print("now its " + str(next_available_date.weekday()))
+
+            elif next_available_date.weekday() == 6:  # Sunday
+                # Add 1 day to move to Monday
+                # print("This is a sunday, adding 1 days to make it Monday (0)")
+                next_available_date += timedelta(days=1)
+                # print("now its " + str(next_available_date.weekday()))
+
+            else:
+                # if it's not a saturday or a sunday, increment by one day run the loop again
+                next_available_date += timedelta(days=1)
+        
+        # print("supposedly " + str(next_available_date) + " is good...its a " + str(next_available_date.weekday()))
 
         print("Item " + str(item.id) + " is available on " + str(next_available_date))
 
@@ -113,6 +124,9 @@ def calc_aggregate_availability(equipmentTypeID):
 def equipment_detail(request, equipmentType_id, template_name):
     equipmentType = EquipmentType.objects.get(id=equipmentType_id)
     aggregateAvailabilityContext = calc_aggregate_availability(equipmentType_id)
+    print("TEMPLATE NAME:")
+    print(template_name)
+    print(type(template_name))
 
     if request.method == 'POST':
         # grab the selected rentalEquipment ID that was identified as available for rental
@@ -268,6 +282,7 @@ def equipment_detail(request, equipmentType_id, template_name):
 
             # Calculate total rental cost
             total_cost = calculate_total_cost(equipmentType, rental_period)
+            print(template_name)
 
             order_data = {
                 'customer': customer.id,
@@ -292,8 +307,12 @@ def equipment_detail(request, equipmentType_id, template_name):
 
             # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
             if "customer" in template_name.lower():
+                print("issa CUSTOMER")
                 return redirect('customer_order_summary', )
             else:
+                print(template_name)
+                print(template_name.lower())
+                print("ISS NOT A CUSTOMER")
                 return redirect('order_summary', )
         
         # Store order_data in the session
@@ -409,6 +428,25 @@ def order_summary(request, template_name):
 
         # send text notification to manager(s)
         # send_text_alert()
+
+        # send confirmation of order placement to customer
+        if new_order.customer.customerPreference == 'text':
+            # send an alert text
+            phone = new_order.customer.phone_number
+            messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
+            # send_customer_text(phone, messageBody)
+
+            # for now, send an email anyway
+            receiver = new_order.customer.email
+            subject = "Rental Order Approval Notification"
+            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}. You can return to this link at any time. An approval notification will be sent shortly thereafter.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            send_customer_email(receiver, subject, body)
+        else:
+            # send an email alert
+            receiver = new_order.customer.email
+            subject = "Rental Order Approval Notification"
+            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}. You can return to this link at any time. An approval notification will be sent shortly thereafter.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            send_customer_email(receiver, subject, body)
     
         # Redirect to the confirmation view and pass the order ID
         # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template

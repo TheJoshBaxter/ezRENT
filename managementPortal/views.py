@@ -341,14 +341,20 @@ def extend_rental(request, order_id):
             if rental_order.customer.cust_notification_preference == 'text':
                 # send an alert text
                 phone = rental_order.customer.phone_number
-                messageBody = f"Hello, {rental_order.customer.first_name} 👋, your request for an extension on your rental ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}) has been approved! Please confirm details and complete payment by visiting {settings.BASE_SITE_URL}/confirmation/{rental_order.id}."
+                messageBody = f"Hello, {rental_order.customer.first_name} 👋, your request for an extension on your rental ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}) has been approved! Please confirm details and complete payment by visiting {settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}."
                 # send_customer_text(phone, messageBody)
+
+                # while text is turned off, send an email anyway!!
+                receiver = rental_order.customer.email
+                subject = "Rental Order Approval Notification"
+                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting {settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+                send_customer_email(receiver, subject, body)
             else:
                 # send an email alert
                 receiver = rental_order.customer.email
                 subject = "Rental Order Approval Notification"
-                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting {settings.BASE_SITE_URL}/confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
-                # send_customer_email(receiver, subject, body)
+                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting {settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+                send_customer_email(receiver, subject, body)
 
             return JsonResponse({'success': True})
         except (RentalOrder.DoesNotExist, ValueError):
