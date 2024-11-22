@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1 class="mt-5">Pickups and Dropoffs 
-        <label for="filter-date" class="form-label">For:</label>
-        <input type="date" id="filter-date" class="form-control" value="{{ selected_date }}" onchange="applyDateFilter()">
-    </h1>
-    <hr>
-    {% comment %} <a href="{% url 'employee_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
-    <a href="{% url 'inspections' %}" class="btn btn-primary">Pending Inspections</a> {% endcomment %}
-
-    <!-- Date Picker for Filtering Pickups/Dropoffs -->
-    <div class="row align-items-center mb-4">
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4 mt-4">
         <div class="col-md-3">
-            
+            <h1 class="h3 mb-0 text-gray-800">Pickups and Dropoffs
+                <label for="filter-date" class="form-label">For:</label>
+                <input type="date" id="filter-date" class="form-control" value="{{ selected_date }}" onchange="applyDateFilter()">
+            </h1>
         </div>
     </div>
 
+    <hr> 
+
     <!-- Outgoing Rentals Section -->
-    <div class="card mt-3">
+    <div class="card shadow mb-3">
+
+        <!-- Card Header -->
         <div class="card-header">
-            Outgoing Rentals
+            <h6 class="m-0 font-weight-bold text-primary">Outgoing Rentals<h6>
         </div>
+
         <div class="card-body row">
             {% if outgoing_orders %}
                 {% for order in outgoing_orders %}
@@ -70,10 +70,13 @@
     </div>
 
     <!-- Rental Returns Section -->
-    <div class="card mt-3">
+    <div class="card shadow mb-3">
+
+        <!-- Card Header -->
         <div class="card-header">
-            Rental Returns
+            <h6 class="m-0 font-weight-bold text-primary">Incoming Rentals<h6>
         </div>
+
         <div class="card-body row">
             {% if returning_orders %}
                 {% for order in returning_orders %}

@@ -10,10 +10,10 @@ from customerPortal.twilioClient import send_text_alert
 
 # Create your views here.
 
-def equipment_types(request):
+def equipment_types(request, template_name):
     allEquipmentTypes = EquipmentType.objects.all().order_by('id')
 
-    return render(request, 'equipment_types.html', {'allEquipmentTypes': allEquipmentTypes})
+    return render(request, template_name, {'allEquipmentTypes': allEquipmentTypes})
 
 
 def equipment_list(request, equipmentTypeID):
@@ -110,7 +110,7 @@ def calc_aggregate_availability(equipmentTypeID):
     return context
 
 # Equipment detail view for customerPortal
-def equipment_detail(request, equipmentType_id):
+def equipment_detail(request, equipmentType_id, template_name):
     equipmentType = EquipmentType.objects.get(id=equipmentType_id)
     aggregateAvailabilityContext = calc_aggregate_availability(equipmentType_id)
 
@@ -290,14 +290,22 @@ def equipment_detail(request, equipmentType_id):
             # Store order_data in the session
             request.session['order_data'] = order_data
 
-            return redirect('order_summary', )
+            # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
+            if "customer" in template_name.lower():
+                return redirect('customer_order_summary', )
+            else:
+                return redirect('order_summary', )
         
         # Store order_data in the session
         request.session['order_data'] = order_data
 
-        return redirect('order_summary', )
+        # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
+        if "customer" in template_name.lower():
+            return redirect('customer_order_summary', )
+        else:
+            return redirect('order_summary', )
 
-    return render(request, 'equipment_detail.html', {'equipmentType': equipmentType, 'aggregateAvailabilityContext': aggregateAvailabilityContext})
+    return render(request, template_name, {'equipmentType': equipmentType, 'aggregateAvailabilityContext': aggregateAvailabilityContext})
 
 def search_customers(request):
     if request.method == 'GET':
@@ -377,7 +385,7 @@ def calculate_total_cost(equipmentType, rental_period):
     
     return total_cost
 
-def order_summary(request):
+def order_summary(request, template_name):
 
     context = {}
 
@@ -403,12 +411,16 @@ def order_summary(request):
         # send_text_alert()
     
         # Redirect to the confirmation view and pass the order ID
-        return redirect('confirmation', orderID=new_order.id)
+        # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
+        if "customer" in template_name.lower():
+            return redirect('customer_confirmation', orderID=new_order.id)
+        else:
+            return redirect('confirmation', orderID=new_order.id)
 
     # this return is called on the inital load of the page, since the inital load is a GET not a POST
-    return render(request, 'order_summary.html', context)
+    return render(request, template_name, context)
 
-def confirmation(request, orderID):
+def confirmation(request, orderID, template_name):
 
     newOrder = RentalOrder.objects.get(id=orderID)
     orderExtensions = newOrder.rentalextensions_set.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
@@ -429,7 +441,7 @@ def confirmation(request, orderID):
     context['squareAppId'] = settings.SQUARE_APP_ID
     context['squareLocationId'] = settings.SQUARE_LOCATION_ID
 
-    return render(request, 'confirmation.html', context)
+    return render(request, template_name, context)
 
 def update_payment_status(request):
     if request.method == 'GET':

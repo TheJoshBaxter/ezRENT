@@ -1,0 +1,23 @@
+{% extends "customer_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mt-5">Start by Selecting Equipment Type:</h2>
+    <div class="row">
+        {% for item in allEquipmentTypes %}
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <img class="card-img-top" src="{% static item.imgURL }} %}" alt="{{ item.name }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }} {{ item.category }}</h5>
+                        <p>{{ item.specs|truncatechars:145 }}</p>
+                        {% comment %} <p><strong>Quantity:</strong> {{ item.available_quantity }}</p> {% endcomment %}
+                        <a href="{% url 'customer_equipment_detail' item.id %}" class="btn btn-primary">View Availability</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

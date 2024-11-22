@@ -2,6 +2,9 @@
 
 {% block content %}
 <div class="container mt-5">
+    <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
+    <p>&nbsp If you have any questions or concerns, please call <a href="tel:(801)-123-1234" class="">(801)-123-1234</a>.</p>
+    <hr>
     <h1 class="mt-5">Almost done...</h1>
     <hr>
 
@@ -308,11 +311,11 @@
     {% endfor %}
     {% endif %}
 
-    {% if paid and contract_signed %}
+    {% comment %} {% if paid and contract_signed %}
     <button class="btn btn-success mt-3" action="SOMETHING">DO SOMETHING NEXT</button>
     {% else %}
     <button class="btn btn-success mt-3" action="SOMETHING" disabled>DO SOMETHING NEXT</button>
-    {% endif %}
+    {% endif %} {% endcomment %}
 </div>
 <style>
     .cost-display {

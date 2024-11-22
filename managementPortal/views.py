@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
+from django.db.models import Sum
 from .forms import UserRegisterForm
 import json
 from django.http import JsonResponse
@@ -49,6 +50,47 @@ def logout_view(request):
     logout(request)
     return redirect('login')
 
+@login_required
+def summary_dash(request):
+    today = date.today()
+
+    # Monthly Revenue
+    monthlyOrders = RentalOrder.objects.filter(
+        rental_start_date__year=today.year,
+        rental_start_date__month=today.month,
+        paid=True
+    )
+    totalMonthOrderRevenue = monthlyOrders.aggregate(Sum('total_cost'))['total_cost__sum'] or 0.00
+
+    totalMonthExtensionRevenue = RentalExtensions.objects.filter(
+        rental_order__in=monthlyOrders,
+        paid=True
+    ).aggregate(Sum('cost'))['cost__sum'] or 0.00
+
+    # Yearly Revenue
+    yearlyOrders = RentalOrder.objects.filter(
+        rental_start_date__year=today.year,
+        paid=True
+    )
+    totalYearOrderRevenue = yearlyOrders.aggregate(Sum('total_cost'))['total_cost__sum'] or 0.00
+
+    totalYearExtensionRevenue = RentalExtensions.objects.filter(
+        rental_order__in=yearlyOrders,
+        paid=True
+    ).aggregate(Sum('cost'))['cost__sum'] or 0.00
+
+    # Total Revenue
+    monthlyRev = totalMonthOrderRevenue + totalMonthExtensionRevenue
+    annualRev = totalYearOrderRevenue + totalYearExtensionRevenue
+
+    # Percentage AR Received:
+    #something here
+    
+    context = {}
+    context['monthlyRev'] = monthlyRev
+    context['anualRev'] = annualRev
+    return render(request, 'summary_dash.html', context)
+
 
 # Backend dashboard for business to manage orders and equipment
 @login_required
@@ -58,11 +100,6 @@ def employee_dashboard(request):
     # print(timezone.now().date())
 
     context = {}
-
-    pendingOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
-
-    for order in pendingOrders:
-        order.unavailableDates = get_unavailable_dates(order.equipment_id)
 
     filter_option = request.GET.get('filter', 'current')  # Get the filter option from query parameters, default to 'current'
 
@@ -114,10 +151,20 @@ def employee_dashboard(request):
 
     context['orders'] = orders
     context['filter_option'] = filter_option
-    context['pendingOrders'] = pendingOrders
     context['today'] = today
 
     return render(request, 'employee_dashboard.html', context)
+
+def pending_rentals(request):
+    pendingOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
+
+    for order in pendingOrders:
+        order.unavailableDates = get_unavailable_dates(order.equipment_id)
+
+    context = {}
+    context['pendingOrders'] = pendingOrders
+    
+    return render(request, 'pending_rentals.html', context)
 
 def approve_rental(request, order_id):
     # Get the RentalOrder instance

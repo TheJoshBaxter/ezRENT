@@ -1,24 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h1 class="mt-5">Inspections</h1>
-    <hr>
-    {% comment %} <a href="{% url 'employee_dashboard' %}" class="btn btn-primary">Back to Dashboard</a>
-    <a href="{% url 'inspections' %}" class="btn btn-primary">Pending Inspections</a> {% endcomment %}
-
-    <!-- Date Picker for Filtering Pickups/Dropoffs -->
-    <div class="row align-items-center mb-4">
-        <div class="col-md-3">
-            
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4 mt-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0 text-gray-800">Inspections</h1>
         </div>
     </div>
 
     <!-- Outgoing Rentals Section -->
-    <div class="card mt-3">
-        <div class="card-header">
-            Pending Inspections
+    <div class="card shadow mb-3">
+
+        <!-- Card Header -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Pending Inspections<h6>
         </div>
+
         <div class="card-body">
             <div class="row">
                 {% if not orders_without_inspections%}
@@ -67,20 +65,19 @@
     </div>
 
     <!-- Rental Returns Section -->
-    <div class="card mt-3">
-        <div class="card-header">
-            Completed Inspections
+    <div class="card shadow mb-3">
+
+        <!-- Card Header -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Completed Inspections<h6>
         </div>
+
         <div class="card-body">
             <div class="row">
                 {% for order in orders_with_inspections %}
                 <div class="col-md-4 mb-4">
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            {% comment %} <!-- Rental Start Date -->
-                            <div class="card-text" style="font-size: 14px; font-weight: bold;">
-                                Equipment ID:
-                            </div> {% endcomment %}
 
                             <!-- Rental End Date with Color Coding -->
                             <div class="text-success" style="font-size: 24px; font-weight: bold; text-decoration: underline;">

@@ -14,8 +14,8 @@
     <title>ezRENT-Jobsite Rents</title>
 
     <!-- OLD THEME STUFF -->
-    {% comment %}  BELOW LINE WAS PREVIOUSLY USED...NOT NEEDED NOW I THINK...
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"> {% endcomment %}
+    {% comment %}  BELOW LINE WAS PREVIOUSLY USED...NOT NEEDED NOW I THINK... {% endcomment %}
+    {% comment %} <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">  {% endcomment %}
 
     <!-- link to Font Awesome library -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -49,11 +49,11 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{% url 'employee_dashboard' %}">
+                <div class="sidebar-brand-icon"> <!--rotate-n-15"-->
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
                 </div>
-                <div class="sidebar-brand-text mx-3">ezRENT <sup>beta</sup></div>
+                <div class="sidebar-brand-text mx-3">ezRENT <sup>1.0</sup></div>
             </a>
 
             <!-- Divider -->
@@ -61,20 +61,41 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="{% url 'equipment_types' %}">
+                <a class="nav-link" href="{% url 'summary_dash' %}">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Book a Rental</span>
+                    <span>Dashboard</span>
                 </a>
             </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider">
 
+            {% if not user.is_authenticated %}
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Login
+            </div>
+
+            <!-- Nav Item - Customers -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}">
+                    <i class="fa-solid fa-key"></i>
+                    {% comment %} <i class="fa-solid fa-address-book"></i> {% endcomment %}
+                    <span>Log In Now</span>
+                </a>
+            </li>
+
+            {% else %}
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Customer Portal
+            </div>
+
             <!-- Nav Item - Dashboard -->
-            <li class="nav-item active">
-                <a class="nav-link" href="{% url 'employee_dashboard' %}">
-                    <i class="fas fa-fw fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'equipment_types' %}">
+                    <i class="fa-solid fa-helmet-safety"></i>
+                    <span>Book a Rental</span>
                 </a>
             </li>
 
@@ -88,31 +109,32 @@
 
             <!-- Nav Item - Pages Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed position-relative" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                <a class="nav-link collapsed position-relative" href="#" data-bs-toggle="collapse" data-bs-target="#collapseTwo"
                    aria-expanded="true" aria-controls="collapseTwo">
-                    <i class="fas fa-fw fa-cog"></i>
-                    <span>Employee Dashboard</span>
-                    {% if user.is_authenticated %}
-                    {% if unapprovedOrders %}
-                    <span class="notification-dot position-absolute"></span>
-                    {% endif %}
-                    {% endif %}
+                   <i class="fas fa-fw fa-table"></i>
+                    
+                    <span>Rental Tracker</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
                 </a>
-                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Custom Components:</h6>
-                        <a class="collapse-item" href="buttons.html">Buttons</a>
-                        <a class="collapse-item" href="cards.html">Cards</a>
+                        <h6 class="collapse-header">Rental Tracker</h6>
+                        <a class="collapse-item" href="{% url 'employee_dashboard' %}">Approved Rentals</a>
+                        <a class="collapse-item" href="{% url 'pending_rentals' %}">Pending Requests
+                            {% comment %} {% if user.is_authenticated %}
+                            {% if unapprovedOrders %}
+                            <span class="notification-dot position-absolute"></span>
+                            {% endif %}
+                            {% endif %} {% endcomment %}
+                        </a>
                     </div>
                 </div>
             </li>
 
-            {% if user.is_authenticated %}
-
             <!-- Nav Item - Today's Pickups/Dropoffs -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'todays_pickups_dropoffs' %}">
-                    <i class="fas fa-fw fa-chart-area"></i>
+                    <i class="fa-solid fa-calendar-day"></i>
                     <span>Today's Pickups/Dropoffs</span>
                 </a>
             </li>
@@ -120,45 +142,45 @@
             <!-- Nav Item - Inspections -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'inspections' %}">
-                    <i class="fas fa-fw fa-table"></i>
+                    <i class="fa-solid fa-magnifying-glass"></i>
                     <span>Inspections</span>
                 </a>
             </li>
 
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Contacts
+            </div>
+
             <!-- Nav Item - Customers -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'customers' %}">
-                    <i class="fas fa-fw fa-table"></i>
+                    <i class="fa-solid fa-users"></i>
+                    {% comment %} <i class="fa-solid fa-address-book"></i> {% endcomment %}
                     <span>Customers</span>
                 </a>
             </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                System Configuration
+            </div>
 
             <!-- Nav Item - Settings -->
             <li class="nav-item">
                 <a class="nav-link" href="/admin/">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Customers</span>
+                    <i class="fas fa-fw fa-cog"></i>
+                    <span>Settings</span>
                 </a>
             </li>
-
-            <!-- Nav Item - Logout -->
-            <li class="nav-item">
-                <a class="nav-link" href="/admin/">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Customers</span>
-                </a>
-            </li>
-
 
             {% endif %}
-
-            <!-- Nav Item - Settings -->
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'logout' %}">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Logout</span>
-                </a>
-            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -168,12 +190,12 @@
                 <button class="rounded-circle border-0" id="sidebarToggle"></button>
             </div>
 
-            <!-- Sidebar Message -->
+            {% comment %} <!-- Sidebar Message -->
             <div class="sidebar-card d-none d-lg-flex">
                 <img class="sidebar-card-illustration mb-2" src="{% static 'img/undraw_rocket.svg' %}" alt="...">
                 <p class="text-center mb-2"><strong>ezRENT Pro</strong> is packed with premium features, components, and more!</p>
                 <a class="btn btn-success btn-sm" href="#">Upgrade to Pro!</a>
-            </div>
+            </div> {% endcomment %}
 
         </ul>
         <!-- End of Sidebar -->
@@ -211,7 +233,7 @@
                         <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                         <li class="nav-item dropdown no-arrow d-sm-none">
                             <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
-                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-search fa-fw"></i>
                             </a>
                             <!-- Dropdown - Messages -->
@@ -235,28 +257,36 @@
                         <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
-                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
                                 <!-- Counter - Alerts -->
-                                <span class="badge badge-danger badge-counter">3+</span>
+                                <span class="badge badge-danger badge-counter">{{ numAlerts }}</span>
                             </a>
                             <!-- Dropdown - Alerts -->
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                  aria-labelledby="alertsDropdown">
                                 <h6 class="dropdown-header">
-                                    Alerts Center
+                                    Pending Requests
                                 </h6>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                {% for order in unapprovedOrders %}
+                                <a class="dropdown-item d-flex align-items-center" href="/managementPortal/pending_rentals#approveRentalModal-{{order.id}}">
                                     <div class="mr-3">
                                         <div class="icon-circle bg-primary">
                                             <i class="fas fa-file-alt text-white"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <div class="small text-gray-500">December 12, 2019</div>
-                                        <span class="font-weight-bold">A new monthly report is ready to download!</span>
+                                        <div class="small text-gray-500">{{ order.created_at|date}}</div>
+                                        <span class="font-weight-bold">{{order.customer.first_name}} {{order.customer.last_name}} has requested {{order.equipment.name}} ({{order.equipment.equipment_type.name}}) from {{order.rental_start_date}} to {{order.rental_end_date}}</span>
                                     </div>
                                 </a>
+                                {% endfor %}
+                                <a class="dropdown-item text-center small text-gray-500" href="{% url 'pending_rentals' %}">Show All Requests</a>
+
+                                {% comment %} <h6 class="dropdown-header bg-success">
+                                    New Payments
+                                </h6>
+
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="mr-3">
                                         <div class="icon-circle bg-success">
@@ -268,25 +298,32 @@
                                         $290.29 has been deposited into your account!
                                     </div>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
+                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Payments</a> {% endcomment %}
+
+                                <h6 class="dropdown-header bg-warning">
+                                    Pending Inspections
+                                </h6>
+                                {% for order in returnedOrdersPendingInspection%}
+                                <a class="dropdown-item d-flex align-items-center" href="{% url 'perform_inspection' order.id %}">
                                     <div class="mr-3">
                                         <div class="icon-circle bg-warning">
                                             <i class="fas fa-exclamation-triangle text-white"></i>
                                         </div>
                                     </div>
                                     <div>
-                                        <div class="small text-gray-500">December 2, 2019</div>
-                                        Spending Alert: We've noticed unusually high spending for your account.
+                                        <div class="small text-gray-500">{{order.rental_end_date}}</div>
+                                        {{order.equipment.name}} ({{order.equipment.equipment_type.name}}) has been returned, and inspection has not been completed yet.
                                     </div>
                                 </a>
-                                <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
+                                {% endfor %}
+                                <a class="dropdown-item text-center small text-gray-500" href="{% url 'inspections' %}">Show All Inspections</a>
                             </div>
                         </li>
 
-                        <!-- Nav Item - Messages -->
+                        {% comment %} <!-- Nav Item - Messages -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
-                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-envelope fa-fw"></i>
                                 <!-- Counter - Messages -->
                                 <span class="badge badge-danger badge-counter">7</span>
@@ -355,22 +392,22 @@
                                 </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
                             </div>
-                        </li>
+                        </li> {% endcomment %}
 
                         <div class="topbar-divider d-none d-sm-block"></div>
 
                         <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">Douglas McGee</span>
+                               data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{user.first_name}} {{user.last_name}}</span>
                                 <img class="img-profile rounded-circle"
                                      src="{% static 'img/undraw_profile.svg' %}">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                  aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="#">
+                                {% comment %} <a class="dropdown-item" href="#">
                                     <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Profile
                                 </a>
@@ -382,8 +419,8 @@
                                     <i class="fas fa-list fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Activity Log
                                 </a>
-                                <div class="dropdown-divider"></div>
-                                <a class="dropdown-item" href="#" data-toggle="modal" data-target="#logoutModal">
+                                <div class="dropdown-divider"></div> {% endcomment %}
+                                <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -406,7 +443,7 @@
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
-                        <span>Copyright &copy; Your Website 2021</span>
+                        <span>Copyright &copy; ezRENT 2024</span>
                     </div>
                 </div>
             </footer>
@@ -430,14 +467,14 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Ready to Leave?</h5>
-                    <button class="close" type="button" data-dismiss="modal" aria-label="Close">
+                    <button class="close" type="button" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">×</span>
                     </button>
                 </div>
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
-                    <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <a class="btn btn-primary" href="{% url 'logout' %}">Logout</a>
                 </div>
             </div>
         </div>

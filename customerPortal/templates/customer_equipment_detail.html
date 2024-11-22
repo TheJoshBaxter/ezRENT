@@ -1,0 +1,389 @@
+{% extends "customer_base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">{{ equipmentType.name }} {{ equipmentType.category }} Rental Details</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <img class="card-img-top" src="{% static equipmentType.imgURL %}" alt="{{ equipmentType.name }}">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
+            <strong>Rental Rates:</strong>
+            <ul>
+                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate }}</li>
+                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate }}</li>
+                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate }} 
+                    <br>(one week free, plus one way delivery fee)
+                </li>
+            </ul>
+            <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
+
+            <form method="post" action="{% url 'customer_equipment_detail' equipmentType.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="start_date">Rental Start Date</label>
+                    <input type="text" class="form-control" id="start_date" name="start_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="rental_period">Rental Period</label>
+                    <select id="rental_period" name="rental_period" class="form-select">
+                        <option value="1">1 Day</option>
+                        <option value="2">2 Days</option>
+                        <option value="7">1 Week</option>
+                        <option value="14">2 Weeks</option>
+                        <option value="21">3 Weeks</option>
+                        <option value="30">1 Month</option>
+                    </select>
+                </div>
+
+                <!-- Trigger button for modal -->
+                <button id="book_button" type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal" disabled>
+                    Book Your Rental
+                </button>
+                <br>
+                <!-- Error message for button unavailability - does not display at first -->
+                <div id="error_message" class="text-danger mt-2" style="display: none;">
+                    Selected dates are not available for rental. Please adjust the start date or rental period, OR check for other available units.
+                </div>
+
+                <!-- Bootstrap Modal -->
+                <div class="modal fade" id="rentalModal" tabindex="-1" aria-labelledby="rentalModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="rentalModalLabel">Provide Contact Info</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% if user.is_authenticated %}
+                                <!-- Customer Name Search Field -->
+                                <div class="mb-3 position-relative" id="custSearchDiv" >
+                                    <label for="customerSearch" class="form-label">Customer Name</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="customerSearch" name="customerSearch" autocomplete="new-password" aria-autocomplete="list" aria-controls="customerDropdown" aria-expanded="false" aria-label="Customer" placeholder="Enter customer name">
+                                        <button class="btn btn-outline-secondary" type="button" id="clearSearch"><i class="fas fa-times"></i></button>
+                                    </div>
+                                    <ul id="customerDropdown" class="dropdown-menu show" style="width: 100%; display: none;" role="listbox">
+                                        <!-- Create new customer button always visible -->
+                                        <li id="newCustomerOption" class="dropdown-item text-primary" role="listbox" tabindex="-1" style="cursor: pointer;">
+                                            <i class="fas fa-user-plus"></i> Create New Customer
+                                        </li>
+                                        <!-- Customer search results will be appended here -->
+                                    </ul>
+                                </div>
+                                <!-- Fields for new customer (already visible fields will be updated by JS for existing customers) -->
+                                <div id="new-customer-fields" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="first_name">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="last_name">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name">
+                                    </div>
+                                </div>
+                                {% else %}
+                                <div class="form-group">
+                                    <label for="first_name">First Name</label>
+                                    <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="first_name" name="first_name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="last_name">Last Name</label>
+                                    <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="last_name" name="last_name">
+                                </div>
+                                {% endif %}
+
+                                <!-- Fields that will always be visible -->
+                                <div class="form-group">
+                                    <label for="company_name">Company Name</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="company_address">Company Address</label>
+                                    <input type="text" class="form-control" id="company_address" name="company_address">
+                                </div>
+                                <div class="form-group">
+                                    <label for="phone_number">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" maxlength="14" placeholder="(123)-456-7890" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email Address</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="custNotificationPreference">Preferred Approval Notification Method:</label>
+                                    <select name="custNotificationPreference" id="custNotificationPreference" class="form-select">
+                                        <option value="email" selected>Email</option>
+                                        <option value="text">Text</option>
+                                    </select>
+                                    <div class="form-group disclaimer">
+                                        <p>
+                                            By submitting this form and selecting "Text" above, you consent to receive alerts about rental request approvals from us, sent through Twilio. Consent is not conditional on purchase. Msg. & data rates may apply. Unsubscribe at any time by replying "STOP." <br><strong>Privacy Policy and Terms:</strong> Your number will not be used for any other purpose by anyone but us, to update you on the status of your rental request.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="location">Rental Dropoff Location</label>
+                                    <input type="text" class="form-control" id="location" name="location" required>
+                                </div>
+
+                                <!-- this is a hidden field used in conjunction with js to pass the equipment id to the view -->
+                                <input type="hidden" name="equipmentIdField" id="equipmentIdField">
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Submit Info</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .disclaimer {
+        background-color: #f8f9fa; /* Light grey background */
+        border: 1px solid #dee2e6; /* Subtle border */
+        padding: 15px;
+        border-radius: 5px;
+        color: #6c757d; /* Greyed-out text */
+        font-size: 0.9rem;
+    }
+</style>
+
+<script type="text/javascript">
+
+    $(document).ready(function() {
+
+        // Initialize jQuery UI Datepicker
+        const earliestDate = new Date("{{ aggregateAvailabilityContext.aggregateEarliestDate|date:'Y-m-d' }}").toISOString().split('T')[0];  // Only grab the Y-m-d portion (not timestamp), then toISOString converts to 'YYYY-MM-DD' format;
+        console.log("EARLIESET DATE")
+        console.log(earliestDate)
+        tryThis = new Date(earliestDate).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
+        console.log(tryThis)
+
+
+        $("#start_date").datepicker({
+            dateFormat: "yy-mm-dd",
+            minDate: tryThis,
+            beforeShowDay: function(date) {
+                const day = date.getDay();
+                return [(day != 0 && day != 6), ""];  // Disable Sundays (0) and Saturdays (6)
+            }
+        });
+            
+        // Event listeners to check availability
+        $("#start_date, #rental_period").change(function() {
+            const equipmentTypeId = {{ equipmentType.id }};
+            const startDate = $("#start_date").val();
+            const rentalPeriod = parseInt($("#rental_period").val());
+
+            // If startDate or rentalPeriod is empty, an alert message prompts the user to select a start date and rental period, then exits the function with return.
+            if (!startDate || !rentalPeriod) {
+                alert("Please select a start date and rental period.");
+                return;
+            }
+
+        // Set rental end date by creating a new date from startDate, setting its day value forward by rentalPeriod, resulting in requestedEndDate.
+        const requestedEndDate = new Date(new Date(startDate).setDate(new Date(startDate).getDate() + rentalPeriod));
+
+        // AJAX request to get unavailable dates for equipment of this type
+        $.ajax({
+            url: `{% url 'get_unavailable_dates' equipmentType.id %}`,
+            method: "GET",
+            success: function(response) {
+                let isAvailable = false; // Flag to track availability
+                console.log("Checking each equipment of type:")
+                console.log({{equipmentType.id}})
+
+                // Iterate through each equipment item returned in the response
+                for (const equipment of response.equipment) {
+                    const equipmentId = equipment.id; // Get the current equipment item's ID
+                    const unavailableDates = response.unavailable_dates_by_item[equipmentId] || []; // Get unavailable dates for this equipment item
+                    
+                    let available = true; // Flag for individual equipment availability
+
+                    console.log("Checking rental equipment id:")
+                    console.log(equipmentId)
+                    console.log("Unavailable dates:")
+                    console.log(unavailableDates)
+
+                    // Check availability for each date in the requested range
+                    for (let d = new Date(startDate); d <= requestedEndDate; d.setDate(d.getDate() + 1)) {
+                        const dateStr = d.toISOString().split('T')[0]; // Format dateStr
+                        if (unavailableDates.includes(dateStr)) { // If dateStr is in unavailable dates,
+                            available = false; // Set available to false
+                            console.log(equipmentId + " is not available because it is already rented out on " + dateStr)
+                            break; // Break if one of the dates is not available
+                        }
+                    }
+
+                    if (available) { // If all requested dates for this item are available
+                        isAvailable = true; // Set isAvailable to true
+                        console.log(equipmentId + " is available!")
+
+                        // Set the hidden field's value to the equipment ID so that id can be passed to view to save order to DB
+                        document.getElementById("equipmentIdField").value = equipmentId;
+
+
+                        break; // Exit the loop as we found an available item
+                    }
+                }
+
+                // Display results based on availability
+                if (isAvailable) {
+                    $("#book_button").prop("disabled", false);  // Enable button if available
+                    $("#error_message").hide();
+                } else {
+                    $("#book_button").prop("disabled", true);  // Disable button if not available
+                    $("#error_message").show().text("Selected dates are not available. Try adjusting your start date or rental period.");
+                }
+            },
+            error: function() {
+                alert("There was an error checking availability. Please try again.");
+            }
+        });
+    });
+    
+
+        let selectedIndex = -1;
+        let customerList = [];
+        let searchField = document.getElementById('customerSearch');
+        let customerDropdown = document.getElementById('customerDropdown');
+
+        searchField.addEventListener('input', function() {
+            const query = this.value;
+
+            // Reset dropdown and selectedIndex
+            selectedIndex = -1;
+            updateDropdownSelection(customerDropdown.getElementsByTagName('li'));
+            customerList = [];
+
+            if (query.length === 0) {
+                customerDropdown.style.display = 'none';  // Hide dropdown when input is empty
+                return;
+            }
+
+            fetch(`/search_customers/?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    customerDropdown.innerHTML = '';
+
+                    // Add "Create New Customer" option at the top
+                    const newCustomerOption = document.createElement('li');
+                    newCustomerOption.classList.add('dropdown-item', 'text-primary');
+                    newCustomerOption.innerHTML = '<i class="fas fa-user-plus"></i> Create New Customer';
+                    newCustomerOption.style.cursor = 'pointer';
+                    newCustomerOption.role = 'listbox';
+                    newCustomerOption.tabIndex = -1;
+                    newCustomerOption.addEventListener('click', () => {
+                        document.getElementById('new-customer-fields').style.display = 'block';
+                        customerDropdown.style.display = 'none';
+                        document.getElementById('custSearchDiv').style.display = 'none';
+                    });
+                    customerDropdown.appendChild(newCustomerOption);
+
+                    // Populate dropdown with customer results
+                    if (data.results.length > 0) {
+                        customerList = data.results;
+                        data.results.forEach((customer, index) => {
+                            const li = document.createElement('li');
+                            li.classList.add('dropdown-item');
+                            li.style.cursor = 'pointer';
+                            li.role = 'option';
+                            li.tabIndex = index;
+                            li.textContent = `${customer.first_name} ${customer.last_name}`;
+                            li.addEventListener('mousedown', () => {
+                                selectCustomer(customer);
+                            });
+                            customerDropdown.appendChild(li);
+                        });
+                    } else {
+                        const noResultsOption = document.createElement('li');
+                        noResultsOption.classList.add('dropdown-item', 'text-muted');
+                        noResultsOption.textContent = 'No results found';
+                        customerDropdown.appendChild(noResultsOption);
+                    }
+
+                    customerDropdown.style.display = 'block';
+                    searchField.setAttribute('aria-expanded', 'true');
+                });
+        });
+
+        // Function to populate form fields with selected customer data
+        function selectCustomer(customer) {
+            document.getElementById('customerSearch').value = `${customer.first_name} ${customer.last_name}`;
+            document.getElementById('company_name').value = customer.company_name || '';
+            document.getElementById('company_address').value = customer.company_address || '';
+            document.getElementById('phone_number').value = customer.phone_number;
+            document.getElementById('email').value = customer.email_address;
+            document.getElementById('custNotificationPreference').value = customer.cust_notification_preference;
+
+            document.getElementById('new-customer-fields').style.display = 'none';
+            customerDropdown.style.display = 'none';
+        }
+
+        // Handle keyboard navigation
+        searchField.addEventListener('keydown', function(event) {
+            const items = customerDropdown.getElementsByTagName('li');
+
+            if (event.key === 'ArrowDown') {
+                selectedIndex = (selectedIndex + 1) % items.length;
+                updateDropdownSelection(items);
+            } else if (event.key === 'ArrowUp') {
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                updateDropdownSelection(items);
+            } else if (event.key === 'Enter') {
+                if (selectedIndex === -1 && items.length > 0) {
+                    selectedIndex = 0;  // Default to the first item if none is selected
+                }
+                if (selectedIndex >= 0) {
+                    items[selectedIndex].click();
+                    event.preventDefault();  // Prevent form submission
+                }
+            }
+        });
+
+        function updateDropdownSelection(items) {
+            for (let i = 0; i < items.length; i++) {
+                items[i].classList.remove('active');
+            }
+            if (items[selectedIndex]) {
+                items[selectedIndex].classList.add('active');
+            }
+        }
+
+        // Clear search input and reset fields
+        document.getElementById('clearSearch').addEventListener('click', () => {
+            searchField.value = '';
+            document.getElementById('company_name').value = '';
+            document.getElementById('company_address').value = '';
+            document.getElementById('phone_number').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('custNotificationPreference').value = '';
+            customerDropdown.style.display = 'none';  // Hide dropdown when cleared
+        });
+
+        // Function to auto-format a phone number input field while the user types
+        document.getElementById("phone_number").addEventListener("input", function (e) {
+            // Remove all non-numeric characters
+            let input = e.target.value.replace(/\D/g, '');
+            
+            // Format the number according to (000)-000-0000
+            if (input.length > 0) input = '(' + input;
+            if (input.length > 4) input = input.slice(0, 4) + ') ' + input.slice(4);
+            if (input.length > 9) input = input.slice(0, 9) + '-' + input.slice(9);
+            if (input.length > 14) input = input.slice(0, 14);  // Limit input length
+        
+            e.target.value = input;
+        });
+    });
+</script>
+{% endblock %}

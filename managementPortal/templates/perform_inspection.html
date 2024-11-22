@@ -2,7 +2,8 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">Perform Inspection</h1>
+    <h1 class="mt-5">Perform Inspection:</h1>
+    <h3>{{order.equipment.name}} ({{order.equipment.equipment_type.name}}), returned by {{order.customer.first_name}} {{order.customer.last_name}}</h3>
     <form method="post" enctype="multipart/form-data">
         <br>
         {% csrf_token %}
