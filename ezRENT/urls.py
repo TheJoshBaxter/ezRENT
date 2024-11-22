@@ -14,11 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
+# from django.contrib import admin
+from managementPortal.admin import custom_admin_site # use the custom Admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', custom_admin_site.urls),
     path('customerPortal/', include('customerPortal.urls')),
     path('managementPortal/', include('managementPortal.urls')),
     path('', include('customerPortal.urls')),  # Default route redirects to customers
