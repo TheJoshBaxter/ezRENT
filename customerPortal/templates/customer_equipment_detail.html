@@ -22,7 +22,7 @@
             </ul>
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
-            <form method="post" action="{% url 'customer_equipment_detail' equipmentType.id %}">
+            <form method="post" action="{% url 'equipment_detail' equipmentType.id %}">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="start_date">Rental Start Date</label>
