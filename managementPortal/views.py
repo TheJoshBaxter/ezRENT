@@ -332,7 +332,7 @@ def extend_rental(request, order_id):
                 new_end_date = rental_order.rental_end_date,
                 timestamp = date.today(),
                 rental_order_id = order_id,
-                extension_cost = extensionCost
+                cost = extensionCost
             )
 
             # then mark the order as not fully paid
