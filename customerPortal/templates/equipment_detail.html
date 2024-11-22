@@ -161,13 +161,6 @@
     }
 </style>
 
- <!-- jQuery UI Datepicker CSS -->
- <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
- <!-- jQuery -->
- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
- <!-- jQuery UI Datepicker JS -->
- <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-
 <script type="text/javascript">
 
     $(document).ready(function() {
@@ -179,14 +172,15 @@
         tryThis = new Date(earliestDate).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
         console.log(tryThis)
 
-
-        $("#start_date").datepicker({
-            dateFormat: "yy-mm-dd",
-            minDate: tryThis,
-            beforeShowDay: function(date) {
-                const day = date.getDay();
-                return [(day != 0 && day != 6), ""];  // Disable Sundays (0) and Saturdays (6)
-            }
+        flatpickr("#start_date", {
+            dateFormat: "Y-m-d", // Equivalent to "yy-mm-dd"
+            minDate: tryThis, // Set the minimum date (tryThis should be in a valid date format)
+            disable: [
+                function(date) {
+                    // Disable weekends
+                    return (date.getDay() === 0 || date.getDay() === 6); // 0 = Sunday, 6 = Saturday
+                }
+            ]
         });
             
         // Event listeners to check availability

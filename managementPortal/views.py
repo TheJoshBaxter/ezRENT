@@ -15,6 +15,7 @@ from django.conf import settings
 from customerPortal.views import calculate_total_cost
 from customerPortal.emailClient import send_customer_email
 from customerPortal.twilioClient import send_customer_text
+from decimal import Decimal
 
 # Create your views here.
 def register(request):
@@ -80,8 +81,8 @@ def summary_dash(request):
     ).aggregate(Sum('cost'))['cost__sum'] or 0.00
 
     # Total Revenue
-    monthlyRev = totalMonthOrderRevenue + totalMonthExtensionRevenue
-    annualRev = totalYearOrderRevenue + totalYearExtensionRevenue
+    monthlyRev = Decimal(totalMonthOrderRevenue) + Decimal(totalMonthExtensionRevenue)
+    annualRev = Decimal(totalYearOrderRevenue) + Decimal(totalYearExtensionRevenue)
 
     # Percentage AR Received:
     #something here
@@ -183,12 +184,18 @@ def approve_rental(request, order_id):
             phone = order.customer.phone_number
             messageBody = f"Hello, {order.customer.first_name} 👋, your rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} has been approved! For next steps, please visit {settings.BASE_SITE_URL}/confirmation/{order.id}"
             # send_customer_text(phone, messageBody)
+
+            # for now, send an email anyway
+            receiver = order.customer.email
+            subject = "Rental Order Approval Notification"
+            body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            send_customer_email(receiver, subject, body)
         else:
             # send an email alert
             receiver = order.customer.email
             subject = "Rental Order Approval Notification"
             body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
-            # send_customer_email(receiver, subject, body)
+            send_customer_email(receiver, subject, body)
 
         # Redirect to a confirmation page or the updated rental order page
         return redirect('employee_dashboard')
