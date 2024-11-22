@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
+    {% comment %} <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
     <p>&nbsp If you have any questions or concerns, please call <a href="tel:(801)-123-1234" class="">(801)-123-1234</a>.</p>
-    <hr>
+    <hr> {% endcomment %}
     <h1 class="mt-5">Almost done...</h1>
     <hr>
 
@@ -34,13 +34,19 @@
         <li><strong>Location for Equipment Dropoff:</strong> {{ order.location }}</li>
     </ul>
 
+    <br>
+
+    <h4 class="text-success"><i class="fas fa-check-circle text-success"></i> A link to this confirmation page has been sent to the customer.</h4>
+
     <!-- Sign Agreement Modal -->
     <div class="modal fade" id="signAgreementModal" tabindex="-1" aria-labelledby="signAgreementModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="signAgreementModalLabel">Sign Rental Agreement</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
                 <div class="modal-body">
                     <!-- Custom code for agreement signing goes here -->

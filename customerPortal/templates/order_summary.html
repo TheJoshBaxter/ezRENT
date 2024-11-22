@@ -2,9 +2,9 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
+    {% comment %} <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
     <p>&nbsp If you have any questions or concerns, please call <a href="tel:(801)-123-1234" class="">(801)-123-1234</a>.</p>
-    <hr>
+    <hr> {% endcomment %}
     <h1 class="mt-5">Order Summary</h1>
     <p><strong>Customer:</strong> {{ order_data.customer_fName }} {{ order_data.customer_lName }}</p>
     <p><strong>Phone Number:</strong> {{ order_data.phone_number }}</p>
