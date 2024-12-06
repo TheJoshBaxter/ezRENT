@@ -12,7 +12,13 @@
     <p><strong>Rental End Date:</strong> {{ order_data.rental_end_date }}</p>
     <p><strong>Rental Period</strong> {{ order_data.rental_period }} days</p>
     <p><strong>Location for Equipment Dropoff:</strong> {{ order_data.location }}</p>
-    <p><strong>Total Cost:</strong> ${{ order_data.total_cost }}</p>
+    <strong>Estimated Total Cost:</strong> ${{ grandTotal }}
+    <ul class="cost-breakdown">
+        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost }}</span></li>
+        <li><span>Delivery Cost: </span><span> ${{delivery_fee}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
+    </ul>
+
+    <br>
     <form method="post">
         {% csrf_token %}
         <button onclick="window.history.back()"type="button" class="btn btn-danger">Edit Info</button>
@@ -21,4 +27,24 @@
         {% endif %}
     </form>
 </div>
+{% comment %} <style>
+    .cost-breakdown {
+      list-style-type: none;
+      padding: 0;
+    }
+    .cost-breakdown li {
+      padding: 5px 0;
+      display: inline-block;  /* Ensures that the description and value are on the same line */
+      width: 100%; /* Optional: Ensures full width for alignment */
+    }
+    .cost-breakdown .cost-item {
+      display: inline-block;  /* Make the description and cost value appear inline */
+      margin-right: 10px; /* Optional: Adds space between the description and value */
+    }
+    .total-cost {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+</style> {% endcomment %}
 {% endblock %}

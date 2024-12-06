@@ -17,11 +17,9 @@
             <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
             <strong>Rental Rates:</strong>
             <ul>
-                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate }}</li>
-                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate }}</li>
-                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate }} 
-                    <br>(one week free, plus one way delivery fee)
-                </li>
+                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate }} + <strong>two</strong>-way delivery fee</li>
+                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate }} + <strong>two</strong>-way delivery fee</li>
+                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate }} (1 week free) + <strong>one</strong>-way delivery fee</li>
             </ul>
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
@@ -167,16 +165,13 @@
 
     $(document).ready(function() {
 
-        // Initialize jQuery UI Datepicker
-        const earliestDate = new Date("{{ aggregateAvailabilityContext.aggregateEarliestDate|date:'Y-m-d' }}").toISOString().split('T')[0];  // Only grab the Y-m-d portion (not timestamp), then toISOString converts to 'YYYY-MM-DD' format;
-        console.log("EARLIESET DATE")
-        console.log(earliestDate)
-        tryThis = new Date(earliestDate).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
-        console.log(tryThis)
+        // Initialize flatpickr UI Datepicker
+        let earliestDate = new Date("{{ aggregateAvailabilityContext.aggregateEarliestDate|date:'Y-m-d' }}").toISOString().split('T')[0];  // Only grab the Y-m-d portion (not timestamp)
+        earliestDate = new Date(earliestDate).toISOString().split('T')[0];  // Convert to 'YYYY-MM-DD' format
 
         flatpickr("#start_date", {
             dateFormat: "Y-m-d", // Equivalent to "yy-mm-dd"
-            minDate: tryThis, // Set the minimum date (tryThis should be in a valid date format)
+            minDate: earliestDate, // Set the minimum date
             disable: [
                 function(date) {
                     // Disable weekends
@@ -197,66 +192,66 @@
                 return;
             }
 
-        // Set rental end date by creating a new date from startDate, setting its day value forward by rentalPeriod, resulting in requestedEndDate.
-        const requestedEndDate = new Date(new Date(startDate).setDate(new Date(startDate).getDate() + rentalPeriod));
+            // Set rental end date by creating a new date from startDate, setting its day value forward by rentalPeriod, resulting in requestedEndDate.
+            const requestedEndDate = new Date(new Date(startDate).setDate(new Date(startDate).getDate() + rentalPeriod));
 
-        // AJAX request to get unavailable dates for equipment of this type
-        $.ajax({
-            url: `{% url 'get_unavailable_dates' equipmentType.id %}`,
-            method: "GET",
-            success: function(response) {
-                let isAvailable = false; // Flag to track availability
-                console.log("Checking each equipment of type:")
-                console.log({{equipmentType.id}})
+            // AJAX request to get unavailable dates for equipment of this type
+            $.ajax({
+                url: `{% url 'get_unavailable_dates' equipmentType.id %}`,
+                method: "GET",
+                success: function(response) {
+                    let isAvailable = false; // Flag to track availability
+                    console.log("Checking each equipment of type:")
+                    console.log({{equipmentType.id}})
 
-                // Iterate through each equipment item returned in the response
-                for (const equipment of response.equipment) {
-                    const equipmentId = equipment.id; // Get the current equipment item's ID
-                    const unavailableDates = response.unavailable_dates_by_item[equipmentId] || []; // Get unavailable dates for this equipment item
-                    
-                    let available = true; // Flag for individual equipment availability
+                    // Iterate through each equipment item returned in the response
+                    for (const equipment of response.equipment) {
+                        const equipmentId = equipment.id; // Get the current equipment item's ID
+                        const unavailableDates = response.unavailable_dates_by_item[equipmentId] || []; // Get unavailable dates for this equipment item
+                        
+                        let available = true; // Flag for individual equipment availability
 
-                    console.log("Checking rental equipment id:")
-                    console.log(equipmentId)
-                    console.log("Unavailable dates:")
-                    console.log(unavailableDates)
+                        console.log("Checking rental equipment id:")
+                        console.log(equipmentId)
+                        console.log("Unavailable dates:")
+                        console.log(unavailableDates)
 
-                    // Check availability for each date in the requested range
-                    for (let d = new Date(startDate); d <= requestedEndDate; d.setDate(d.getDate() + 1)) {
-                        const dateStr = d.toISOString().split('T')[0]; // Format dateStr
-                        if (unavailableDates.includes(dateStr)) { // If dateStr is in unavailable dates,
-                            available = false; // Set available to false
-                            console.log(equipmentId + " is not available because it is already rented out on " + dateStr)
-                            break; // Break if one of the dates is not available
+                        // Check availability for each date in the requested range
+                        for (let d = new Date(startDate); d <= requestedEndDate; d.setDate(d.getDate() + 1)) {
+                            const dateStr = d.toISOString().split('T')[0]; // Format dateStr
+                            if (unavailableDates.includes(dateStr)) { // If dateStr is in unavailable dates,
+                                available = false; // Set available to false
+                                console.log(equipmentId + " is not available because it is already rented out on " + dateStr)
+                                break; // Break if one of the dates is not available
+                            }
+                        }
+
+                        if (available) { // If all requested dates for this item are available
+                            isAvailable = true; // Set isAvailable to true
+                            console.log(equipmentId + " is available!")
+
+                            // Set the hidden field's value to the equipment ID so that id can be passed to view to save order to DB
+                            document.getElementById("equipmentIdField").value = equipmentId;
+
+
+                            break; // Exit the loop as we found an available item
                         }
                     }
 
-                    if (available) { // If all requested dates for this item are available
-                        isAvailable = true; // Set isAvailable to true
-                        console.log(equipmentId + " is available!")
-
-                        // Set the hidden field's value to the equipment ID so that id can be passed to view to save order to DB
-                        document.getElementById("equipmentIdField").value = equipmentId;
-
-
-                        break; // Exit the loop as we found an available item
+                    // Display results based on availability
+                    if (isAvailable) {
+                        $("#book_button").prop("disabled", false);  // Enable button if available
+                        $("#error_message").hide();
+                    } else {
+                        $("#book_button").prop("disabled", true);  // Disable button if not available
+                        $("#error_message").show().text("Selected dates are not available. Try adjusting your start date or rental period.");
                     }
+                },
+                error: function() {
+                    alert("There was an error checking availability. Please try again.");
                 }
-
-                // Display results based on availability
-                if (isAvailable) {
-                    $("#book_button").prop("disabled", false);  // Enable button if available
-                    $("#error_message").hide();
-                } else {
-                    $("#book_button").prop("disabled", true);  // Disable button if not available
-                    $("#error_message").show().text("Selected dates are not available. Try adjusting your start date or rental period.");
-                }
-            },
-            error: function() {
-                alert("There was an error checking availability. Please try again.");
-            }
+            });
         });
-    });
     
 
         let selectedIndex = -1;

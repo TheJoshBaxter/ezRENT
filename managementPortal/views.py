@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType
+from .models import RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType, TransportOrder
 from datetime import date, timedelta, datetime
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -122,6 +122,10 @@ def employee_dashboard(request):
         inspection = Inspection.objects.filter(rental_order_id=order.id)
         order.inspection = inspection
 
+        # get delivery data associated with an order
+        deliveryData = TransportOrder.objects.filter(rental_order=order.id)
+        order.delivery = deliveryData
+
         # get all extensions associated with each order
         extensions = get_extensions(order.id)
         order.extensions = extensions
@@ -220,6 +224,11 @@ def save_notes(request, order_id):
         orderToChange.location = request.POST['rentalLocation']
         orderToChange.notes = request.POST['notes']
         orderToChange.save()  # Save changes to the RentalOrder model
+
+        # Update TransportOrder field
+        transportOrder = TransportOrder.objects.get(rental_order=orderToChange.id)
+        transportOrder.cost = request.POST['deliveryFee']
+        transportOrder.save()  # Save changes to the TransportOrder model
 
         return redirect('employee_dashboard')
     

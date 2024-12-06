@@ -150,6 +150,8 @@ G_APP_PASS = os.environ.get('G_APP_PASS')
 
 BASE_SITE_URL = os.environ.get('BASE_SITE_URL')
 
+G_MAPS_API = os.environ.get('G_MAPS_API')
+
 # enhance security (BUT THIS BREAKS MY LOGIN FUNCTIONALITY)
 # CSRF_COOKIE_SECURE = True
 # SESSION_COOKIE_SECURE = True

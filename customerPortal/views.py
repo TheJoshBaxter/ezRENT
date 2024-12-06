@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
 from .models import Customer
-from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions
+from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from customerPortal.square_client import create_payment
 from customerPortal.twilioClient import send_text_alert
 from customerPortal.emailClient import send_customer_email
+from customerPortal.googleMapsClient import calculate_delivery_fee
 
 # Create your views here.
 
@@ -158,19 +159,47 @@ def equipment_detail(request, equipmentType_id, template_name):
             total_cost = calculate_total_cost(equipmentType, rental_period)
             print("data grab completed!!!!!")
 
-            # Check if the user is an employee (authenticated)
-            if request.user.is_authenticated:  # Employee - create new customer
-                print("this user is authenticated...we should trust them to create the new customer if needed due to our awesome front end validations")
-                customer = Customer.objects.create(
-                    first_name=first_name,
-                    last_name=last_name,
-                    company_name=company_name,
-                    phone_number=phone_number,
-                    email=email,
-                    cust_notification_preference=custNotificationPreference
-                )
+            # Prevent Duplicates
+            print("ALWAYS should double check user to make sure they're not duplicating an existing customer record")
+            exists = Customer.objects.filter(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name).exists()
 
-                order_data = { # create an order for the newly created customer
+            if exists: # create an order with the matching customer data
+                print("CUSTOMER CHECK: customer already exists!")
+
+                customer = Customer.objects.get(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name)
+
+                order_data = {
+                    'customer': customer.id,
+                    'customer_fName': customer.first_name,
+                    'customer_lName': customer.last_name,
+                    'company': customer.company_name,
+                    'phone_number': phone_number,
+                    'email': email,
+                    'equipmentType': equipmentType.name + " " + equipmentType.category,
+                    'equipment': equipment_id,
+                    'rental_start_date': start_date,
+                    'rental_period': rental_period,
+                    'rental_end_date': end_date,
+                    'location': location,
+                    'total_cost': float(total_cost),
+                    'new_cust': False,
+                    'cust_notification_preference': customer.cust_notification_preference
+                }
+
+            else:
+                print("CUSTOMER CHECK: customer doesn't exist yet!")
+
+                try:
+                    customer = Customer.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        company_name=company_name,
+                        phone_number=phone_number,
+                        email=email,
+                        cust_notification_preference=custNotificationPreference
+                    )
+
+                    order_data = { # then create a new order for the new customer
                         'customer': customer.id,
                         'customer_fName': customer.first_name,
                         'customer_lName': customer.last_name,
@@ -187,23 +216,10 @@ def equipment_detail(request, equipmentType_id, template_name):
                         'new_cust': True,
                         'cust_notification_preference': custNotificationPreference
                     }
-
-
-            else: # Non-employee - see if customer already exists in the DB
-                print("user is not authenticated...they're a customer theoretically...we should double check them to make sure they're not duplicating an existing customer record")
-                exists = Customer.objects.filter(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name).exists()
-
-                if exists: # create an order with the matching customer data
-                    print("CUSTOMER CHECK: customer already exists!")
-
-                    customer = Customer.objects.get(phone_number=phone_number, first_name__icontains=first_name, last_name__icontains=last_name)
-
+                except: 
                     order_data = {
-                        'customer': customer.id,
-                        'customer_fName': customer.first_name,
-                        'customer_lName': customer.last_name,
-                        'company': customer.company_name,
-                        'phone_number': phone_number,
+                        'customer': "ERROR",
+                        'phone_number': "ERROR: something went wrong. Please EDIT INFO to make sure information is correct.",
                         'email': email,
                         'equipmentType': equipmentType.name + " " + equipmentType.category,
                         'equipment': equipment_id,
@@ -212,53 +228,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                         'rental_end_date': end_date,
                         'location': location,
                         'total_cost': float(total_cost),
-                        'new_cust': False,
-                        'cust_notification_preference': customer.cust_notification_preference
                     }
-
-                else:
-                    print("CUSTOMER CHECK: customer doesn't exist yet!")
-
-                    try:
-                        customer = Customer.objects.create(
-                            first_name=first_name,
-                            last_name=last_name,
-                            company_name=company_name,
-                            phone_number=phone_number,
-                            email=email,
-                            cust_notification_preference=custNotificationPreference
-                        )
-
-                        order_data = { # then create a new order for the new customer
-                            'customer': customer.id,
-                            'customer_fName': customer.first_name,
-                            'customer_lName': customer.last_name,
-                            'company': customer.company_name,
-                            'phone_number': phone_number,
-                            'email': email,
-                            'equipmentType': equipmentType.name + " " + equipmentType.category,
-                            'equipment': equipment_id,
-                            'rental_start_date': start_date,
-                            'rental_period': rental_period,
-                            'rental_end_date': end_date,
-                            'location': location,
-                            'total_cost': float(total_cost),
-                            'new_cust': True,
-                            'cust_notification_preference': custNotificationPreference
-                        }
-                    except: 
-                        order_data = {
-                            'customer': "ERROR",
-                            'phone_number': "ERROR: something went wrong. Please EDIT INFO to make sure information is correct.",
-                            'email': email,
-                            'equipmentType': equipmentType.name + " " + equipmentType.category,
-                            'equipment': equipment_id,
-                            'rental_start_date': start_date,
-                            'rental_period': rental_period,
-                            'rental_end_date': end_date,
-                            'location': location,
-                            'total_cost': float(total_cost),
-                        }
 
         else:  # Existing customer!
             print("You are using your fancy new customer dropdown functionality!")
@@ -412,9 +382,16 @@ def order_summary(request, template_name):
     order_data = request.session.get('order_data', None)
     context['order_data'] = order_data
 
-    if request.method == 'POST': # this if is triggered when the user hits confirm and pay on the order summary page
+    # Calculate transport fee and add to context:
+    delivery_fee = calculate_delivery_fee(order_data['location'])
+    context['delivery_fee'] = delivery_fee
 
-        # # Save the new order to the DB
+    # Calculate total cost by adding transport fee and rental cost
+    context['grandTotal'] = float(order_data['total_cost']) + float(delivery_fee)
+
+    if request.method == 'POST': # this is triggered when the user hits confirm and pay on the order summary page
+
+        # Save the new order to the DB
         new_order = RentalOrder.objects.create(
             customer_id=order_data['customer'],
             equipment_id=order_data['equipment'],
@@ -423,14 +400,23 @@ def order_summary(request, template_name):
             location=order_data['location'],
             total_cost=order_data['total_cost'],
         )
+        print("Rental Order created in ezRENT successfully")
 
-        print("Order created in ezRENT successfully")
+        new_transport_order = TransportOrder.objects.create(
+            rental_order=new_order,
+            cost=delivery_fee,
+            paid=False,
+        )
+
+        print("Transport Order created in ezRENT successfully")
 
         # send text notification to manager(s)
         # send_text_alert()
 
-        # send confirmation of order placement to customer
-        if new_order.customer.customerPreference == 'text':
+        # Send email or text notification to customer depending on preference
+        customerPreference = new_order.customer.cust_notification_preference
+        
+        if customerPreference == 'text':
             # send an alert text
             phone = new_order.customer.phone_number
             messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
@@ -461,6 +447,7 @@ def order_summary(request, template_name):
 def confirmation(request, orderID, template_name):
 
     newOrder = RentalOrder.objects.get(id=orderID)
+    transportOrder = TransportOrder.objects.get(rental_order=orderID)
     orderExtensions = newOrder.rentalextensions_set.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
 
     # If the request method is POST, this means that the user has submitted their signed rental contract
@@ -468,12 +455,15 @@ def confirmation(request, orderID, template_name):
         newOrder.contract_signed = True # mark contract signed as true in DB
         newOrder.save()
 
+    # Calculate total cost by adding rental order cost and transport cost
+    grandTotalCost = newOrder.total_cost + transportOrder.cost
+
     context = {}
     context['today'] = date.today()
     context['order'] = newOrder
     context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
     context['paid'] = newOrder.paid # if order has been paid for, this will contain true
-    context['total_cost'] = newOrder.total_cost
+    context['total_cost'] = grandTotalCost
     context['order_id'] = orderID
     context['extensions'] = orderExtensions
     context['squareAppId'] = settings.SQUARE_APP_ID
@@ -495,8 +485,10 @@ def update_payment_status(request):
             extension.save()
         else:
             order = RentalOrder.objects.get(id=orderId)
+            transportOrder = TransportOrder.objects.get(rental_order=orderId)
             cost_in_cents = int(order.total_cost * 100)
             create_payment(token, cost_in_cents)
             order.paid = True
+            transportOrder.paid = True
             order.save()
         return redirect('confirmation', orderID=orderId)

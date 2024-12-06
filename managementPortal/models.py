@@ -77,3 +77,17 @@ class ManagementAlertNumber(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+    
+class TransportRate(models.Model):
+    hourly_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def __str__(self):
+        return "Hourly Rate"
+    
+class TransportOrder(models.Model):
+    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
+    cost = models.DecimalField(max_digits=10, decimal_places=2)
+    paid = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Transport Request for {self.rental_order}"

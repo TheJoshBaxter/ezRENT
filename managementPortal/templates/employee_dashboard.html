@@ -106,6 +106,12 @@
                                         <strong><label for="rentalLocation">Equipment Location: </label></strong>
                                         <input class="form-control" id="rentalLocation" name="rentalLocation" value="{{ order.location }}"></input> 
                                     </div>
+                                    {% for delivery in order.delivery%}
+                                    <div class="mb-3">
+                                        <strong><label for="rentalLocation">Delivery Fee: </label></strong>
+                                        <input class="form-control" id="deliveryFee" name="deliveryFee" value="{{ delivery.cost }}"></input> 
+                                    </div>
+                                    {% endfor %}
                                     <div class="mb-3">
                                         <strong><label for="startDate">Rental Start Date:</label></strong>
                                         <input type="date" id="startDate" name="startDate" value="{{ order.rental_start_date|date:"Y-m-d"}}"></input>

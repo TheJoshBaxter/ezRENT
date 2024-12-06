@@ -354,8 +354,8 @@
 
 <script type="module">
     const orderId = {{ order_id }};
-    const appId = '{{ squareAppId|escapejs }}'; //'sandbox-sq0idb-RT3u-HhCpNdbMiGg5aXuVg';
-    const locationId = '{{ squareLocationId|escapejs }}'; //'TC4Z3ZEBKRXRH';
+    const appId = '{{ squareAppId|escapejs }}';
+    const locationId = '{{ squareLocationId|escapejs }}';
     
     async function initializePrimaryPayment(extensionId) {
         const payments = Square.payments(appId, locationId);

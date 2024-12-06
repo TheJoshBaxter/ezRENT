@@ -15,7 +15,13 @@
     <p><strong>Rental End Date:</strong> {{ order_data.rental_end_date }}</p>
     <p><strong>Rental Period</strong> {{ order_data.rental_period }} days</p>
     <p><strong>Location for Equipment Dropoff:</strong> {{ order_data.location }}</p>
-    <p><strong>Total Cost:</strong> ${{ order_data.total_cost }}</p>
+    <strong>Estimated Total Cost:</strong> ${{ grandTotal }}
+    <ul class="cost-breakdown">
+        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost }}</span></li>
+        <li><span>Delivery Cost: </span><span> ${{delivery_fee}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
+    </ul>
+
+    <br>
     <form method="post">
         {% csrf_token %}
         <button onclick="window.history.back()"type="button" class="btn btn-danger">Edit Info</button>
