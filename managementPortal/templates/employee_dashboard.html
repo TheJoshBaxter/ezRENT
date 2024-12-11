@@ -183,7 +183,7 @@
                                         ({{order.numExtensions}} extensions so far)
                                     </div>
                                     <div class="mb-3">
-                                        {% if order.extensions %}
+                                        {% if order.extensionsTown %}
                                         <table class="table">
                                             <thead>
                                                 <tr>
@@ -195,7 +195,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {% for extension in order.extensions %}
+                                                {% for extension in order.extensionsTown %}
                                                 <tr>
                                                     <td>{{extension.original_end_date}}</td>
                                                     <td>{{extension.days_extended}}</td>

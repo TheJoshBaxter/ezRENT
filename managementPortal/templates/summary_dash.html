@@ -6,7 +6,7 @@
 
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+        <h1 class="h3 mb-0 text-gray-800">Payments Dashboard</h1>
         {% comment %} <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
                 class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> {% endcomment %}
     </div>
@@ -21,7 +21,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Earnings (Monthly)</div>
+                                Paid (Last 30 days)</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">${{monthlyRev|intcomma}}</div>
                         </div>
                         <div class="col-auto">
@@ -39,7 +39,7 @@
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Earnings (Annual)</div>
+                                Paid (Annual)</div>
                             <div class="h5 mb-0 font-weight-bold text-gray-800">${{anualRev|intcomma}}</div>
                         </div>
                         <div class="col-auto">
@@ -85,9 +85,10 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                Pending Rental Requests</div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{numUnapprovedOrders}}</div>
+                            <a href="#invoices">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Overdue Payments</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">${{totalOverduePayments|intcomma}}</div>
+                            </a>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-comments fa-2x text-gray-300"></i>
@@ -176,159 +177,234 @@
         </div>
     </div>
 
-    {% comment %} <!-- Content Row -->
-    <div class="row">
-
-        <!-- Content Column -->
-        <div class="col-lg-6 mb-4">
-
-            <!-- Project Card Example -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Projects</h6>
-                </div>
-                <div class="card-body">
-                    <h4 class="small font-weight-bold">Server Migration <span
-                            class="float-right">20%</span></h4>
-                    <div class="progress mb-4">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: 20%"
-                            aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <h4 class="small font-weight-bold">Sales Tracking <span
-                            class="float-right">40%</span></h4>
-                    <div class="progress mb-4">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 40%"
-                            aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <h4 class="small font-weight-bold">Customer Database <span
-                            class="float-right">60%</span></h4>
-                    <div class="progress mb-4">
-                        <div class="progress-bar" role="progressbar" style="width: 60%"
-                            aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <h4 class="small font-weight-bold">Payout Details <span
-                            class="float-right">80%</span></h4>
-                    <div class="progress mb-4">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 80%"
-                            aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <h4 class="small font-weight-bold">Account Setup <span
-                            class="float-right">Complete!</span></h4>
-                    <div class="progress">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%"
-                            aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
+    <div class="card shadow mb-3" id="invoiceTown">
+        <!-- Card Header -->
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="invoices">
+            <h6 class="m-0 font-weight-bold text-primary">Invoices<h6>
+            <div class="btn-group" role="group" aria-label="Filter Invoices">
+                <a href="?filter=all#invoices" class="btn btn-outline-primary {% if filter_option == 'all' %}active{% endif %}">All</a>
+                <a href="?filter=paid#invoices" class="btn btn-outline-success {% if filter_option == 'paid' %}active{% endif %}">Paid</a>
+                <a href="?filter=outstanding#invoices" class="btn btn-outline-danger {% if filter_option == 'outstanding' %}active{% endif %}">Outstanding</a>
             </div>
-
-            <!-- Color System -->
-            <div class="row">
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-primary text-white shadow">
-                        <div class="card-body">
-                            Primary
-                            <div class="text-white-50 small">#4e73df</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-success text-white shadow">
-                        <div class="card-body">
-                            Success
-                            <div class="text-white-50 small">#1cc88a</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-info text-white shadow">
-                        <div class="card-body">
-                            Info
-                            <div class="text-white-50 small">#36b9cc</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-warning text-white shadow">
-                        <div class="card-body">
-                            Warning
-                            <div class="text-white-50 small">#f6c23e</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-danger text-white shadow">
-                        <div class="card-body">
-                            Danger
-                            <div class="text-white-50 small">#e74a3b</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-secondary text-white shadow">
-                        <div class="card-body">
-                            Secondary
-                            <div class="text-white-50 small">#858796</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-light text-black shadow">
-                        <div class="card-body">
-                            Light
-                            <div class="text-black-50 small">#f8f9fc</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 mb-4">
-                    <div class="card bg-dark text-white shadow">
-                        <div class="card-body">
-                            Dark
-                            <div class="text-white-50 small">#5a5c69</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
 
-        <div class="col-lg-6 mb-4">
+        <div class="card-body">
+        <!-- Content Row -->
+        <div class="card-body row">
+            {% if orders %}
+            {% for order in orders %}
+                <div class="col-md-3 mb-4">
+                    <div class="card shadow-sm h-100 rental-card {% if order.is_fully_paid %}paid{% else %}outstanding{% endif %}" data-bs-toggle="modal" data-bs-target="#viewDetailsModal-{{ order.id }}" style="cursor: pointer;">
+                        <div class="card-body" style="display: flex; flex-direction: column;"> <!-- these style additions make the cards more uniform, regardless of length of data displayed in it-->
+                            
+                            <!-- Rental Payment Status w/ Color Coding -->
+                            <div class="{% if order.is_fully_paid %}text-success{% else %}text-danger{% endif %}" style="font-size: 24px; font-weight: bold; text-decoration: underline;">
+                                <i class="{% if order.is_fully_paid %}fas fa-money-check-alt{% else %}fa fas fa-triangle-exclamation{% endif %}" style="font-size: 20px;"></i>
+                                {% if order.is_fully_paid %}Paid{% else %}Outstanding{% endif %}
+                            </div>
+                            
+                            <!-- Order ID -->
+                            <div class="card-text" style="font-size: 21px;; font-weight: bold;">
+                                Invoice #{{ order.id }}
+                            </div>
 
-            <!-- Illustrations -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Illustrations</h6>
-                </div>
-                <div class="card-body">
-                    <div class="text-center">
-                        <img class="img-fluid px-3 px-sm-4 mt-3 mb-4" style="width: 25rem;"
-                            src="img/undraw_posting_photo.svg" alt="...">
+                            <!-- Customer Name -->
+                            <div class="card-text" style="">
+                                <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
+                            </div>
+
+                            <!-- Customer Phone # -->
+                            <div class="card-text" style="font-size: 14px;">
+                                <strong>Phone:</strong> {{ order.customer.phone_number }}
+                            </div>
+
+                            <!-- Rental Period -->
+                            <div class="card-text" style="font-size: 14px;">
+                                <strong>Rental: </strong>{{order.equipment.name}}, {{ order.rental_start_date }}-{% if extension %}{{ extension.new_end_date }}{% else%}{{order.rental_end_date}}{% endif %}
+                            </div>
+
+                            <br>
+
+                            {% if not order.is_fully_paid%}
+                            <!-- Action Buttons -->
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-primary rental-card" onclick="sendOverduePaymentReminder(event, {{ order.id }})">Send Reminder</button>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <p>Add some quality, svg illustrations to your project courtesy of <a
-                            target="_blank" rel="nofollow" href="https://undraw.co/">unDraw</a>, a
-                        constantly updated collection of beautiful svg images that you can use
-                        completely free and without attribution!</p>
-                    <a target="_blank" rel="nofollow" href="https://undraw.co/">Browse Illustrations on
-                        unDraw &rarr;</a>
                 </div>
-            </div>
 
-            <!-- Approach -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Development Approach</h6>
-                </div>
-                <div class="card-body">
-                    <p>SB Admin 2 makes extensive use of Bootstrap 4 utility classes in order to reduce
-                        CSS bloat and poor page performance. Custom CSS classes are used to create
-                        custom components and custom utility classes.</p>
-                    <p class="mb-0">Before working with this theme, you should become familiar with the
-                        Bootstrap framework, especially the utility classes.</p>
-                </div>
-            </div> {% endcomment %}
+                <!-- Modal for Viewing Payment Details -->
+                <div class="modal fade" id="viewDetailsModal-{{ order.id }}" tabindex="-1" aria-labelledby="viewDetailsModalLabel-{{ order.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="viewDetailsModalLabel-{{ order.id }}">Payment Details for Order #{{ order.id }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                                    <span class="btn-close" aria-label="Close" style="font-size: 1.5rem; line-height: 1; color: #495057; background-color: transparent; border: none; cursor: pointer;" role="button">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="post" action="">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <table class="table table-bordered table-hover mt-4">
+                                            <thead>
+                                                <tr>
+                                                    <th>Cost Type</th>
+                                                    <th>Rental Period</th>
+                                                    <th>Total Cost</th>
+                                                    <th>Payment Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Row for Initial Rental -->
+                                                <tr>
+                                                    <td>Initial Rental</td>
+                                                    <td>{{ order.rental_start_date }} - {{ order.rental_end_date }}</td>
+                                                    <td>${{ order.total_cost }}</td>
+                                                    <td>
+                                                        <span class="badge {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {% if order.paid %}
+                                                            Paid
+                                                            {% else %}
+                                                            Outstanding
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                        
+                                                <!-- Rows for Extensions -->
+                                                {% if order.extensions.exists %}
+                                                    {% for extension in order.extensions.all %}
+                                                    <tr>
+                                                        <td>Extension</td>
+                                                        <td>+{{ extension.days_extended }} days</td>
+                                                        <td>${{ extension.cost }}</td>
+                                                        <td>
+                                                            <span class="badge {% if extension.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                                {% if extension.paid %}
+                                                                Paid
+                                                                {% else %}
+                                                                Outstanding
+                                                                {% endif %}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                {% else %}
+                                                <tr>
+                                                    <td colspan="4" class="text-center">No extensions requested</td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
+                                    {% comment %} <div class="mb-3">
+                                        <strong><label for="notes">Other Notes:</label></strong>
+                                        <br>
+                                        <textarea class="form-control" id="notes" name="notes" rows="2" style="resize: none;">{{ order.notes }}</textarea>
+                                    </div> {% endcomment %}
+
+                                    <div class="mb-3">
+                                        <u><strong>Reminders Sent:</strong></u> 
+                                        <br>
+                                        (num reminders sent goes here)
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                                        {% comment %} <button class="btn btn-primary rental-card" onclick="sendOverduePaymentReminder(event,{{ order.id }})">Send Reminder</button> {% endcomment %}
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            {% endfor %}
+            {% else %}
+            <p>No rentals to show with this filter.</p>
+            {% endif %}
         </div>
     </div>
 
 </div>
 <!-- /.container-fluid -->
+
+<style>
+    /* Hover effect for highlighting the card */
+    .rental-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transform: scale(1.02);
+        transition: all 0.2s ease-in-out;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+</style>
+
+<script>
+    // Function to trigger the send_overdue_payment_reminder function in the view
+    function sendOverduePaymentReminder(event, orderId) {
+    
+        // Show a confirmation dialog
+        const userConfirmed = confirm("Are you sure you want to send an overdue payment reminder?");
+        if (userConfirmed) {
+            // Make an AJAX request to send the overdue payment reminder
+            fetch(`/managementPortal/send_overdue_payment_reminder/${orderId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}', // CSRF token for security
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Notify the user and take appropriate actions
+                    alert('An overdue payment reminder has been sent to the customer.');
+                    // Optionally reload the page or update the UI
+                    // location.reload();
+                } else {
+                    alert('Failed to send the reminder.');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending reminder:', error);
+                alert('An unexpected error occurred.');
+            });
+        } else {
+            // Optional: Handle the case where the user cancels the confirmation
+            alert("Reminder not sent.");
+        }
+
+        // Prevent the click event from propagating to the card
+        event.stopPropagation();
+    }   
+    
+    {% comment %} function filterInvoices(filterType) {
+        const allCards = document.querySelectorAll('.rental-card'); // Select all invoice cards
+    
+        allCards.forEach(card => {
+            const isPaid = card.classList.contains('paid'); // Check if the card represents a paid invoice
+    
+            if (filterType === 'all') {
+                card.style.display = ''; // Show all cards
+            } else if (filterType === 'paid' && isPaid) {
+                card.style.display = ''; // Show only paid invoices
+            } else if (filterType === 'outstanding' && !isPaid) {
+                card.style.display = ''; // Show only outstanding invoices
+            } else {
+                card.style.display = 'none'; // Hide the card
+            }
+        });
+    } {% endcomment %}
+    
+</script>
 {% endblock %}

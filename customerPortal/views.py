@@ -425,13 +425,13 @@ def order_summary(request, template_name):
             # for now, send an email anyway
             receiver = new_order.customer.email
             subject = "Rental Order Approval Notification"
-            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}. You can return to this link at any time. An approval notification will be sent shortly thereafter.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
             send_customer_email(receiver, subject, body)
         else:
             # send an email alert
             receiver = new_order.customer.email
             subject = "Rental Order Approval Notification"
-            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}. You can return to this link at any time. An approval notification will be sent shortly thereafter.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
             send_customer_email(receiver, subject, body)
     
         # Redirect to the confirmation view and pass the order ID
@@ -447,16 +447,25 @@ def order_summary(request, template_name):
 def confirmation(request, orderID, template_name):
 
     newOrder = RentalOrder.objects.get(id=orderID)
-    transportOrder = TransportOrder.objects.get(rental_order=orderID)
-    orderExtensions = newOrder.rentalextensions_set.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
 
     # If the request method is POST, this means that the user has submitted their signed rental contract
     if request.method == 'POST':
         newOrder.contract_signed = True # mark contract signed as true in DB
         newOrder.save()
 
-    # Calculate total cost by adding rental order cost and transport cost
-    grandTotalCost = newOrder.total_cost + transportOrder.cost
+    try:
+        # if there is a transport order, grab it
+        transportOrder = TransportOrder.objects.get(rental_order_id=orderID)
+
+        # Calculate total cost by adding rental order cost and transport cost
+        grandTotalCost = newOrder.total_cost + transportOrder.cost
+    except:
+        grandTotalCost = newOrder.total_cost
+
+    try:
+        orderExtensions = newOrder.rentalextensions_set.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
+    except:
+        orderExtensions = None
 
     context = {}
     context['today'] = date.today()

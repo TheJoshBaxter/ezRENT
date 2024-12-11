@@ -41,12 +41,17 @@ class RentalOrder(models.Model):
     @property
     def rental_term_agreement(self): # (number of days until renewal or return)
         return (self.rental_end_date - self.rental_start_date).days
+    
+    @property
+    def is_fully_paid(self):
+        # Check the rental order's paid status and any unpaid extensions
+        return self.paid and not self.extensions.filter(paid=False).exists()
 
     def __str__(self):
         return f"Order #{self.id} - {self.customer.first_name} {self.customer.last_name} - {self.equipment.name} - Ending on {self.rental_end_date}"
     
 class RentalExtensions(models.Model):
-    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
+    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE, related_name='extensions') # "related_name='extensions'" allows me to
     original_end_date = models.DateField()
     days_extended = models.IntegerField()
     new_end_date = models.DateField()
