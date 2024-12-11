@@ -76,9 +76,17 @@ class Inspection(models.Model):
         return f"Inspection for {self.rental_order.equipment.name} on {self.inspection_date}"
 
 class ManagementAlertNumber(models.Model):
+
+    ALERTS_PREFERENCE_CHOICES = [
+        ('text', 'Text'),
+        ('email', 'Email'),
+    ]
+
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=15, unique=True) # Enforce uniqueness (phone number is unique id)
+    email = models.EmailField(blank=True, null=True)
+    employee_notification_preference = models.CharField(max_length=10, choices=ALERTS_PREFERENCE_CHOICES, default='email')
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

@@ -413,6 +413,9 @@ def order_summary(request, template_name):
         # send text notification to manager(s)
         # send_text_alert()
 
+        # send email notification to managers
+        
+
         # Send email or text notification to customer depending on preference
         customerPreference = new_order.customer.cust_notification_preference
         
