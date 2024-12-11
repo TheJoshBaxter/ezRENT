@@ -1,4 +1,13 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load static %}
+
+{% comment %}
+<script>
+  // Define a global object to hold the chart data
+  var earningsChartLabels = {{ earningsChartLabels|safe }};
+  var earningsChartValues = {{ earningsChartValues|safe }};
+  var hello = "hello";
+</script>
+{% endcomment %}
 
 {% block content %}{% load humanize %}
 <!-- Begin Page Content -->
@@ -387,24 +396,6 @@
         // Prevent the click event from propagating to the card
         event.stopPropagation();
     }   
-    
-    {% comment %} function filterInvoices(filterType) {
-        const allCards = document.querySelectorAll('.rental-card'); // Select all invoice cards
-    
-        allCards.forEach(card => {
-            const isPaid = card.classList.contains('paid'); // Check if the card represents a paid invoice
-    
-            if (filterType === 'all') {
-                card.style.display = ''; // Show all cards
-            } else if (filterType === 'paid' && isPaid) {
-                card.style.display = ''; // Show only paid invoices
-            } else if (filterType === 'outstanding' && !isPaid) {
-                card.style.display = ''; // Show only outstanding invoices
-            } else {
-                card.style.display = 'none'; // Hide the card
-            }
-        });
-    } {% endcomment %}
     
 </script>
 {% endblock %}

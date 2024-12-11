@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block content %}{% load humanize %}
 <div class="container">
     {% comment %} <h1 class="mt-5">Thanks for choosing Jobsite Rents!</h1>
     <p>&nbsp If you have any questions or concerns, please call <a href="tel:(801)-123-1234" class="">(801)-123-1234</a>.</p>
@@ -15,10 +15,10 @@
     <p><strong>Rental End Date:</strong> {{ order_data.rental_end_date }}</p>
     <p><strong>Rental Period</strong> {{ order_data.rental_period }} days</p>
     <p><strong>Location for Equipment Dropoff:</strong> {{ order_data.location }}</p>
-    <strong>Estimated Total Cost:</strong> ${{ grandTotal }}
+    <strong>Estimated Total Cost:</strong> ${{ grandTotal|intcomma }}
     <ul class="cost-breakdown">
-        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost }}</span></li>
-        <li><span>Delivery Cost: </span><span> ${{delivery_fee}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
+        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost|intcomma }}</span></li>
+        <li><span>Delivery Cost: </span><span> ${{delivery_fee|intcomma}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
     </ul>
 
     <br>

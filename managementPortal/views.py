@@ -56,7 +56,7 @@ def logout_view(request):
 def summary_dash(request):
     today = date.today()
 
-    # Monthly Revenue
+    # Monthly Revenue Card
     monthlyOrders = RentalOrder.objects.filter(
         rental_start_date__year=today.year,
         rental_start_date__month=today.month,
@@ -69,7 +69,7 @@ def summary_dash(request):
         paid=True
     ).aggregate(Sum('cost'))['cost__sum'] or 0.00
 
-    # Yearly Revenue
+    # Yearly Revenue Card
     yearlyOrders = RentalOrder.objects.filter(
         rental_start_date__year=today.year,
         paid=True
@@ -81,20 +81,46 @@ def summary_dash(request):
         paid=True
     ).aggregate(Sum('cost'))['cost__sum'] or 0.00
 
-    # Calculate total monthly and yearly revenue by added order rev and extension rev
+    # Calculate total monthly and yearly revenue by adding order rev and extension rev
     monthlyRev = Decimal(totalMonthOrderRevenue) + Decimal(totalMonthExtensionRevenue)
     annualRev = Decimal(totalYearOrderRevenue) + Decimal(totalYearExtensionRevenue)
 
-    # Overdue Payments
+    # % Orders Paid Card
+
+    ###
+
+    # Overdue Payments Card
     overdueRentalPaymentsQS = RentalOrder.objects.filter(paid=False, rental_start_date__lte=today) # all orders that haven't been paid are considered overdue on the day the rental starts
     overdueExtensionPaymentsQS = RentalExtensions.objects.filter(paid=False, new_end_date__lte=today) # all extensions that haven't been paid are considered overdue on the new end date
-    print(overdueRentalPaymentsQS)
-    print(overdueExtensionPaymentsQS)
+    # (QS stands for Query Set)
 
     totalOverdueRentalPayments = overdueRentalPaymentsQS.aggregate(Sum('total_cost'))['total_cost__sum'] or 0.00
     totalOverdueExtensionPayments = overdueExtensionPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
 
     totalOverduePayments = totalOverdueRentalPayments + totalOverdueExtensionPayments
+
+    # Earnings Overview Graph
+    # Calculate the start date of the rolling 12-month window
+    today = date.today()
+    start_date = today - timedelta(days=365)
+
+    # Example dataset for the last 12 months
+    monthly_data = RentalOrder.objects.filter(
+        rental_start_date__gte=start_date,  # Start date is 12 months ago
+        rental_start_date__lte=today        # End date is today
+    ).values('rental_start_date__year', 'rental_start_date__month').annotate(
+        total_revenue=Sum('total_cost')
+    ).order_by('rental_start_date__year', 'rental_start_date__month')
+
+    # Create labels and values
+    earningsChartLabels = [
+        f"{entry['rental_start_date__year']}-{entry['rental_start_date__month']:02d}"  # Format as "YYYY-MM"
+        for entry in monthly_data
+    ]
+    earningsChartValues = [int(entry['total_revenue']) for entry in monthly_data]
+
+    print(earningsChartLabels)
+    print(earningsChartValues)
 
     # Invoices Filter
     filter_option = request.GET.get('filter', 'all')  # Default to 'all'
@@ -113,6 +139,8 @@ def summary_dash(request):
 
     
     context = {}
+    # context['earningsChartLabels'] = json.dumps(earningsChartLabels)
+    # context['earningsChartValues'] = json.dumps(earningsChartValues)
     context['orders'] = orders
     context['filter_option'] = filter_option
     context['anchor'] = 'invoices'
@@ -296,8 +324,8 @@ def save_notes(request, order_id):
     
     return redirect('employee_dashboard')
 
-def get_extensions(rental_order_ID):
-    extensions = RentalExtensions.objects.filter(rental_order=rental_order_ID)
+def get_extensions(orderId):
+    extensions = RentalExtensions.objects.filter(rental_order_id=orderId)
 
     return extensions #returns a query set
 

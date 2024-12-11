@@ -34,10 +34,6 @@
         <li><strong>Location for Equipment Dropoff:</strong> {{ order.location }}</li>
     </ul>
 
-    <br>
-
-    <h4 class="text-success"><i class="fas fa-check-circle text-success"></i> A link to this confirmation page has been sent to the customer.</h4>
-
     <!-- Sign Agreement Modal -->
     <div class="modal fade" id="signAgreementModal" tabindex="-1" aria-labelledby="signAgreementModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -321,11 +317,9 @@
     {% endfor %}
     {% endif %}
 
-    {% comment %} {% if paid and contract_signed %}
-    <button class="btn btn-success mt-3" action="SOMETHING">DO SOMETHING NEXT</button>
-    {% else %}
-    <button class="btn btn-success mt-3" action="SOMETHING" disabled>DO SOMETHING NEXT</button>
-    {% endif %} {% endcomment %}
+    <br>
+    <h4 class="text-success"><i class="fas fa-check-circle text-success"></i> A link to this confirmation page has been sent to the customer.</h4>
+
 </div>
 <style>
     .cost-display {

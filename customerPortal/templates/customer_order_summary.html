@@ -1,6 +1,6 @@
 {% extends "customer_base.html" %}
 
-{% block content %}
+{% block content %}{% load humanize %}
 <div class="container">
     <h1 class="mt-5">Order Summary</h1>
     <p><strong>Customer:</strong> {{ order_data.customer_fName }} {{ order_data.customer_lName }}</p>
@@ -12,10 +12,10 @@
     <p><strong>Rental End Date:</strong> {{ order_data.rental_end_date }}</p>
     <p><strong>Rental Period</strong> {{ order_data.rental_period }} days</p>
     <p><strong>Location for Equipment Dropoff:</strong> {{ order_data.location }}</p>
-    <strong>Estimated Total Cost:</strong> ${{ grandTotal }}
+    <strong>Estimated Total Cost:</strong> ${{ grandTotal|intcomma }}
     <ul class="cost-breakdown">
-        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost }}</span></li>
-        <li><span>Delivery Cost: </span><span> ${{delivery_fee}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
+        <li><span>Rental Cost: </span><span> ${{ order_data.total_cost|intcomma }}</span></li>
+        <li><span>Delivery Cost: </span><span> ${{delivery_fee|intcomma}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
     </ul>
 
     <br>

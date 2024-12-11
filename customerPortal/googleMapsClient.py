@@ -30,19 +30,16 @@ def calculate_delivery_fee(destination: str, home_base: str = "1726 W 500 N, Spr
         # Extract travel time in seconds
         travel_time_to_dest = directions_to_dest[0]['legs'][0]['duration']['value']  # in seconds
         travel_time_to_home = directions_to_home[0]['legs'][0]['duration']['value']  # in seconds
-        print(home_base)
         
         # Total round trip travel time in hours
         total_travel_time_hours = (travel_time_to_dest + travel_time_to_home) / 3600  # Convert seconds to hours
-        total_travel_time_hours = round(total_travel_time_hours, 2)
-        total_travel_time_hours = float(total_travel_time_hours)
         print(total_travel_time_hours)
 
         # Add half hour for pickup and drop-off
-        total_service_time_hours = float(total_travel_time_hours) + float(.5)  # Additional half hour
+        total_service_time_hours = total_travel_time_hours + .5  # Additional half hour
         
         # Calculate the fee with a 2-hour minimum
-        delivery_fee = max(total_service_time_hours, 2) * hourly_rate  # max() ensures that the time used is at least 2 hours, hourly_rate defined in db (settings portal)
+        delivery_fee = max(total_service_time_hours, 2) * float(hourly_rate)  # max() ensures that the time used is at least 2 hours, hourly_rate defined in db (settings portal)
         print(delivery_fee)
 
         return round(delivery_fee, 2)
