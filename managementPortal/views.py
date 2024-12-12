@@ -97,7 +97,7 @@ def summary_dash(request):
     totalOverdueRentalPayments = overdueRentalPaymentsQS.aggregate(Sum('total_cost'))['total_cost__sum'] or 0.00
     totalOverdueExtensionPayments = overdueExtensionPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
 
-    totalOverduePayments = totalOverdueRentalPayments + totalOverdueExtensionPayments
+    totalOverduePayments = float(totalOverdueRentalPayments) + float(totalOverdueExtensionPayments)
 
     # Earnings Overview Graph
     # Calculate the start date of the rolling 12-month window
