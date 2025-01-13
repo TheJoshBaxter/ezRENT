@@ -123,15 +123,35 @@
                                         <option value="email" selected>Email</option>
                                         <option value="text">Text</option>
                                     </select>
-                                    <div class="form-group disclaimer">
+                                    <div class="form-group disclaimer"id="dynamicDisclaimer" style="display: none;">
                                         <p>
                                             By submitting this form and selecting "Text" above, you consent to receive alerts about rental request approvals from us, sent through Twilio. Consent is not conditional on purchase. Msg. & data rates may apply. Unsubscribe at any time by replying "STOP." <br><strong>Privacy Policy and Terms:</strong> Your number will not be used for any other purpose by anyone but us, to update you on the status of your rental request.
                                         </p>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="location">Rental Dropoff Location</label>
-                                    <input type="text" class="form-control" id="location" name="location" required>
+                                    <hr>
+                                    <h5>Rental Dropoff Location</h5>
+                                    <hr>
+                                    <!-- Address Line 1 -->
+                                    <label for="address-line-1">Street Address</label>
+                                    <input type="text" class="form-control" id="address-line-1" name="address-line-1" required placeholder="123 Main St">
+
+                                    <!-- Address Line 2 -->
+                                    <label for="address-line-2">Apartment/Unit (optional)</label>
+                                    <input type="text" class="form-control" id="address-line-2" name="address-line-2" placeholder="Apt 4B">
+
+                                    <!-- City -->
+                                    <label for="city">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" required placeholder="Lehi">
+
+                                    <!-- State / Province -->
+                                    <label for="state">State/Province</label>
+                                    <input type="text" class="form-control" id="state" name="state" required placeholder="UT">
+
+                                    <!-- ZIP / Postal Code -->
+                                    <label for="zip">ZIP/Postal Code</label>
+                                    <input type="text" class="form-control" id="zip" name="zip" required pattern="\d{5}(-\d{4})?" placeholder="84058" title="5 or 9 digit ZIP code">
                                 </div>
 
                                 <!-- this is a hidden field used in conjunction with js to pass the equipment id to the view -->
@@ -252,7 +272,16 @@
                 }
             });
         });
-    
+
+        //jQuery event listener to dynamically show/hide the text disclaimer
+        $('#custNotificationPreference').on('change', function () {
+            const value = $(this).val();
+            if (value === 'text') {
+                $('#dynamicDisclaimer').show(); // Show the element
+            } else {
+                $('#dynamicDisclaimer').hide(); // Hide the element
+            }
+        });
 
         let selectedIndex = -1;
         let customerList = [];

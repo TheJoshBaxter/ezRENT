@@ -125,14 +125,10 @@ def calc_aggregate_availability(equipmentTypeID):
 def equipment_detail(request, equipmentType_id, template_name):
     equipmentType = EquipmentType.objects.get(id=equipmentType_id)
     aggregateAvailabilityContext = calc_aggregate_availability(equipmentType_id)
-    print("TEMPLATE NAME:")
-    print(template_name)
-    print(type(template_name))
 
     if request.method == 'POST':
         # grab the selected rentalEquipment ID that was identified as available for rental
         equipment_id = request.POST['equipmentIdField']
-        print(equipment_id)
 
         # Check if an existing customer was selected or a new one is being created
         if request.POST['first_name'].strip():  # If first_name from the DOM has contents and isn't an empty string, this is a New customer
@@ -146,7 +142,13 @@ def equipment_detail(request, equipmentType_id, template_name):
 
             start_date = request.POST['start_date']
             rental_period = int(request.POST['rental_period'])
-            location = request.POST['location']
+            address = request.POST['address-line-1']
+            apt_unit = request.POST['address-line-2']
+            city = request.POST['city']
+            state = request.POST['state']
+            zip = request.POST['zip']
+
+            dropoffLocation = f"{address} {apt_unit}, {city}, {state} {zip}"
 
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = start_date + timedelta(days=rental_period)
@@ -180,7 +182,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                     'rental_start_date': start_date,
                     'rental_period': rental_period,
                     'rental_end_date': end_date,
-                    'location': location,
+                    'location': dropoffLocation,
                     'total_cost': float(total_cost),
                     'new_cust': False,
                     'cust_notification_preference': customer.cust_notification_preference
@@ -211,7 +213,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                         'rental_start_date': start_date,
                         'rental_period': rental_period,
                         'rental_end_date': end_date,
-                        'location': location,
+                        'location': dropoffLocation,
                         'total_cost': float(total_cost),
                         'new_cust': True,
                         'cust_notification_preference': custNotificationPreference
@@ -226,7 +228,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                         'rental_start_date': start_date,
                         'rental_period': rental_period,
                         'rental_end_date': end_date,
-                        'location': location,
+                        'location': dropoffLocation,
                         'total_cost': float(total_cost),
                     }
 
@@ -241,7 +243,13 @@ def equipment_detail(request, equipmentType_id, template_name):
 
             start_date = request.POST['start_date']
             rental_period = int(request.POST['rental_period'])
-            location = request.POST['location']
+            address = request.POST['address-line-1']
+            apt_unit = request.POST['address-line-2']
+            city = request.POST['city']
+            state = request.POST['state']
+            zip = request.POST['zip']
+
+            dropoffLocation = f"{address} {apt_unit}, {city}, {state} {zip}"
 
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
             end_date = start_date + timedelta(days=rental_period)
@@ -266,7 +274,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                 'rental_start_date': start_date,
                 'rental_period': rental_period,
                 'rental_end_date': end_date,
-                'location': location,
+                'location': dropoffLocation,
                 'total_cost': float(total_cost),
                 'new_cust': False,
                 'cust_notification_preference': custNotificationPreference
