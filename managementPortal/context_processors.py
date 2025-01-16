@@ -4,7 +4,7 @@ from datetime import date
 def global_notifications(request):
     today = date.today()
 
-    unapprovedOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
+    unapprovedOrders = RentalOrder.objects.filter(rental_approved=False).order_by('-created_at')
     numUnapprovedOrders = len(unapprovedOrders)
 
     returnedOrdersPendingInspection = RentalOrder.objects.filter(inspection__isnull=True, rental_end_date__lte=today, rental_returned=True).order_by('rental_end_date')
