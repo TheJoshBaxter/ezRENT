@@ -8,6 +8,7 @@ from customerPortal.square_client import create_payment
 from customerPortal.twilioClient import send_text_alert
 from customerPortal.emailClient import send_customer_email
 from customerPortal.googleMapsClient import calculate_delivery_fee
+from django.db.models import Q
 
 # Create your views here.
 
@@ -399,73 +400,95 @@ def order_summary(request, template_name):
 
     if request.method == 'POST': # this is triggered when the user hits confirm and pay on the order summary page
 
-        # Save the new order to the DB
-        new_order = RentalOrder.objects.create(
-            customer_id=order_data['customer'],
-            equipment_id=order_data['equipment'],
-            rental_start_date=order_data['rental_start_date'],
-            rental_end_date=order_data['rental_end_date'],
-            location=order_data['location'],
-            total_cost=order_data['total_cost'],
-        )
-        print("Rental Order created in ezRENT successfully")
+        # Ensure no accidental duplicate order submissions
+        existing_order = RentalOrder.objects.filter(
+            Q(customer_id=order_data['customer']) &
+            Q(equipment_id=order_data['equipment']) &
+            Q(rental_start_date=order_data['rental_start_date']) &
+            Q(rental_end_date=order_data['rental_end_date']) &
+            Q(location=order_data['location']) &
+            Q(total_cost=order_data['total_cost'])
+        )#.exists()
 
-        new_transport_order = TransportOrder.objects.create(
-            rental_order=new_order,
-            cost=delivery_fee,
-            paid=False,
-        )
+        if existing_order.exists():
+            print("This Rental Order has already been submitted. Duplication avoided successfully")
+            existing_order_queryset = existing_order.values_list('id', flat=True)
+            existing_order_id = existing_order_queryset[0]
 
-        print("Transport Order created in ezRENT successfully")
+            # Redirect to the confirmation view and pass the original order ID (WITHOUT SAVING DUPLICATE TO THE DB OR SENDING TEXT ALERTS)
+            # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
+            if "customer" in template_name.lower():
+                return redirect('customer_confirmation', orderID=existing_order_id)
+            else:
+                return redirect('confirmation', orderID=existing_order_id)
+        else:
+            # Save the new order to the DB
+            new_order = RentalOrder.objects.create(
+                customer_id=order_data['customer'],
+                equipment_id=order_data['equipment'],
+                rental_start_date=order_data['rental_start_date'],
+                rental_end_date=order_data['rental_end_date'],
+                location=order_data['location'],
+                total_cost=order_data['total_cost'],
+            )
+            print("Rental Order created in ezRENT successfully")
 
-        # Send email or text (depending on preference) notification to each manager
-        managers = ManagementAlertNumber.objects.all()
-        for manager in managers:
-            if manager.employee_notification_preference == 'text':
-                # send an alert text using the send_customer_text method (since it's customizable using arguments)
+            new_transport_order = TransportOrder.objects.create(
+                rental_order=new_order,
+                cost=delivery_fee,
+                paid=False,
+            )
+
+            print("Transport Order created in ezRENT successfully")
+
+            # Send email or text (depending on preference) notification to each manager
+            managers = ManagementAlertNumber.objects.all()
+            for manager in managers:
+                if manager.employee_notification_preference == 'text':
+                    # send an alert text using the send_customer_text method (since it's customizable using arguments)
+                    phone = new_order.customer.phone_number
+                    messageBody = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/"
+                    # send_customer_text(phone, messageBody)
+
+                    ### TEXT NOT ACTIVATED, SO FOR NOW, SEND AN EMAIL ANYWAY:
+                    receiver = manager.email
+                    subject = "New Pending Rental Request"
+                    body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
+                    send_customer_email(receiver, subject, body)
+                else:
+                    # send an email alert
+                    receiver = manager.email
+                    subject = "New Pending Rental Request"
+                    body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
+                    send_customer_email(receiver, subject, body)
+
+            # Send email or text notification to customer depending on preference
+            customerPreference = new_order.customer.cust_notification_preference
+            
+            if customerPreference == 'text':
+                # send an alert text
                 phone = new_order.customer.phone_number
-                messageBody = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/"
+                messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
                 # send_customer_text(phone, messageBody)
 
                 ### TEXT NOT ACTIVATED, SO FOR NOW, SEND AN EMAIL ANYWAY:
-                receiver = manager.email
-                subject = "New Pending Rental Request"
-                body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
+                receiver = new_order.customer.email
+                subject = "Rental Order Approval Notification"
+                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
                 send_customer_email(receiver, subject, body)
             else:
                 # send an email alert
-                receiver = manager.email
-                subject = "New Pending Rental Request"
-                body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
+                receiver = new_order.customer.email
+                subject = "Rental Order Approval Notification"
+                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
                 send_customer_email(receiver, subject, body)
-
-        # Send email or text notification to customer depending on preference
-        customerPreference = new_order.customer.cust_notification_preference
-        
-        if customerPreference == 'text':
-            # send an alert text
-            phone = new_order.customer.phone_number
-            messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
-            # send_customer_text(phone, messageBody)
-
-            ### TEXT NOT ACTIVATED, SO FOR NOW, SEND AN EMAIL ANYWAY:
-            receiver = new_order.customer.email
-            subject = "Rental Order Approval Notification"
-            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
-            send_customer_email(receiver, subject, body)
-        else:
-            # send an email alert
-            receiver = new_order.customer.email
-            subject = "Rental Order Approval Notification"
-            body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
-            send_customer_email(receiver, subject, body)
     
-        # Redirect to the confirmation view and pass the order ID
-        # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
-        if "customer" in template_name.lower():
-            return redirect('customer_confirmation', orderID=new_order.id)
-        else:
-            return redirect('confirmation', orderID=new_order.id)
+            # Redirect to the confirmation view and pass the order ID
+            # check whether the equipment_detail template is the customer version or the management version, and redirect to the corresponding orders_summary template
+            if "customer" in template_name.lower():
+                return redirect('customer_confirmation', orderID=new_order.id)
+            else:
+                return redirect('confirmation', orderID=new_order.id)
 
     # this return is called on the inital load of the page, since the inital load is a GET not a POST
     return render(request, template_name, context)
