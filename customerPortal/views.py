@@ -545,3 +545,9 @@ def update_payment_status(request):
             transportOrder.paid = True
             order.save()
         return redirect('confirmation', orderID=orderId)
+    
+def privacy_policy(request):
+    return render(request, 'privacy_policy.html')
+
+def terms_conditions(request):
+    return render(request, 'terms_conditions.html')

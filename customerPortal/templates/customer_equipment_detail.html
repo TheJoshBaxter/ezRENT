@@ -1,7 +1,7 @@
 {% extends "customer_base.html" %}
 {% load static %}
 
-{% block content %}
+{% block content %} {% load humanize %}
 <div class="container">
     <h1 class="mt-5">{{ equipmentType.name }} {{ equipmentType.category }} Rental Details</h1>
     <div class="row">
@@ -14,9 +14,9 @@
             <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
             <strong>Rental Rates:</strong>
             <ul>
-                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate }} + <strong>two</strong>-way delivery fee</li>
-                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate }} + <strong>two</strong>-way delivery fee</li>
-                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate }} (1 week free) + <strong>one</strong>-way delivery fee</li>
+                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
+                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
+                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate|intcomma }} (1 week free) + <strong>one</strong>-way delivery fee</li>
             </ul>
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
@@ -39,7 +39,7 @@
                 </div>
 
                 <!-- Trigger button for modal -->
-                <button id="book_button" type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#rentalModal" disabled>
+                <button id="book_button" type="button" class="btn btn-success mt-3" data-bs-toggle="modal" data-bs-target="#contactInfoModal" disabled>
                     Book Your Rental
                 </button>
                 <br>
@@ -49,119 +49,120 @@
                     Selected dates are not available for rental. Please adjust the start date or rental period, OR check for other available units.
                 </div>
 
-                <!-- Bootstrap Modal -->
-                <div class="modal fade" id="rentalModal" tabindex="-1" aria-labelledby="rentalModalLabel" aria-hidden="true">
+                <!-- First (Contact Info) Modal -->
+                <div class="modal fade" id="contactInfoModal" tabindex="-1" aria-labelledby="contactInfoModalLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="rentalModalLabel">Provide Contact Info</h5>
+                                <h5 class="modal-title" id="contactInfoModalLabel">Provide Contact Info</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body">
-                                {% comment %} {% if user.is_authenticated %}
-                                <!-- Customer Name Search Field -->
-                                <div class="mb-3 position-relative" id="custSearchDiv" >
-                                    <label for="customerSearch" class="form-label">Customer Name</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="customerSearch" name="customerSearch" autocomplete="new-password" aria-autocomplete="list" aria-controls="customerDropdown" aria-expanded="false" aria-label="Customer" placeholder="Enter customer name">
-                                        <button class="btn btn-outline-secondary" type="button" id="clearSearch"><i class="fas fa-times"></i></button>
-                                    </div>
-                                    <ul id="customerDropdown" class="dropdown-menu show" style="width: 100%; display: none;" role="listbox">
-                                        <!-- Create new customer button always visible -->
-                                        <li id="newCustomerOption" class="dropdown-item text-primary" role="listbox" tabindex="-1" style="cursor: pointer;">
-                                            <i class="fas fa-user-plus"></i> Create New Customer
-                                        </li>
-                                        <!-- Customer search results will be appended here -->
-                                    </ul>
-                                </div>
-                                <!-- Fields for new customer (already visible fields will be updated by JS for existing customers) -->
-                                <div id="new-customer-fields" style="display: none;">
-                                    <div class="form-group">
-                                        <label for="first_name">First Name</label>
-                                        <input type="text" class="form-control" id="first_name" name="first_name">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="last_name">Last Name</label>
-                                        <input type="text" class="form-control" id="last_name" name="last_name">
-                                    </div>
-                                </div>
-                                {% else %} {% endcomment %}
+                                <!-- Content of "Provide Contact Info" section -->
                                 <div class="form-group">
                                     <label for="first_name">First Name</label>
-                                    <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="first_name" name="first_name">
+                                    <input type="text" class="form-control" id="first_name" name="first_name" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="last_name">Last Name</label>
-                                    <input type="text" class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="last_name" name="last_name">
-                                </div>
-                                {% comment %} {% endif %} {% endcomment %}
-
-                                <!-- Fields that will always be visible -->
-                                <div class="form-group">
-                                    <label for="company_name">Company Name</label>
-                                    <input type="text" class="form-control" id="company_name" name="company_name">
-                                </div>
-                                <div class="form-group">
-                                    <label for="company_address">Company Address</label>
-                                    <input type="text" class="form-control" id="company_address" name="company_address">
+                                    <input type="text" class="form-control" id="last_name" name="last_name" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="phone_number">Phone Number</label>
-                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" maxlength="14" placeholder="(123)-456-7890" required>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="email">Email Address</label>
                                     <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
+
+                                <br>
+
                                 <div class="form-group">
-                                    <label for="custNotificationPreference">Preferred Approval Notification Method</label>
-                                    <select name="custNotificationPreference" id="custNotificationPreference" class="form-select">
-                                        <option value="email" selected>Email</option>
-                                        <option value="text">Text</option>
-                                    </select>
+                                    <label for="custNotificationPreference">Preferred Notification Method:</label>
+                                    <br>
+
+                                    <p class="text-muted">
+                                        <small>Select your preferred method for receiving notifications once your rental request is approved.</small>
+                                    </p>
+                                    <div id="custNotificationPreference" class="btn-group" role="group" aria-label="Notification Preference">
+                                        <!-- Button for Email -->
+                                        <button type="button" class="btn btn-outline-dark" data-value="email" id="emailBtn">Email</button>
+                                
+                                        <!-- Button for Text -->
+                                        <button type="button" class="btn btn-outline-dark" data-value="text" id="textBtn">Text</button>
+                                    </div>
+
+                                    <input type="hidden" name="custNotificationPreference" id="custNotificationPreferenceInput" value="email">
+                                </div>
+
+                                <div class="form-group">
                                     <div class="form-group disclaimer" id="dynamicDisclaimer" style="display: none;">
                                         <p>
-                                            By submitting this form and selecting "Text" above, you consent to receive alerts about rental request approvals from us, sent through Twilio. Consent is not conditional on purchase. Msg. & data rates may apply. Unsubscribe at any time by replying "STOP." <br><strong>Privacy Policy and Terms:</strong> No personal information or end-user information will be shared with third parties/affiliates for marketing or promotional purposes. In other words, your number will not be used by or shared with anyone but us to update you on the status of your rental request.
+                                            <input type="checkbox" id="textOptIn" name="textOptIn" required>
+                                            I agree to receive text updates from ezRent (by Project Jumpstart, LLC) at the phone number provided above. I understand I will receive no more than 2 texts per rental request I submit. Data rates may apply, reply STOP to opt out. I also agree to the Privacy Policy and Terms of Service.
                                         </p>
+                                        <div>
+                                            <a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a> | 
+                                            <a href="{% url 'terms_conditions' %}" target="_blank">Terms and Conditions</a>
+                                        </div>
+                                        {% comment %} By submitting this form and selecting "Text" above, you consent to receive alerts about rental request approvals from us, sent through Twilio. Consent is not conditional on purchase. Msg. & data rates may apply. Unsubscribe at any time by replying "STOP." <br><strong>Privacy Policy and Terms:</strong> No personal information or end-user information will be shared with third parties/affiliates for marketing or promotional purposes. In other words, your number will not be used by or shared with anyone but us to update you on the status of your rental request. {% endcomment %}
                                     </div>
                                 </div>
-                                <br>
-                                <div class="form-group">
-                                    <hr>
-                                    <h5>Rental Dropoff Location</h5>
-                                    <hr>
-                                    <!-- Address Line 1 -->
-                                    <label for="address-line-1">Street Address</label>
-                                    <input type="text" class="form-control" id="address-line-1" name="address-line-1" required placeholder="123 Main St">
-
-                                    <!-- Address Line 2 -->
-                                    <label for="address-line-2">Apartment/Unit (optional)</label>
-                                    <input type="text" class="form-control" id="address-line-2" name="address-line-2" placeholder="Apt 4B">
-
-                                    <!-- City -->
-                                    <label for="city">City</label>
-                                    <input type="text" class="form-control" id="city" name="city" required placeholder="Lehi">
-
-                                    <!-- State / Province -->
-                                    <label for="state">State/Province</label>
-                                    <input type="text" class="form-control" id="state" name="state" required placeholder="UT">
-
-                                    <!-- ZIP / Postal Code -->
-                                    <label for="zip">ZIP/Postal Code</label>
-                                    <input type="text" class="form-control" id="zip" name="zip" required pattern="\d{5}(-\d{4})?" placeholder="84058" title="5 or 9 digit ZIP code">
-                                </div>
-
-                                <!-- this is a hidden field used in conjunction with js to pass the equipment id to the view -->
-                                <input type="hidden" name="equipmentIdField" id="equipmentIdField">
-
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="submit" class="btn btn-primary">Submit Info</button>
+                                <!-- Custom "Next" button triggers validation of the form inputs in the first modal only-->
+                                <button type="button" class="btn btn-primary" id="nextButton">Next</button>
                             </div>
                         </div>
                     </div>
                 </div>
+
+
+                <!-- Second (Rental Dropoff Info) Modal -->
+                <div class="modal fade" id="dropoffLocationModal" tabindex="-1" aria-labelledby="dropoffLocationModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="dropoffLocationModalLabel">Rental Dropoff Location</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- Content of "Rental Dropoff Location" section -->
+                                <div class="form-group">
+                                    <label for="address-line-1">Street Address</label>
+                                    <input type="text" class="form-control" id="address-line-1" name="address-line-1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="address-line-2">Apartment/Unit (optional)</label>
+                                    <input type="text" class="form-control" id="address-line-2" name="address-line-2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="city">City</label>
+                                    <input type="text" class="form-control" id="city" name="city" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="state">State/Province</label>
+                                    <input type="text" class="form-control" id="state" name="state" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="zip">ZIP/Postal Code</label>
+                                    <input type="text" class="form-control" id="zip" name="zip" required pattern="\d{5}">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#contactInfoModal">Back</button>
+                                <!-- Form submission functionality -->
+                                <button type="submit" class="btn btn-success">Submit Info</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                            
+                <!-- this is a hidden field used in conjunction with js to pass the equipment id to the view -->
+                <input type="hidden" name="equipmentIdField" id="equipmentIdField">
+
             </form>
         </div>
     </div>
@@ -270,14 +271,31 @@
             });
         });
 
-        //jQuery event listener to dynamically show/hide the text disclaimer
-        $('#custNotificationPreference').on('change', function () {
-            const value = $(this).val();
-            if (value === 'text') {
-                $('#dynamicDisclaimer').show(); // Show the element
-            } else {
-                $('#dynamicDisclaimer').hide(); // Hide the element
-            }
+        // NOTIFICATION PREFERENCE BUTTONS
+        // Set the initial value to "email"
+        document.getElementById('emailBtn').classList.add('active');
+
+        // Handle button click to update the input value and show/hide disclaimer
+        document.querySelectorAll('#custNotificationPreference button').forEach(button => {
+            button.addEventListener('click', function () {
+                // Remove the active class from all buttons
+                document.querySelectorAll('#custNotificationPreference button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                // Add the active class to the clicked button
+                this.classList.add('active');
+
+                // Update the hidden input field to store the selected value
+                document.getElementById('custNotificationPreferenceInput').value = this.getAttribute('data-value');
+
+                // Toggle disclaimer visibility based on selection
+                if (this.getAttribute('data-value') === 'text') {
+                    document.getElementById('dynamicDisclaimer').style.display = 'block'; // Show disclaimer if 'Text' is selected
+                } else {
+                    document.getElementById('dynamicDisclaimer').style.display = 'none'; // Hide disclaimer if 'Email' is selected
+                }
+            });
         });
 
         // Function to auto-format a phone number input field while the user types
@@ -292,6 +310,43 @@
             if (input.length > 14) input = input.slice(0, 14);  // Limit input length
         
             e.target.value = input;
+        });
+
+        // Custom validation for the "Next" button (only checks first modal's fields)
+        document.getElementById('nextButton').addEventListener('click', function () {
+            const firstModalFields = [
+                document.getElementById('first_name'),
+                document.getElementById('last_name'),
+                document.getElementById('phone_number'),
+                document.getElementById('email'),
+            ];
+
+            // Check if the "Text" button is selected; only require the textOptIn if it is
+            const selectedButton = document.querySelector('#custNotificationPreference .btn-outline-dark.active'); // Grab the selected button
+
+            // Check if "Text" button is selected
+            if (selectedButton && selectedButton.getAttribute('data-value') === 'text') {
+                firstModalFields.push(document.getElementById('textOptIn'));
+            }
+    
+            let allValid = true;
+    
+            // Validation fields - Reverse iteration (since the last one to be checked is the only alert that shows.)
+            for (let i = firstModalFields.length - 1; i >= 0; i--) {
+                const field = firstModalFields[i];
+                if (!field.checkValidity()) {
+                    allValid = false;
+                    field.reportValidity(); // Show validation message
+                }
+            }
+    
+            // If all fields in the first modal are valid, proceed to the second modal
+            if (allValid) {
+                const contactInfoModal = bootstrap.Modal.getInstance(document.getElementById('contactInfoModal'));
+                contactInfoModal.hide(); // Hide the first modal
+                const dropoffLocationModal = new bootstrap.Modal(document.getElementById('dropoffLocationModal'));
+                dropoffLocationModal.show(); // Show the second modal
+            }
         });
     });
 </script>

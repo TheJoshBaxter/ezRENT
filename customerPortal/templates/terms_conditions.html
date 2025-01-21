@@ -1,0 +1,60 @@
+<!-- terms_conditions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms and Conditions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Terms and Conditions</h1>
+        <p>Welcome to ezRent (by Project Jumpstart, LLC). By providing your phone number, you agree to the following terms and conditions:</p>
+        
+        <h2>Use of Your Phone Number</h2>
+        <p>Your phone number will be used solely for sending notifications regarding your rental requests, such as updates about rental approvals or status changes. We will not use your phone number for marketing purposes unless you explicitly opt-in. We will never sell or give your contact information to any other 3rd parties.</p>
+
+        <h2>Text Message Frequency</h2>
+        <p>We will send no more than three (3) text messages per rental request. These messages will include updates such as when your request is approved.</p>
+
+        <h2>Data Rates and Opting Out</h2>
+        <p>Standard text messaging rates may apply based on your mobile carrier's terms. You can opt out at any time by replying <strong>STOP</strong> to one of our messages.</p>
+
+        <h2>Changes to These Terms</h2>
+        <p>We reserve the right to modify these terms at any time. Any changes will be communicated to you and posted on this page.</p>
+
+        <p>For more information, please read our <a href="{% url 'privacy_policy' %}">Privacy Policy</a>.</p>
+
+        <hr>
+
+        <p><a href="#" onclick="window.close()">Back to Rental Reservation</a></p>
+    </div>
+</body>
+</html>

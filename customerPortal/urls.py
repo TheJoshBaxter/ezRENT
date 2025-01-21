@@ -19,4 +19,7 @@ urlpatterns = [
     path('get_unavailable_dates/<int:equipmentType_id>/', views.get_unavailable_dates, name='get_unavailable_dates'),
     path('search_customers/', views.search_customers, name='search_customers'),
     path('update_payment_status/', views.update_payment_status, name='update_payment_status'),
+
+    path('privacy_policy/', views.privacy_policy, name='privacy_policy'),
+    path('terms_conditions/', views.terms_conditions,  name='terms_conditions'),
 ]
