@@ -71,7 +71,7 @@
                             </div>
 
                             <br>
-
+                            {% if not filter_option == 'past' %}
                             <!-- Action Buttons -->
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between">
@@ -79,6 +79,7 @@
                                     <button class="btn btn-secondary rental-card" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
