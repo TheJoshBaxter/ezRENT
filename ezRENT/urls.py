@@ -23,4 +23,5 @@ urlpatterns = [
     path('customerPortal/', include('customerPortal.urls')),
     path('managementPortal/', include('managementPortal.urls')),
     path('', include('customerPortal.urls')),  # Default route redirects to customers
+    path('landingPage/', include('landingPage.urls')),
 ]
