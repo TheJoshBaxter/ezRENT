@@ -13,7 +13,7 @@
     <div class="card shadow mt-3">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Approved Rentals:</h6>
-                <div class="col-md-3">
+                {% comment %} <div class="col-md-3">
                     <select id="rental-filter" class="form-select" onchange="applyFilter()">
                         <option value="current" {% if filter_option == 'current' %}selected{% endif %}>Current</option>
                         <option value="past" {% if filter_option == 'past' %}selected{% endif %}>Past</option>
@@ -21,6 +21,13 @@
                         <option value="new" {% if filter_option == 'new' %}selected{% endif %}>Newly Added</option>
                         <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
                     </select>
+                </div> {% endcomment %}
+                <div class="btn-group" role="group" aria-label="Filter Cards">
+                    <a href="?filter=current" class="btn btn-outline-primary {% if filter_option == 'current' %}active{% endif %}">Current</a>
+                    <a href="?filter=past" class="btn btn-outline-primary {% if filter_option == 'past' %}active{% endif %}">Past</a>
+                    <a href="?filter=upcoming" class="btn btn-outline-primary {% if filter_option == 'upcoming' %}active{% endif %}">Upcoming</a>
+                    <a href="?filter=new" class="btn btn-outline-primary {% if filter_option == 'new' %}active{% endif %}">Newly Added</a>
+                    <a href="?filter=all" class="btn btn-outline-primary {% if filter_option == 'all' %}active{% endif %}">All Rentals</a>
                 </div>
         </div>
         <div class="card-body row">
@@ -285,11 +292,11 @@
 </style>
 
 <script>
-    // Function to apply the selected filter by reloading the page with the selected filter in the URL
+    {% comment %} // Function to apply the selected filter by reloading the page with the selected filter in the URL
     function applyFilter() {
         const filter = document.getElementById('rental-filter').value;
         window.location.href = `?filter=${filter}`;  // Redirect with filter in query string
-    }
+    } {% endcomment %}
 
     // Function to increment/decrement days in the input box
     function changeDays(amount, orderId) {
