@@ -10,8 +10,11 @@ class EquipmentType(models.Model):
     available_quantity = models.IntegerField()
     manufacturer = models.CharField(max_length=100, blank=True, null=True)
     daily_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    discounted_daily_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Discounted Daily Rate (leave blank for no discount)")
     weekly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    discounted_weekly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Discounted Weekly Rate (leave blank for no discount)")
     monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    discounted_monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, verbose_name="Discounted Monthly Rate (leave blank for no discount)")
     imgURL = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
