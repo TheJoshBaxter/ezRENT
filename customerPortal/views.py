@@ -363,18 +363,22 @@ def calculate_total_cost(equipmentType, rental_period):
     # create some logic to check the app settings (a future settings page needs to be created) to determine the desired pricing system (daily only, or daily, weekly, monthly rates)
 
     if rental_period < 7:
-        rate = equipmentType.daily_rate
+        if equipmentType.discounted_daily_rate is not None and equipmentType.discounted_daily_rate > 0: # check for active discount
+            rate = equipmentType.discounted_daily_rate
+        else:
+            rate = equipmentType.daily_rate
         numPeriods = rental_period
-        # print("Rental period is less than 7 days")
-        # print("Num Periods:")
-        # print(numPeriods)
-        # print("Rate:")
-        # print(rate)
-    elif rental_period >= 7 and rental_period < 30:
-        rate = equipmentType.weekly_rate
+    elif rental_period >= 7 and rental_period < 28:
+        if equipmentType.discounted_weekly_rate is not None and equipmentType.discounted_weekly_rate > 0:  # check for active discount
+            rate = equipmentType.discounted_weekly_rate
+        else:
+            rate = equipmentType.weekly_rate
         numPeriods = rental_period//7
     else:
-        rate = equipmentType.monthly_rate
+        if equipmentType.discounted_monthly_rate is not None and equipmentType.discounted_monthly_rate > 0: # check for active discount
+            rate = equipmentType.discounted_monthly_rate
+        else:
+            rate = equipmentType.monthly_rate
         numPeriods = 1 # hard coded 1 because 1 month is the max time period option available to users
         
     # Calculate the total cost
