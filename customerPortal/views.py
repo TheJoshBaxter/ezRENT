@@ -5,7 +5,8 @@ from managementPortal.models import Equipment, EquipmentType, RentalOrder, Renta
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from customerPortal.square_client import create_payment
-from customerPortal.twilioClient import send_text_alert
+# from customerPortal.twilioClient import send_text_alert
+from customerPortal.twilioClient import send_customer_text
 from customerPortal.emailClient import send_customer_email
 from customerPortal.googleMapsClient import calculate_delivery_fee
 from django.db.models import Q
@@ -448,13 +449,13 @@ def order_summary(request, template_name):
                     # send an alert text using the send_customer_text method (since it's customizable using arguments)
                     phone = new_order.customer.phone_number
                     messageBody = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/"
-                    # send_customer_text(phone, messageBody)
+                    send_customer_text(phone, messageBody)
 
                     ### TEXT NOT ACTIVATED, SO FOR NOW, SEND AN EMAIL ANYWAY:
-                    receiver = manager.email
-                    subject = "New Pending Rental Request"
-                    body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
-                    send_customer_email(receiver, subject, body)
+                    # receiver = manager.email
+                    # subject = "New Pending Rental Request"
+                    # body = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/.\n\nThanks!\n-ezRENT"
+                    # send_customer_email(receiver, subject, body)
                 else:
                     # send an email alert
                     receiver = manager.email
@@ -468,19 +469,19 @@ def order_summary(request, template_name):
             if customerPreference == 'text':
                 # send an alert text
                 phone = new_order.customer.phone_number
-                messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
-                # send_customer_text(phone, messageBody)
+                messageBody = f"Hello, {new_order.customer.first_name} 👋, your rental request for an {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category} has been submitted! Your request is now being reviewed. If you haven't paid and signed the rental agreement, please visit {settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}"
+                send_customer_text(phone, messageBody)
 
                 ### TEXT NOT ACTIVATED, SO FOR NOW, SEND AN EMAIL ANYWAY:
-                receiver = new_order.customer.email
-                subject = "Rental Order Approval Notification"
-                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
-                send_customer_email(receiver, subject, body)
+                # receiver = new_order.customer.email
+                # subject = "Rental Order Approval Notification"
+                # body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for an {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
+                # send_customer_email(receiver, subject, body)
             else:
                 # send an email alert
                 receiver = new_order.customer.email
                 subject = "Rental Order Approval Notification"
-                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for a {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
+                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for an {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
                 send_customer_email(receiver, subject, body)
     
             # Redirect to the confirmation view and pass the order ID
