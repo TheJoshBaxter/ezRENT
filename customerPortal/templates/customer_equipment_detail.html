@@ -305,6 +305,12 @@
         // Set the initial value to "email"
         document.getElementById('emailBtn').classList.add('active');
 
+        // Since initial value is "email," disable the textOptIn checkbox to start
+        const textOptInCheckbox = document.getElementById('textOptIn');
+        const disclaimer = document.getElementById('dynamicDisclaimer');
+        textOptInCheckbox.disabled = true; // Disable checkbox to avoid validation error
+        textOptInCheckbox.checked = false; // Uncheck it to ensure it's cleared
+
         // Handle button click to update the input value and show/hide disclaimer
         document.querySelectorAll('#custNotificationPreference button').forEach(button => {
             button.addEventListener('click', function () {
@@ -322,8 +328,11 @@
                 // Toggle disclaimer visibility based on selection
                 if (this.getAttribute('data-value') === 'text') {
                     document.getElementById('dynamicDisclaimer').style.display = 'block'; // Show disclaimer if 'Text' is selected
+                    textOptInCheckbox.disabled = false; // Enable checkbox
                 } else {
                     document.getElementById('dynamicDisclaimer').style.display = 'none'; // Hide disclaimer if 'Email' is selected
+                    textOptInCheckbox.disabled = true; // Disable checkbox to avoid validation error
+                    textOptInCheckbox.checked = false; // Uncheck it to ensure it's cleared
                 }
             });
         });
