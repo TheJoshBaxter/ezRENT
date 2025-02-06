@@ -447,7 +447,7 @@ def order_summary(request, template_name):
             for manager in managers:
                 if manager.employee_notification_preference == 'text':
                     # send an alert text using the send_customer_text method (since it's customizable using arguments)
-                    phone = new_order.customer.phone_number
+                    phone = manager.phone_number
                     messageBody = f"Ahoy 👋, you have a new rental order that needs to be reviewed. Check it out at {settings.BASE_SITE_URL}/managementPortal/pending_rentals/"
                     send_customer_text(phone, messageBody)
 
