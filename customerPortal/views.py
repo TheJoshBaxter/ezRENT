@@ -359,24 +359,33 @@ def get_unavailable_dates(request, equipmentType_id):
     })
 
 # Helper function to calculate total cost
-def calculate_total_cost(equipmentType, rental_period):
+def calculate_total_cost(equipmentType, rental_period, request_type="new"): # if request_type is not provided when calling this function, default value "new" will be used, and it means that it is a new request, not an extension, and the function will check for discounts.
     # create some logic to check the app settings (a future settings page needs to be created) to determine the desired pricing system (daily only, or daily, weekly, monthly rates)
 
     if rental_period < 7:
-        if equipmentType.discounted_daily_rate is not None and equipmentType.discounted_daily_rate > 0: # check for active discount
-            rate = equipmentType.discounted_daily_rate
-        else:
+        if request_type != "extension": # if request_type is not extension, check for discounts
+            if equipmentType.discounted_daily_rate is not None and equipmentType.discounted_daily_rate > 0: # check for active discount
+                rate = equipmentType.discounted_daily_rate
+            else: # no active discount
+                rate = equipmentType.daily_rate
+        else: # this block executes if the request_type = extension. It does not check for discounts
             rate = equipmentType.daily_rate
         numPeriods = rental_period
     elif rental_period >= 7 and rental_period < 28:
-        if equipmentType.discounted_weekly_rate is not None and equipmentType.discounted_weekly_rate > 0:  # check for active discount
-            rate = equipmentType.discounted_weekly_rate
+        if request_type != "extension":
+            if equipmentType.discounted_weekly_rate is not None and equipmentType.discounted_weekly_rate > 0:  # check for active discount
+                rate = equipmentType.discounted_weekly_rate
+            else:
+                rate = equipmentType.weekly_rate
         else:
             rate = equipmentType.weekly_rate
         numPeriods = rental_period//7
     else:
-        if equipmentType.discounted_monthly_rate is not None and equipmentType.discounted_monthly_rate > 0: # check for active discount
-            rate = equipmentType.discounted_monthly_rate
+        if request_type != "extension":
+            if equipmentType.discounted_monthly_rate is not None and equipmentType.discounted_monthly_rate > 0: # check for active discount
+                rate = equipmentType.discounted_monthly_rate
+            else:
+                rate = equipmentType.monthly_rate
         else:
             rate = equipmentType.monthly_rate
         numPeriods = 1 # hard coded 1 because 1 month is the max time period option available to users

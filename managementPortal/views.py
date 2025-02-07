@@ -419,10 +419,10 @@ def extend_rental(request, order_id):
             rental_order.rental_end_date += timedelta(days=days_to_extend)
             rental_order.save()
 
-            # grab equipment type, and feed it and rental extension period to the calculate_total_cost method (from other views file)
+            # grab equipment type, and feed it and rental extension period (along with request_type, which is used as a marker for extensions so that calculate_total_cost does not check for discounts) to the calculate_total_cost method (from other views file)
             equipmentTypeId = rental_order.equipment.equipment_type.id # grab the type id in order to grab the instance
             equipmentType = EquipmentType.objects.get(id=equipmentTypeId) # grab instance (contains the three rates)
-            extensionCost = calculate_total_cost(equipmentType, days_to_extend)
+            extensionCost = calculate_total_cost(equipmentType, days_to_extend, request_type="extension")
 
             # second, save extension data to the rental extensions table:
             RentalExtensions.objects.create(

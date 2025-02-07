@@ -237,10 +237,21 @@
                                 </button>
                             </div>
                             <div class="modal-body">
-                                <div class="input-group mb-3">
+                                {% comment %} <div class="input-group mb-3">
                                     <button class="btn btn-outline-secondary" type="button" onclick="changeDays(-1, {{ order.id }})">-</button>
                                     <input type="text" id="daysToExtend-{{ order.id }}" class="form-control text-center" value="0" min="1">
                                     <button class="btn btn-outline-secondary" type="button" onclick="changeDays(1, {{ order.id }})">+</button>
+                                </div> {% endcomment %}
+                                <div class="form-group">
+                                    <label for="daysToExtend-{{ order.id }}" class="form-label fw-bold">Extend Rental By: &nbsp</label>
+                                    <select id="daysToExtend-{{ order.id }}" name="daysToExtend-{{ order.id }}" class="form-select form-select-lg border-dark shadow-sm">
+                                        <option value="1">1 Day</option>
+                                        <option value="2">2 Days</option>
+                                        <option value="7">1 Week</option>
+                                        <option value="14">2 Weeks</option>
+                                        <option value="21">3 Weeks</option>
+                                        <option value="28">1 Month</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -298,14 +309,14 @@
         window.location.href = `?filter=${filter}`;  // Redirect with filter in query string
     } {% endcomment %}
 
-    // Function to increment/decrement days in the input box
+    {% comment %} // Function to increment/decrement days in the input box
     function changeDays(amount, orderId) {
         let input = document.getElementById(`daysToExtend-${orderId}`);
         let newValue = parseInt(input.value) + amount;
         if (newValue > 0) {
             input.value = newValue;
         }
-    }
+    } {% endcomment %}
 
     // Function to handle the rental extension
     function extendRental(orderId) {
