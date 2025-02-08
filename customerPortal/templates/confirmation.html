@@ -14,14 +14,18 @@
     <div class="checklist">
         <div class="checklist-item d-flex align-items-center mb-3">
             <!-- Task 1: Sign Rental Agreement -->
-            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal">Sign Rental Agreement</a>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
+                <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                <span class="fw-bold">Sign Rental Agreement</span>
+            </a>
         </div>
         
         <div class="checklist-item d-flex align-items-center mb-3">
             <!-- Task 2: Make Payment -->
-            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal">Complete Payment</a>
+            <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
+                <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                <span class="fw-bold">Complete Payment</span>
+            </a>
         </div>
     </div>
 
@@ -272,8 +276,10 @@
     {% for extension in extensions%}
     <div class="checklist-item d-flex align-items-center mb-3">
         <!-- Task 2: Make Payment -->
-        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}">Complete Payment for Extension to {{extension.new_end_date}}:</a>
+        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center">
+            <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+            <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
+        </a>
     </div>
 
     <!-- Complete EXTENSION Payment Modal -->
