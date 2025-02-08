@@ -272,11 +272,11 @@
                                             <tbody>
                                                 <!-- Row for Initial Rental -->
                                                 <tr>
-                                                    <td>Initial Rental</td>
+                                                    <td><strong>Initial Rental<strong></td>
                                                     <td>{{ order.rental_start_date }} - {{ order.rental_end_date }}</td>
                                                     <td>${{ order.total_cost }}</td>
                                                     <td>
-                                                        <span class="badge {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                        <span class="badge text-white {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
                                                             {% if order.paid %}
                                                             Paid
                                                             {% else %}
@@ -294,7 +294,7 @@
                                                         <td>+{{ extension.days_extended }} days</td>
                                                         <td>${{ extension.cost }}</td>
                                                         <td>
-                                                            <span class="badge {% if extension.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                            <span class="badge text-white {% if extension.paid %}bg-success{% else %}bg-danger{% endif %}">
                                                                 {% if extension.paid %}
                                                                 Paid
                                                                 {% else %}

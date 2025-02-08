@@ -59,6 +59,18 @@
                                 <strong>Equipment ID:</strong> {{ order.equipment.name }}
                             </div>
 
+                            <!-- Payment Status -->
+                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                                <strong>Fully Paid?</strong> 
+                                <span class="badge text-white {% if order.allPaid %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if order.allPaid %}
+                                        Yes
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                                </span>
+                            </div>
+
                             <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
                             {% if filter_option == 'past' %}
                                 {% if not order.inspection %}
@@ -129,6 +141,16 @@
                                         <input type="number" id="rentalTerm" name="rentalTerm" value="{{ order.rental_term_agreement }}" style="width: 50px;"> days</input>
                                     </div>
                                     <div class="mb-3">
+                                        <strong>Initial Rental Paid?</strong>
+                                        <span class="badge text-white {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if order.paid %}
+                                            Yes
+                                            {% else %}
+                                            No
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="mb-3">
                                         <strong><label for="fuelStartStatus">Starting Fuel Status:</label></strong> {{order.starting_fuel_status}}
                                         {% comment %} <select name="fuelStartStatus" id="fuelStartStatus" class="form-select">
                                             <option value="Full" {% if order.starting_fuel_status == "Full" %}selected{% endif %}>Full Tank</option>
@@ -186,8 +208,7 @@
                                     {% endif %}
 
                                     <div class="mb-3">
-                                        <u><strong>Extensions Info:</strong></u> 
-                                        <br>
+                                        <h5><u><strong>Extensions Info:</strong></u></h5>
                                         ({{order.numExtensions}} extensions so far)
                                     </div>
                                     <div class="mb-3">
@@ -198,7 +219,7 @@
                                                     <th>Original End Date</th>
                                                     <th>Days Extended</th>
                                                     <th>New End Date</th>
-                                                    <th>Time Stamp</th>
+                                                    <th>Requested On</th>
                                                     <th>Paid?</th>
                                                 </tr>
                                             </thead>
@@ -209,7 +230,15 @@
                                                     <td>{{extension.days_extended}}</td>
                                                     <td>{{extension.new_end_date}}</td>
                                                     <td>{{extension.timestamp}}</td>
-                                                    <td>{{extension.extension_paid}}</td>
+                                                    <td>
+                                                        <span class="badge text-white {% if extension.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {% if extension.paid %}
+                                                            Yes
+                                                            {% else %}
+                                                            No
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
                                                 </tr>
                                                 {% endfor %}
                                             </tbody>

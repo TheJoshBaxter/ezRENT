@@ -188,6 +188,17 @@ def employee_dashboard(request):
         order.extensionsTown = extensions
         order.numExtensions = extensions.count()
 
+        # determine if rental and all extensions are paid
+        if order.paid:
+            for extension in extensions:
+                if extension.paid:
+                    allPaid = True
+                else:
+                    allPaid = False
+        else: allPaid = False
+
+        order.allPaid = allPaid
+
         # get days remaining for each order
         days_remaining = (order.rental_end_date - today).days
         order.days_remaining = days_remaining # used to color icons based on proximity of end date
@@ -245,12 +256,6 @@ def approve_rental(request, order_id):
             phone = order.customer.phone_number
             messageBody = f"Hello, {order.customer.first_name} 👋, your rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} has been approved! For next steps, please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id}"
             send_customer_text(phone, messageBody)
-
-            # # for now, send an email anyway
-            # receiver = order.customer.email
-            # subject = "Rental Order Approval Notification"
-            # body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
-            # send_customer_email(receiver, subject, body)
         else:
             # send an email alert
             receiver = order.customer.email
@@ -274,12 +279,6 @@ def send_overdue_payment_reminder(request, order_id):
                 phone = order.customer.phone_number
                 messageBody = f"Hello, {order.customer.first_name} 👋, you have an outstanding payment for your rental from JobsiteRents. Please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id} to complete payment."
                 send_customer_text(phone, messageBody)
-
-                # # for now, send an email anyway
-                # receiver = order.customer.email
-                # subject = "Overdue Rental Payment Reminder"
-                # body = f"Hello, {order.customer.first_name} 👋,\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from JobsiteRents. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
-                # send_customer_email(receiver, subject, body)
             else:
                 # send an email alert
                 receiver = order.customer.email
@@ -434,24 +433,16 @@ def extend_rental(request, order_id):
                 cost = extensionCost
             )
 
-            # then mark the order as not fully paid
-
             # notify customer of outstanding payment
             if rental_order.customer.cust_notification_preference == 'text':
                 # send an alert text
                 phone = rental_order.customer.phone_number
                 messageBody = f"Hello, {rental_order.customer.first_name} 👋, your request for an extension on your rental ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}) has been approved! Please confirm details and complete payment by visiting {settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}."
                 send_customer_text(phone, messageBody)
-
-                # while text is turned off, send an email anyway!!
-                # receiver = rental_order.customer.email
-                # subject = "Rental Order Approval Notification"
-                # body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
-                # send_customer_email(receiver, subject, body)
             else:
                 # send an email alert
                 receiver = rental_order.customer.email
-                subject = "Rental Order Approval Notification"
+                subject = "Rental Extension Approval Notification"
                 body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
                 send_customer_email(receiver, subject, body)
 
