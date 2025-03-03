@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG')
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ezRENT.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'ezRENT.onrender.com', 'jobsiterents.com']
 
 # Application definition
 
@@ -144,6 +144,7 @@ SQUARE_ACCESS_TOKEN = os.environ.get('SQUARE_ACCESS_TOKEN')
 SQUARE_LOCATION_ID = os.environ.get('SQUARE_LOCATION_ID')
 SQUARE_APP_ID = os.environ.get('SQUARE_APP_ID')
 
+#Twilio
 ACCOUNT_SID = os.environ.get('account_sid')
 AUTH_TOKEN = os.environ.get('auth_token')
 
