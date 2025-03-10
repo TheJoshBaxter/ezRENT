@@ -188,13 +188,15 @@ def employee_dashboard(request):
         order.extensionsTown = extensions
         order.numExtensions = extensions.count()
 
-        # determine if rental and all extensions are paid
+        # Determine if rental and all extensions are paid
+        allPaid = True # initialize allPaid with a default value
+
+        # check to see if the order and each extension has actually been paid
         if order.paid:
             for extension in extensions:
-                if extension.paid:
-                    allPaid = True
-                else:
-                    allPaid = False
+                if not extension.paid:
+                    allPaid = False 
+                break # no need to keep checking if one is unpaid
         else: allPaid = False
 
         order.allPaid = allPaid
