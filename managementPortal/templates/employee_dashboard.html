@@ -55,7 +55,7 @@
                             </div>
 
                             <!-- Equipment ID -->
-                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                            <div class="card-text" style="font-size: 18px;">
                                 <strong>Equipment ID:</strong> {{ order.equipment.name }}
                             </div>
 
@@ -64,6 +64,18 @@
                                 <strong>Fully Paid?</strong> 
                                 <span class="badge text-white {% if order.allPaid %}bg-success{% else %}bg-danger{% endif %}">
                                     {% if order.allPaid %}
+                                        Yes
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <!-- Signed Agreement Status -->
+                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                                <strong>Agreement Signed?</strong> 
+                                <span class="badge text-white {% if order.contract_signed %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if order.contract_signed %}
                                         Yes
                                     {% else %}
                                         No
