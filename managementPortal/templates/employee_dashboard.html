@@ -71,6 +71,18 @@
                                 </span>
                             </div>
 
+                            <!-- Signed Agreement Status -->
+                            <div class="card-text" style="font-size: 14px; opacity: 0.6">
+                                <strong>Agreement Signed?</strong> 
+                                <span class="badge text-white {% if order.contract_signed %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if order.contract_signed %}
+                                        Yes
+                                    {% else %}
+                                        No
+                                    {% endif %}
+                                </span>
+                            </div>
+
                             <!-- Alert appears if, on the past rentals filter, inspection has not been completed -->
                             {% if filter_option == 'past' %}
                                 {% if not order.inspection %}
