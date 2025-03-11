@@ -534,7 +534,7 @@ def update_payment_status(request):
 
         if orderId == 'extensionPayment': # if orderId contains the default 'extensionPayment' (set in the call in js), this is a rental extension payment, not an intial order payment.
             extension = RentalExtensions.objects.get(id=extensionId)
-            cost_in_cents = extension.cost * 100
+            cost_in_cents = int(extension.cost * 100)
             create_payment(token, cost_in_cents)
             extension.paid = True
             extension.save()
