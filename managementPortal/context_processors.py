@@ -1,4 +1,5 @@
 from .models import RentalOrder
+from .models import CompanySetting
 from datetime import date
 
 def global_notifications(request):
@@ -12,10 +13,13 @@ def global_notifications(request):
 
     numAlerts = numUnapprovedOrders + numPendingInspection
 
+    companyInfo = CompanySetting.objects.first()
+
     context = {}
     context['unapprovedOrders'] = unapprovedOrders
     context['returnedOrdersPendingInspection'] = returnedOrdersPendingInspection
     context['numAlerts'] = numAlerts
     context['numUnapprovedOrders'] = numUnapprovedOrders
+    context['companyInfo'] = companyInfo
 
     return context

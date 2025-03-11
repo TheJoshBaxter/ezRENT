@@ -107,3 +107,7 @@ class TransportOrder(models.Model):
 
     def __str__(self):
         return f"Transport Request for {self.rental_order}"
+    
+class CompanySetting(models.Model):
+    company_name = models.CharField(max_length=100, blank=False, default="DemoRentals")
+    company_phone = models.CharField(max_length=15, blank=False, default="")
