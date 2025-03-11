@@ -1,7 +1,7 @@
 # from django.contrib import admin  ### not registering models with the default admin any more, registering them ith my custom admin.
 from django.contrib.admin import AdminSite
 from django.conf import settings
-from .models import EquipmentType, Equipment, RentalOrder, Inspection, RentalExtensions, ManagementAlertNumber, TransportRate, CompanySetting
+from .models import EquipmentType, Equipment, RentalOrder, Inspection, RentalExtensions, ManagementAlertNumber, TransportRate, CompanySetting, TransportOrder
 
 # Re-add the User and Group models that would've been included in default admin.
 from django.contrib.auth.models import User, Group
@@ -24,6 +24,7 @@ custom_admin_site.register(EquipmentType)
 custom_admin_site.register(RentalExtensions)
 custom_admin_site.register(ManagementAlertNumber)
 custom_admin_site.register(TransportRate)
+custom_admin_site.register(TransportOrder)
 custom_admin_site.register(CompanySetting)
 
 # Re-register the User and Group models that would've been included in default admin.
