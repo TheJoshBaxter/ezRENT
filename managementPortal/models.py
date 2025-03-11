@@ -110,4 +110,7 @@ class TransportOrder(models.Model):
     
 class CompanySetting(models.Model):
     company_name = models.CharField(max_length=100, blank=False, default="DemoRentals")
-    company_phone = models.CharField(max_length=15, blank=False, default="")
+    company_phone = models.CharField(max_length=15, blank=False, default="8011231234")
+
+    def __str__(self):
+        return f"Company Settings for {self.company_name}"
