@@ -5,7 +5,7 @@
     <!-- Header Section -->
     <div class="row align-items-center mb-4 mt-4">
         <div class="col-md-6">
-            <h1 class="h3 mb-0 text-gray-800">Employee Dashboard:</h1>
+            <h1 class="h3 mb-0 text-gray-800">Rental Tracker:</h1>
         </div>
     </div>
 
@@ -13,21 +13,16 @@
     <div class="card shadow mt-3">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
             <h6 class="m-0 font-weight-bold text-primary">Approved Rentals:</h6>
-                {% comment %} <div class="col-md-3">
-                    <select id="rental-filter" class="form-select" onchange="applyFilter()">
-                        <option value="current" {% if filter_option == 'current' %}selected{% endif %}>Current</option>
-                        <option value="past" {% if filter_option == 'past' %}selected{% endif %}>Past</option>
-                        <option value="upcoming" {% if filter_option == 'upcoming' %}selected{% endif %}>Upcoming</option>
-                        <option value="new" {% if filter_option == 'new' %}selected{% endif %}>Newly Added</option>
-                        <option value="all" {% if filter_option == 'all' %}selected{% endif %}>All Rentals</option>
-                    </select>
-                </div> {% endcomment %}
                 <div class="btn-group" role="group" aria-label="Filter Cards">
                     <a href="?filter=current" class="btn btn-outline-primary {% if filter_option == 'current' %}active{% endif %}">Current</a>
                     <a href="?filter=past" class="btn btn-outline-primary {% if filter_option == 'past' %}active{% endif %}">Past</a>
                     <a href="?filter=upcoming" class="btn btn-outline-primary {% if filter_option == 'upcoming' %}active{% endif %}">Upcoming</a>
                     <a href="?filter=new" class="btn btn-outline-primary {% if filter_option == 'new' %}active{% endif %}">Newly Added</a>
                     <a href="?filter=all" class="btn btn-outline-primary {% if filter_option == 'all' %}active{% endif %}">All Rentals</a>
+
+                    {% if overdueRentals_exists %}
+                    <a href="?filter=overdue" class="btn btn-outline-danger {% if filter_option == 'overdue' %}active{% endif %}">Overdue Rentals</a>
+                    {% endif %}
                 </div>
         </div>
         <div class="card-body row">
@@ -102,7 +97,7 @@
                             </div>
 
                             <br>
-                            {% if not filter_option == 'past' %}
+                            {% if not order.rental_returned %}
                             <!-- Action Buttons -->
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between">
@@ -330,6 +325,8 @@
             {% endif %}
         </div>
     </div>
+
+    
 </div>
 <br>
 <br>

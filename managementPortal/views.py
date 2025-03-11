@@ -170,8 +170,12 @@ def employee_dashboard(request):
         orders = RentalOrder.objects.filter(rental_end_date__lt=today, rental_approved=True).order_by('rental_end_date')
     elif filter_option == 'new':
         orders = RentalOrder.objects.filter(rental_approved=True).order_by('-created_at')
+    elif filter_option == 'overdue':
+        orders = RentalOrder.objects.filter(rental_end_date__lt=today, rental_returned=False).order_by('rental_end_date')
     else:
         orders = RentalOrder.objects.filter(rental_approved=True).order_by('rental_end_date')
+
+    overdueRentals_exists = RentalOrder.objects.filter(rental_end_date__lt=today, rental_returned=False).exists()
 
     # Add days remaining information to each order
     for order in orders:
@@ -224,6 +228,7 @@ def employee_dashboard(request):
             order.start_condition_status = "Clean"
             order.starting_fuel_status = "Full"
 
+    context['overdueRentals_exists'] = overdueRentals_exists
     context['orders'] = orders
     context['filter_option'] = filter_option
     context['today'] = today
@@ -416,7 +421,7 @@ def extend_rental(request, order_id):
             data = json.loads(request.body)
             days_to_extend = int(data.get('days_to_extend', 0))
             rental_order = RentalOrder.objects.get(id=order_id)
-            ogEndDate = rental_order.rental_end_date # saving for exension data creation
+            ogEndDate = rental_order.rental_end_date # saving for extension data creation
             rental_order.rental_end_date += timedelta(days=days_to_extend)
             rental_order.save()
 

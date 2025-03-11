@@ -15,7 +15,10 @@ def global_notifications(request):
 
     companyInfo = CompanySetting.objects.first()
 
+    overdueRentals_exists = RentalOrder.objects.filter(rental_end_date__lt=today, rental_returned=False).exists()
+
     context = {}
+    context['overdueRentals_exists'] = overdueRentals_exists
     context['unapprovedOrders'] = unapprovedOrders
     context['returnedOrdersPendingInspection'] = returnedOrdersPendingInspection
     context['numAlerts'] = numAlerts
