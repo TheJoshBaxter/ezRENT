@@ -6,7 +6,7 @@ import uuid
 def get_square_client():
     client = Client(
         access_token=settings.SQUARE_ACCESS_TOKEN,
-        environment="sandbox"  # 'sandbox' for testing or 'production' for live transactions
+        environment="production"  # 'sandbox' for testing or 'production' for live transactions
     )
     return client
 
@@ -27,7 +27,7 @@ def create_payment(token, cost_in_cents):
             "currency": "USD"
             },
             "autocomplete": True,
-            "note": "Brief description"
+            "note": "Brief description goes here -JB"
         }
     )
 
