@@ -36,6 +36,9 @@
             {% else %}
             <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
             <span class="fw-bold">Completed Payment</span>
+            <div class="ms-4 mt-2">
+                <a href="{{order.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+            </div>
             {% endif %}
         </div>
 
@@ -308,6 +311,9 @@
         {% else %}
         <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
         <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
+        <div class="ms-4 mt-2">
+            <a href="{{extension.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+        </div>
         {% endif %}
     </div>
 

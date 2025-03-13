@@ -40,6 +40,7 @@ class RentalOrder(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     rental_approved = models.BooleanField(default=False, null=True)
     rental_returned = models.BooleanField(default=False, null=True)
+    payment_receipt_url = models.CharField(max_length=100, default="noURL")
 
     @property
     def rental_term_agreement(self): # (number of days until renewal or return)
@@ -61,6 +62,7 @@ class RentalExtensions(models.Model):
     timestamp = models.DateTimeField()
     cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     paid = models.BooleanField(default=False, null=True)
+    payment_receipt_url = models.CharField(max_length=100, default="noURL")
 
     def __str__(self):
         return f"Extension for {self.rental_order} originally, now {self.new_end_date}"

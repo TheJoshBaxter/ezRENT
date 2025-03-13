@@ -544,8 +544,10 @@ def update_payment_status(request):
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
 
-            if create_payment(token, cost_in_cents): #execute create_payment, and if it returns true (for successful payment), mark the extension as paid and save it.
+            result = create_payment(token, cost_in_cents) # execute create_payment, save the results to "result"
+            if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
                 extension.paid = True
+                extension.payment_receipt_url = result.get("receipt_url")
                 extension.save()
             else:
                 messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
@@ -555,8 +557,10 @@ def update_payment_status(request):
             transportOrder = TransportOrder.objects.get(rental_order=orderId)
             cost_in_cents = int(order.total_cost * 100)
 
-            if create_payment(token, cost_in_cents): #execute create_payment, and if it returns true (for successful payment), mark the order and transport as paid and save them.
+            result = create_payment(token, cost_in_cents) # execute create_payment, save the results to "result"
+            if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
                 order.paid = True
+                order.payment_receipt_url = result.get("receipt_url")
                 transportOrder.paid = True
                 order.save()
                 transportOrder.save()
