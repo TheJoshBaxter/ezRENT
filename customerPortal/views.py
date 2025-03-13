@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
+from django.contrib import messages
 from .models import Customer
 from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber
 from datetime import datetime, date, timedelta
@@ -535,17 +536,26 @@ def update_payment_status(request):
         if orderId == 'extensionPayment': # if orderId contains the default 'extensionPayment' (set in the call in js), this is a rental extension payment, not an intial order payment.
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
-            create_payment(token, cost_in_cents)
-            extension.paid = True
-            extension.save()
+
+            if create_payment(token, cost_in_cents): #execute create_payment, and if it returns true (for successful payment), mark the extension as paid and save it.
+                extension.paid = True
+                extension.save()
+            else:
+                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="extensionPayment")
+
         else:
             order = RentalOrder.objects.get(id=orderId)
             transportOrder = TransportOrder.objects.get(rental_order=orderId)
             cost_in_cents = int(order.total_cost * 100)
-            create_payment(token, cost_in_cents)
-            order.paid = True
-            transportOrder.paid = True
-            order.save()
+
+            if create_payment(token, cost_in_cents): #execute create_payment, and if it returns true (for successful payment), mark the order and transport as paid and save them.
+                order.paid = True
+                transportOrder.paid = True
+                order.save()
+                transportOrder.save()
+            else:
+                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+
         return redirect('confirmation', orderID=orderId)
     
 def privacy_policy(request):

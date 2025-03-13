@@ -6,7 +6,7 @@ import uuid
 def get_square_client():
     client = Client(
         access_token=settings.SQUARE_ACCESS_TOKEN,
-        environment="production"  # 'sandbox' for testing or 'production' for live transactions
+        environment="sandbox"  # 'sandbox' for testing or 'production' for live transactions
     )
     return client
 
@@ -33,6 +33,8 @@ def create_payment(token, cost_in_cents):
 
     if result.is_success():
         print(result.body)
+        return True #Indicate success
     elif result.is_error():
         print("ERROR:")
         print(result.errors)
+        return False #Indicate failure

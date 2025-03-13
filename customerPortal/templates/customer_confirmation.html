@@ -15,19 +15,40 @@
     <div class="checklist">
         <div class="checklist-item d-flex align-items-center mb-3">
             <!-- Task 1: Sign Rental Agreement -->
+            {% if not contract_signed %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
                 <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                 <span class="fw-bold">Sign Rental Agreement</span>
             </a>
+            {% else %}
+            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+            <span class="fw-bold">Signed Rental Agreement</span>
+            {% endif %}
         </div>
         
         <div class="checklist-item d-flex align-items-center mb-3">
             <!-- Task 2: Make Payment -->
+            {% if not paid %}
             <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
                 <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                 <span class="fw-bold">Complete Payment</span>
             </a>
+            {% else %}
+            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+            <span class="fw-bold">Completed Payment</span>
+            {% endif %}
         </div>
+        {% if messages %}
+            {% for message in messages %}
+                {% if "initialPayment" in message.tags %}
+                    <div class="icon-circle text-danger">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        {{ message }}
+                    </div>
+                    <br/>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
     </div>
 
     <h4>Request Details:</h4>
@@ -278,11 +299,28 @@
     {% endif %}
     <div class="checklist-item d-flex align-items-center mb-3">
         <!-- Task 2: Make Payment -->
+        {% if not extension.paid %}
         <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center">
             <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
             <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
         </a>
+        {% else %}
+        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+        <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
+        {% endif %}
     </div>
+
+    {% if messages %}
+            {% for message in messages %}
+                {% if "extensionPayment" in message.tags %}
+                    <div class="icon-circle text-danger">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        {{ message }}
+                    </div>
+                    <br/>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
 
     <!-- Complete EXTENSION Payment Modal -->
     <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
@@ -373,7 +411,7 @@
             const result = await card.tokenize();
 
             if (result.status === 'OK') {
-                statusContainer.innerText = 'Payment Successful!';
+                statusContainer.innerText = 'Payment Info Submitted!';
                 await updatePaymentStatus(extensionId, result.token, orderId); // Pass token to backend
             } else {
                 statusContainer.innerText = 'Payment Failed!';
@@ -391,7 +429,7 @@
             const result = await card.tokenize();
 
             if (result.status === 'OK') {
-                statusContainer.innerText = 'Payment Successful!';
+                statusContainer.innerText = 'Payment Info Submitted!';
                 await updatePaymentStatus(extensionId, result.token); // Pass token to backend
             } else {
                 statusContainer.innerText = 'Payment Failed!';
