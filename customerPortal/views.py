@@ -500,6 +500,11 @@ def confirmation(request, orderID, template_name):
 
     newOrder = RentalOrder.objects.get(id=orderID)
 
+    if settings.SQUARE_ENV == 'sandbox':
+        sandboxed = True
+    else:
+        sandboxed = False
+
     # If the request method is POST, this means that the user has submitted their signed rental contract
     if request.method == 'POST':
         newOrder.contract_signed = True # mark contract signed as true in DB
@@ -517,6 +522,7 @@ def confirmation(request, orderID, template_name):
     context = {}
     context['today'] = date.today()
     context['order'] = newOrder
+    context['sandboxed'] = sandboxed # used for showing/hiding square sandbox fake card info
     context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
     context['paid'] = newOrder.paid # if order has been paid for, this will contain true
     context['total_cost'] = grandTotalCost
@@ -532,8 +538,9 @@ def update_payment_status(request):
         extensionId = request.GET.get('extensionId', '')
         token = request.GET.get('token', '') # to be used for payment API
         orderId = request.GET.get('orderId', '')
+        orderType = request.GET.get('orderType')
 
-        if orderId == 'extensionPayment': # if orderId contains the default 'extensionPayment' (set in the call in js), this is a rental extension payment, not an intial order payment.
+        if orderType == 'extension': # if orderType contains 'extension' (set in the call in js), this is a rental extension payment, not an intial order payment.
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
 
@@ -541,7 +548,7 @@ def update_payment_status(request):
                 extension.paid = True
                 extension.save()
             else:
-                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="extensionPayment")
+                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
 
         else:
             order = RentalOrder.objects.get(id=orderId)

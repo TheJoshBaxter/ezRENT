@@ -144,6 +144,7 @@ LOGIN_URL = '/managementPortal/login/'
 SQUARE_ACCESS_TOKEN = os.environ.get('SQUARE_ACCESS_TOKEN')
 SQUARE_LOCATION_ID = os.environ.get('SQUARE_LOCATION_ID')
 SQUARE_APP_ID = os.environ.get('SQUARE_APP_ID')
+SQUARE_ENV = os.environ.get('SQUARE_ENV')
 
 ACCOUNT_SID = os.environ.get('account_sid')
 AUTH_TOKEN = os.environ.get('auth_token')

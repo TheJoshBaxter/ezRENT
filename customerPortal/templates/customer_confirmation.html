@@ -38,6 +38,8 @@
             <span class="fw-bold">Completed Payment</span>
             {% endif %}
         </div>
+
+        <!-- This block generates an error message for the initial rental if there was an error with payment -->
         {% if messages %}
             {% for message in messages %}
                 {% if "initialPayment" in message.tags %}
@@ -271,17 +273,16 @@
                             <button id="primary-payment-card-button" type="button" class="btn btn-primary w-100">Pay</button>
                             <br>
                             <br>
+                            {% if sandboxed %}
                             ***
-                            <h5><u>For Testing Only:</u></h5>
+                            <h5><u>You're in SANDBOX MODE:</u></h5>
                             <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
                             <p><strong>CVV:</strong> 111</p>
                             <p><strong>Expiration:</strong> Any future date</p>
                             <p><strong>Zip Code:</strong> Any valid zip</p>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -306,21 +307,24 @@
         </a>
         {% else %}
         <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-        <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
+        <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
         {% endif %}
     </div>
 
+    <!-- This block generates an error message for the extension the user was trying to pay for if there was an error with payment -->
     {% if messages %}
-            {% for message in messages %}
-                {% if "extensionPayment" in message.tags %}
+        {% for message in messages %}
+            {% if "extensionPayment" in message.tags %}
+                {% if extension.id|stringformat:"s" in message.tags %}
                     <div class="icon-circle text-danger">
                         <i class="fas fa-exclamation-triangle text-danger"></i>
                         {{ message }}
                     </div>
                     <br/>
                 {% endif %}
-            {% endfor %}
-        {% endif %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
     <!-- Complete EXTENSION Payment Modal -->
     <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
@@ -343,17 +347,16 @@
                             <button id="extension-{{ extension.id }}-card-button" type="button" class="btn btn-primary w-100">Pay</button>
                             <br>
                             <br>
+                            {% if sandboxed %}
                             ***
-                            <h5><u>For Testing Only:</u></h5>
+                            <h5><u>You're in SANDBOX MODE:</u></h5>
                             <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
                             <p><strong>CVV:</strong> 111</p>
                             <p><strong>Expiration:</strong> Any future date</p>
                             <p><strong>Zip Code:</strong> Any valid zip</p>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -361,11 +364,7 @@
     {% endfor %}
     {% endif %}
 
-    {% comment %} {% if paid and contract_signed %}
-    <button class="btn btn-success mt-3" action="SOMETHING">DO SOMETHING NEXT</button>
-    {% else %}
-    <button class="btn btn-success mt-3" action="SOMETHING" disabled>DO SOMETHING NEXT</button>
-    {% endif %} {% endcomment %}
+
 </div>
 <style>
     .cost-display {
@@ -405,6 +404,7 @@
         const payments = Square.payments(appId, locationId);
         const card = await payments.card();
         await card.attach('#primary-payment-card-container');
+        const orderType = "initial";
 
         document.getElementById('primary-payment-card-button').addEventListener('click', async () => {
             const statusContainer = document.getElementById('primary-payment-status-container');
@@ -412,7 +412,7 @@
 
             if (result.status === 'OK') {
                 statusContainer.innerText = 'Payment Info Submitted!';
-                await updatePaymentStatus(extensionId, result.token, orderId); // Pass token to backend
+                await updatePaymentStatus(extensionId, result.token, orderId, orderType); // Pass token to backend
             } else {
                 statusContainer.innerText = 'Payment Failed!';
             }
@@ -423,6 +423,7 @@
         const payments = Square.payments(appId, locationId);
         const card = await payments.card();
         await card.attach(`#extension-${extensionId}-card-container`);
+        const orderType = "extension";
 
         document.getElementById(`extension-${extensionId}-card-button`).addEventListener('click', async () => {
             const statusContainer = document.getElementById(`extension-${extensionId}-payment-status-container`);
@@ -430,7 +431,7 @@
 
             if (result.status === 'OK') {
                 statusContainer.innerText = 'Payment Info Submitted!';
-                await updatePaymentStatus(extensionId, result.token); // Pass token to backend
+                await updatePaymentStatus(extensionId, result.token, orderId, orderType); // Pass token to backend
             } else {
                 statusContainer.innerText = 'Payment Failed!';
             }
@@ -438,10 +439,10 @@
     }
 
     // Function to make an AJAX request to the Django server to update the payment status in the database
-    async function updatePaymentStatus(extensionId, token, orderId='extensionPayment') {
+    async function updatePaymentStatus(extensionId, token, orderId, orderType) {
         try {
             // Send GET request with 'order_id' as a URL parameter
-            const response = await fetch(`/update_payment_status/?extensionId=${extensionId}&token=${token}&orderId=${orderId}`, {
+            const response = await fetch(`/update_payment_status/?extensionId=${extensionId}&token=${token}&orderId=${orderId}&orderType=${orderType}`, {
                 method: 'GET',  // Using GET request
             });
             location.reload();

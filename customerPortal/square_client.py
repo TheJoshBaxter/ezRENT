@@ -6,7 +6,7 @@ import uuid
 def get_square_client():
     client = Client(
         access_token=settings.SQUARE_ACCESS_TOKEN,
-        environment="sandbox"  # 'sandbox' for testing or 'production' for live transactions
+        environment=settings.SQUARE_ENV  # 'sandbox' for testing or 'production' for live transactions
     )
     return client
 

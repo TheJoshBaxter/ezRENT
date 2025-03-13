@@ -1,3 +1,4 @@
+from django.conf import settings
 from .models import RentalOrder
 from .models import CompanySetting
 from datetime import date
@@ -17,6 +18,11 @@ def global_notifications(request):
 
     overdueRentals_exists = RentalOrder.objects.filter(rental_end_date__lt=today, rental_returned=False).exists()
 
+    if settings.SQUARE_ENV == "production":
+        squareURL_prefix = ''
+    else:
+        squareURL_prefix = 'sandbox.'
+
     context = {}
     context['overdueRentals_exists'] = overdueRentals_exists
     context['unapprovedOrders'] = unapprovedOrders
@@ -24,5 +30,6 @@ def global_notifications(request):
     context['numAlerts'] = numAlerts
     context['numUnapprovedOrders'] = numUnapprovedOrders
     context['companyInfo'] = companyInfo
+    context['squareURL_prefix'] = squareURL_prefix
 
     return context
