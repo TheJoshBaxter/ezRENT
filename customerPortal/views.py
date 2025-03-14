@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib import messages
 from .models import Customer
-from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber
+from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber, CompanySetting
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
 from customerPortal.square_client import create_payment, create_order
@@ -456,6 +456,9 @@ def order_summary(request, template_name):
 
             print("Transport Order created in ezRENT successfully")
 
+            # grab company name from DB to populate automated texts/emails
+            company = CompanySetting.objects.first()
+
             # Send email or text (depending on preference) notification to each manager
             managers = ManagementAlertNumber.objects.all()
             for manager in managers:
@@ -483,7 +486,7 @@ def order_summary(request, template_name):
                 # send an email alert
                 receiver = new_order.customer.email
                 subject = "Rental Order Submitted"
-                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for an {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The Jobsite Rents Team"
+                body = f"Hello, {new_order.customer.first_name} 👋,\n\nYour rental request for an {new_order.equipment.equipment_type.name} {new_order.equipment.equipment_type.category}, to be rented from {new_order.rental_start_date} to {new_order.rental_end_date}, has been submitted and is now being reviewed.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting the following link:\n{settings.BASE_SITE_URL}/customer_confirmation/{new_order.id}.\n\nYou can return to this link at any time. A second notification will be sent upon approval of your request.\n\nThanks for your business!\n-The {company.company_name} Team"
                 send_customer_email(receiver, subject, body)
     
             # Redirect to the confirmation view and pass the order ID

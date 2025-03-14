@@ -150,6 +150,7 @@ ACCOUNT_SID = os.environ.get('account_sid')
 AUTH_TOKEN = os.environ.get('auth_token')
 
 G_APP_PASS = os.environ.get('G_APP_PASS')
+SENDER_EMAIL = os.environ.get('SENDER_EMAIL')
 
 BASE_SITE_URL = os.environ.get('BASE_SITE_URL')
 

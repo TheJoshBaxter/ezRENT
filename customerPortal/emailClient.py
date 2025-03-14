@@ -6,7 +6,7 @@ from django.conf import settings
 def send_customer_email(receiver, subject, body):
 
     # Email configuration
-    sender_email = "jebaxter2@gmail.com"
+    sender_email = settings.SENDER_EMAIL
     sender_password = settings.G_APP_PASS
     receiver_email = receiver
     subject = subject

@@ -1,6 +1,5 @@
 from django.conf import settings
-from .models import RentalOrder
-from .models import CompanySetting
+from .models import RentalOrder, CompanySetting
 from datetime import date
 
 def global_notifications(request):

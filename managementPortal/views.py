@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType, TransportOrder
+from .models import RentalOrder, Inspection, Customer, RentalExtensions, EquipmentType, TransportOrder, CompanySetting
 from datetime import date, timedelta, datetime
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
@@ -249,6 +249,7 @@ def pending_rentals(request):
 def approve_rental(request, order_id):
     # Get the RentalOrder instance
     order = get_object_or_404(RentalOrder, id=order_id)
+    company = CompanySetting.objects.first()
     
     if request.method == 'POST':
         # Mark the rental as approved (you can update any field in your model)
@@ -267,7 +268,7 @@ def approve_rental(request, order_id):
             # send an email alert
             receiver = order.customer.email
             subject = "Rental Order Approval Notification"
-            body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+            body = f"Hello, {order.customer.first_name} 👋,\n\nYour rental request for a {order.equipment.equipment_type.name} {order.equipment.equipment_type.category}, to be rented from {order.rental_start_date} to {order.rental_end_date}, has been approved!\n\nThe {order.equipment.equipment_type.category} will be delivered to {order.location} on the specified start date of the reservation.\n\nPlease make sure you have signed the rental contract and paid for your rental by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
             send_customer_email(receiver, subject, body)
 
         # Redirect to a confirmation page or the updated rental order page
@@ -277,6 +278,7 @@ def send_overdue_payment_reminder(request, order_id):
     if request.method == 'POST':
         try:
             order = RentalOrder.objects.get(id=order_id)
+            company = CompanySetting.objects.first()
 
             # Send email or text notification to customer depending on preference
             customerPreference = order.customer.cust_notification_preference
@@ -284,13 +286,13 @@ def send_overdue_payment_reminder(request, order_id):
             if customerPreference == 'text':
                 # send an alert text
                 phone = order.customer.phone_number
-                messageBody = f"Hello, {order.customer.first_name} 👋, you have an outstanding payment for your rental from JobsiteRents. Please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id} to complete payment."
+                messageBody = f"Hello, {order.customer.first_name} 👋, you have an outstanding payment for your rental from {company.company_name}. Please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id} to complete payment."
                 send_customer_text(phone, messageBody)
             else:
                 # send an email alert
                 receiver = order.customer.email
                 subject = "Overdue Rental Payment Reminder"
-                body = f"Hello, {order.customer.first_name} 👋,\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from JobsiteRents. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+                body = f"Hello, {order.customer.first_name} 👋,\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from {company.company_name}. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
                 send_customer_email(receiver, subject, body)
 
 
@@ -440,6 +442,8 @@ def extend_rental(request, order_id):
                 cost = extensionCost
             )
 
+            company = CompanySetting.objects.first()
+
             # notify customer of outstanding payment
             if rental_order.customer.cust_notification_preference == 'text':
                 # send an alert text
@@ -450,7 +454,7 @@ def extend_rental(request, order_id):
                 # send an email alert
                 receiver = rental_order.customer.email
                 subject = "Rental Extension Approval Notification"
-                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The Jobsite Rents Team"
+                body = f"Hello, {rental_order.customer.first_name} 👋,\n\nYour request for an extension on your rental of our ({rental_order.equipment.equipment_type.name} {rental_order.equipment.equipment_type.category}), originally rented from {rental_order.rental_start_date} to {rental_order.rental_end_date}, has been approved!\n\n Please confirm extension details and complete payment for your rental extension by visiting:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{rental_order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
                 send_customer_email(receiver, subject, body)
 
             return JsonResponse({'success': True})
