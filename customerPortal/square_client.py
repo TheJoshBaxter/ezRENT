@@ -10,7 +10,49 @@ def get_square_client():
     )
     return client
 
-def create_payment(token, cost_in_cents):
+def create_order(orderType, order, cost_in_cents, extension=None):
+
+    # Access the client service (orders)
+    orders_api = get_square_client().orders
+
+    # Depending on type of order, adjust the line item descriptions to be used in "name" below
+    if orderType =='extension':
+        # order_details = f"Extension for Order #{order.id}, {order.equipment.equipment_type.name} Forklift, extended to {extension.new_end_date}."
+        order_details = f"Extension: {order.equipment.equipment_type.name} Forklift"
+        note = f"Order #{order.id}, {order.equipment.equipment_type.name} Forklift Rental, extended by {extension.days_extended} days to end on {extension.new_end_date}."
+    else:
+        order_details = f"{order.equipment.equipment_type.name} Forklift Rental"
+        note = f"{order.equipment.equipment_type.name} Forklift Rental: {order.rental_term_agreement}-day Rental from {order.rental_start_date} to {order.rental_end_date}."
+
+    orderResult = orders_api.create_order(
+        body = {
+            "order": {
+            "location_id": settings.SQUARE_LOCATION_ID,
+            "line_items": [
+                {
+                "name": order_details,
+                "quantity": "1",
+                "base_price_money": {
+                    "amount": cost_in_cents,
+                    "currency": "USD"
+                }
+                }
+            ]
+            },
+            "idempotency_key": str(uuid.uuid4())
+        }
+    )
+
+    if orderResult.is_error():
+        print("Order Creation resulted in an error")
+    elif orderResult.is_success():
+        print("Order Creation SUCCESSFUL!!!")
+
+        order_id = orderResult.body['order']['id']
+        
+        return {"order_id": order_id, "note": note} #Return a dictionary containing the order_id and the note to be used in create_payment.
+
+def create_payment(token, cost_in_cents, order_data):
 
     client = get_square_client()
 
@@ -22,12 +64,14 @@ def create_payment(token, cost_in_cents):
             "amount": cost_in_cents,
             "currency": "USD"
             },
+
             "app_fee_money": { #The amount of money that the developer is taking as a fee for facilitating the payment on behalf of the seller.
             "amount": 0,
             "currency": "USD"
             },
             "autocomplete": True,
-            "note": "Brief description goes here -JB"
+            "order_id": order_data["order_id"],
+            "note": order_data["note"]
         }
     )
 
@@ -35,7 +79,7 @@ def create_payment(token, cost_in_cents):
         payment_response = result.body
         receipt_url = payment_response.get("payment", {}).get("receipt_url")
         print("Payment Successful!")
-        return {"success": True, "receipt_url": receipt_url} #Return a dictionary containing success indicator and receipt URL
+        return {"success": True, "receipt_url": receipt_url, "order_id": order_data["order_id"], "note": order_data["note"]} #Return a dictionary containing success indicator and receipt URL
     elif result.is_error():
         print("PAYMENT ERROR:")
         print(result.errors)

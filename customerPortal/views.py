@@ -5,7 +5,7 @@ from .models import Customer
 from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber
 from datetime import datetime, date, timedelta
 from django.http import JsonResponse
-from customerPortal.square_client import create_payment
+from customerPortal.square_client import create_payment, create_order
 # from customerPortal.twilioClient import send_text_alert
 from customerPortal.twilioClient import send_customer_text
 from customerPortal.emailClient import send_customer_email
@@ -538,13 +538,19 @@ def update_payment_status(request):
         extensionId = request.GET.get('extensionId', '')
         token = request.GET.get('token', '') # to be used for payment API
         orderId = request.GET.get('orderId', '')
-        orderType = request.GET.get('orderType')
+        orderType = request.GET.get('orderType', '')
+
+        order = RentalOrder.objects.get(id=orderId)
+        transportOrder = TransportOrder.objects.get(rental_order=orderId)
 
         if orderType == 'extension': # if orderType contains 'extension' (set in the call in js), this is a rental extension payment, not an intial order payment.
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
 
-            result = create_payment(token, cost_in_cents) # execute create_payment, save the results to "result"
+            # create an order for receipting purposes
+            order_data = create_order(orderType, order, cost_in_cents, extension)
+
+            result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
             if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
                 extension.paid = True
                 extension.payment_receipt_url = result.get("receipt_url")
@@ -553,11 +559,14 @@ def update_payment_status(request):
                 messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
 
         else:
-            order = RentalOrder.objects.get(id=orderId)
-            transportOrder = TransportOrder.objects.get(rental_order=orderId)
+            # order = RentalOrder.objects.get(id=orderId)
+            # transportOrder = TransportOrder.objects.get(rental_order=orderId)
             cost_in_cents = int(order.total_cost * 100)
 
-            result = create_payment(token, cost_in_cents) # execute create_payment, save the results to "result"
+            # create an order for receipting purposes
+            order_data = create_order(orderType, order, cost_in_cents)
+
+            result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
             if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
                 order.paid = True
                 order.payment_receipt_url = result.get("receipt_url")
