@@ -45,6 +45,7 @@ def create_order(orderType, order, cost_in_cents, extension=None):
 
     if orderResult.is_error():
         print("Order Creation resulted in an error")
+        print(orderResult.errors)
     elif orderResult.is_success():
         print("Order Creation SUCCESSFUL!!!")
 
