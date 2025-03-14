@@ -45,13 +45,14 @@ def create_order(orderType, order, cost_in_cents, extension=None):
 
     if orderResult.is_error():
         print("Order Creation resulted in an error")
-        print(orderResult.errors)
+        # print(orderResult.errors)
+        return {"success": False,}
     elif orderResult.is_success():
         print("Order Creation SUCCESSFUL!!!")
 
         order_id = orderResult.body['order']['id']
         
-        return {"order_id": order_id, "note": note} #Return a dictionary containing the order_id and the note to be used in create_payment.
+        return {"success": True, "order_id": order_id, "note": note} #Return a dictionary containing the order_id and the note to be used in create_payment.
 
 def create_payment(token, cost_in_cents, order_data):
 

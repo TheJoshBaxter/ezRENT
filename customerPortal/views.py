@@ -550,13 +550,16 @@ def update_payment_status(request):
             # create an order for receipting purposes
             order_data = create_order(orderType, order, cost_in_cents, extension)
 
-            result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
-            if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
-                extension.paid = True
-                extension.payment_receipt_url = result.get("receipt_url")
-                extension.save()
-            else:
-                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
+            # if order creation was successful, use create_payment to take the payment
+            if order_data.get("success"):
+
+                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
+                    extension.paid = True
+                    extension.payment_receipt_url = result.get("receipt_url")
+                    extension.save()
+                else:
+                    messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
 
         else:
             # order = RentalOrder.objects.get(id=orderId)
@@ -566,15 +569,18 @@ def update_payment_status(request):
             # create an order for receipting purposes
             order_data = create_order(orderType, order, cost_in_cents)
 
-            result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
-            if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
-                order.paid = True
-                order.payment_receipt_url = result.get("receipt_url")
-                transportOrder.paid = True
-                order.save()
-                transportOrder.save()
-            else:
-                messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+            # if order creation was successful, use create_payment to take the payment
+            if order_data.get("success"):
+
+                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
+                    order.paid = True
+                    order.payment_receipt_url = result.get("receipt_url")
+                    transportOrder.paid = True
+                    order.save()
+                    transportOrder.save()
+                else:
+                    messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
 
         return redirect('confirmation', orderID=orderId)
     
