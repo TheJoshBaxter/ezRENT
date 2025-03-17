@@ -17,7 +17,8 @@ def send_customer_email(receiver, subject, body):
     msg["From"] = sender_email
     msg["To"] = receiver_email
     msg["Subject"] = subject
-    msg.attach(MIMEText(body, "plain"))
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
 
     try:
         # Connect to the SMTP server
