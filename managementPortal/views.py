@@ -286,24 +286,13 @@ def send_overdue_payment_reminder(request, order_id):
             if customerPreference == 'text':
                 # send an alert text
                 phone = order.customer.phone_number
-                messageBody = f"Hello, {order.customer.first_name},\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from {company.company_name}. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
-                OG = f"Hello, {order.customer.first_name}, you have an outstanding payment for your rental from {company.company_name}. Please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id} to complete payment."
+                messageBody = f"Hello, {order.customer.first_name}, you have an outstanding payment for your rental from {company.company_name}. Please visit {settings.BASE_SITE_URL}/customer_confirmation/{order.id} to complete payment."
                 send_customer_text(phone, messageBody)
             else:
                 # send an email alert
                 receiver = order.customer.email
                 subject = "Overdue Rental Payment Reminder"
-                body = "Hello!"
-                print(repr(order.customer.first_name))
-                print(repr(order.equipment.equipment_type.name))
-                print(repr(order.equipment.equipment_type.category))
-                print(repr(company.company_name))
-                print(repr(body))
-                print(repr(subject))
-                print(repr(receiver))
-                print(repr(settings.SENDER_EMAIL))
-                
-
+                body = f"Hello, {order.customer.first_name},\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from {company.company_name}. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
                 send_customer_email(receiver, subject, body)
 
 
