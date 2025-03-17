@@ -292,7 +292,7 @@ def send_overdue_payment_reminder(request, order_id):
                 # send an email alert
                 receiver = order.customer.email
                 subject = "Overdue Rental Payment Reminder"
-                body = f"Hello, {order.customer.first_name},\n\nYou have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from {company.company_name}. To complete payment, please visit:\n\n{settings.BASE_SITE_URL}/customer_confirmation/{order.id}.\n\nThanks for your business!\n\n-The {company.company_name} Team"
+                body = f"Hello, {order.customer.first_name}, You have an outstanding payment for your {order.equipment.equipment_type.name} {order.equipment.equipment_type.category} rental from {company.company_name}. To complete payment, please visit: {settings.BASE_SITE_URL}/customer_confirmation/{order.id}. Thanks for your business! -The {company.company_name} Team"
                 send_customer_email(receiver, subject, body)
 
 
