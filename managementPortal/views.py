@@ -293,11 +293,16 @@ def send_overdue_payment_reminder(request, order_id):
                 # send an email alert
                 receiver = order.customer.email
                 subject = "Overdue Rental Payment Reminder"
-                body = f"Hello!"
+                body = "Hello!"
                 print(repr(order.customer.first_name))
                 print(repr(order.equipment.equipment_type.name))
                 print(repr(order.equipment.equipment_type.category))
                 print(repr(company.company_name))
+                print(repr(body))
+                print(repr(subject))
+                print(repr(receiver))
+                print(repr(settings.SENDER_EMAIL))
+                
 
                 send_customer_email(receiver, subject, body)
 
