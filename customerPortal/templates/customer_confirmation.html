@@ -1,69 +1,256 @@
 {% extends "customer_base.html" %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1 class="mt-5">Almost done...</h1>
-    <hr>
+<div class="container mt-4">
 
-    {% if contract_signed and paid %}
-    <p>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</p>
-    {% else %}
-    <p>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, the following tasks must be completed:</p>
-    {% endif %}
-
-    <!-- Checklist Items -->
-    <div class="checklist">
-        <div class="checklist-item d-flex align-items-center mb-3">
-            <!-- Task 1: Sign Rental Agreement -->
-            {% if not contract_signed %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
-                <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-                <span class="fw-bold">Sign Rental Agreement</span>
-            </a>
-            {% else %}
-            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Signed Rental Agreement</span>
-            {% endif %}
-        </div>
-        
-        <div class="checklist-item d-flex align-items-center mb-3">
-            <!-- Task 2: Make Payment -->
-            {% if not paid %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
-                <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-                <span class="fw-bold">Complete Payment</span>
-            </a>
-            {% else %}
-            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Completed Payment</span>
-            <div class="ms-4 mt-2">
-                <a href="{{order.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- This block generates an error message for the initial rental if there was an error with payment -->
-        {% if messages %}
-            {% for message in messages %}
-                {% if "initialPayment" in message.tags %}
-                    <div class="icon-circle text-danger">
-                        <i class="fas fa-exclamation-triangle text-danger"></i>
-                        {{ message }}
-                    </div>
-                    <br/>
-                {% endif %}
-            {% endfor %}
+    <div class="text-center p-3 border bg-light">
+        {% if contract_signed and paid and order.rental_approved %}
+        <h5>Your rental request <u><strong>has been approved</strong></u>. Thank you for your payment and signature!</h5>
+        {% elif contract_signed and paid %}
+        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</h5>
+        {% else %}
+        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, please complete the following tasks:</h5>
         {% endif %}
     </div>
 
-    <h4>Request Details:</h4>
-    <ul>
-        <li><strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}</li>
-        <li><strong>Equipment:</strong> {{ order.equipment.equipment_type }} Forklift</li>
-        <li><strong>Rental Start Date:</strong> {{ order.rental_start_date }}</li>
-        <li><strong>Rental End Date:</strong> {{ order.rental_end_date }}</li>
-        <li><strong>Location for Equipment Dropoff:</strong> {{ order.location }}</li>
-    </ul>
+    <div class="container my-4">
+        <div class="row">
+            <!-- First Column: Takes up 6 out of 12 columns -->
+            <div class="col-md-6">
+                <h3>Customer Actions:</h3>
+                <hr>
+                <u><h5>Initial Rental:</h5></u>
+                <!-- Checklist Items -->
+                <div class="checklist">
+                    <div class="checklist-item d-flex align-items-center mb-3">
+                        <!-- Task 1: Sign Rental Agreement -->
+                        {% if not contract_signed %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
+                            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Sign Rental Agreement</span>
+                        </a>
+                        {% else %}
+                        <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Signed Rental Agreement</span>
+                        <div class="ms-auto">
+                            <a href="#" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Contract</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="checklist-item d-flex align-items-center mb-3">
+                        <!-- Task 2: Make Payment -->
+                        {% if not paid %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
+                            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Complete Payment</span>
+                        </a>
+                        {% else %}
+                        <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Completed Payment</span>
+                        <div class="ms-auto">
+                            <a href="{{order.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+                        </div>
+                        {% endif %}
+                    </div>
+            
+                    <!-- This block generates an error message for the initial rental if there was an error with payment -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if "initialPayment" in message.tags %}
+                                <div class="icon-circle text-danger">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                    {{ message }}
+                                </div>
+                                <br/>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if extensions %}
+                <hr>
+                
+                <u><h5>Extension Requests:</h5></u>
+                {% for extension in extensions%}
+                {% if not extension.paid %}
+                <p>Your rental extension is <u><strong>being reviewed</strong></u>. Before approval, please complete payment!</p>
+                {% endif %}
+                <div class="checklist-item d-flex align-items-center mb-3">
+                    <!-- Task 2: Make Payment -->
+                    {% if not extension.paid %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center">
+                            <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
+                        </a>
+
+                        <!-- This block generates an error message for the extension the user was trying to pay for if there was an error with payment -->
+                        {% if messages %}
+                        {% for message in messages %}
+                            {% if "extensionPayment" in message.tags %}
+                                {% if extension.id|stringformat:"s" in message.tags %}
+                                    <div class="icon-circle text-danger">
+                                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                                        {{ message }}
+                                    </div>
+                                    <br/>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+
+                        <!-- Complete EXTENSION Payment Modal -->
+                        <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="extensionPaymentModalLabel-{{ extension.id }}">Complete Payment</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <!-- Custom code for payment process goes here -->
+                                        <div id="payment-form">
+                                            <div class="cost-display">
+                                                <h3 class="description">Total Cost for Your {{extension.days_extended}}-day Rental Extension</h3>
+                                                {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
+                                                <p class="price">${{ extension.cost }}</p>
+                                            
+                                                <div id="extension-{{ extension.id }}-payment-status-container"></div>
+                                                <div id="extension-{{ extension.id }}-card-container"></div>
+                                                <button id="extension-{{ extension.id }}-card-button" type="button" class="btn btn-primary w-100">Pay</button>
+                                                <br>
+                                                <br>
+                                                {% if sandboxed %}
+                                                ***
+                                                <h5><u>You're in SANDBOX MODE:</u></h5>
+                                                <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
+                                                <p><strong>CVV:</strong> 111</p>
+                                                <p><strong>Expiration:</strong> Any future date</p>
+                                                <p><strong>Zip Code:</strong> Any valid zip</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                    {% else %}
+                        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
+                        <div class="ms-4 mt-2">
+                            <a href="{{extension.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+        
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Second Column -->
+            <div class="col-md-6">
+                <div class="row justify-content-center">
+                    <!-- Payment Info Card -->
+    
+                    <div class="card p-4">
+                        <h3 class="text-center">Order Info - #{{order.id}}</h3>
+                    <hr>
+    
+                    {% comment %} <p class="fw-bold">Order: <span class="text-muted">#{{order.id}}</span></p> {% endcomment %}
+                    <p class="fw-bold">Customer: <span class="text-muted">{{ order.customer.first_name }} {{ order.customer.last_name }}</span></p>
+                    <p class="fw-bold">Equipment Type: <span class="text-muted">{{ order.equipment.equipment_type }} Forklift </span></p>
+                    <p class="fw-bold">Rental Period: <span class="text-muted">{{ order.rental_start_date }} - {{ order.rental_end_date }}</span></p>
+                    <p class="fw-bold">Dropoff Location: <span class="text-muted">{{ order.location }}</span></p>
+                    <p class="fw-bold">Total Cost (inluding all extensions): <span class="text-success">$2,499.00</span></p>
+    
+                    <hr>
+        
+                        <!-- Payment Breakdown -->
+                        <div class="mt-4">
+                            <h5 class="fw-bold">Payment Breakdown:</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Initial Forklift Rental</span>
+                                <span class="fw-bold text-muted">${{order.total_cost}}</span>
+                            </div>
+                            <br>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Delivery/Transport Costs</span>
+                                <span class="fw-bold text-muted">${{order.transportorder.cost}}</span>
+                            </div>
+                            <br>
+                            {% for extension in extensions %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Extension to {{extension.new_end_date}}</span>
+                                <span class="fw-bold text-muted">${{extension.cost}}</span>
+                            </div>
+                            <br>
+                            {% endfor %}
+                        </div>
+        
+                        <!-- Sub Items Accordion -->
+                        <div class="accordion mt-3" id="orderDetailsAccordion">
+                            <!-- Sub Item 1 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingOne">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                                        Delivery & Setup Details
+                                    </button>
+                                </h2>
+                                <div id="collapseOne" class="accordion-collapse collapse" data-bs-parent="#orderDetailsAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Delivery Address:</strong> 123 Jobsite Ave, Dallas, TX</p>
+                                        <p><strong>Scheduled Date:</strong> March 18, 2025</p>
+                                        <p><strong>Setup Fee:</strong> $100.00</p>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <!-- Sub Item 2 -->
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="headingTwo">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                        Additional Equipment Included
+                                    </button>
+                                </h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#orderDetailsAccordion">
+                                    <div class="accordion-body">
+                                        <ul>
+                                            <li>Safety Harness - $50.00</li>
+                                            <li>Extra Battery Pack - $75.00</li>
+                                            <li>Operator Training Session - $200.00</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <!-- Sub Item 3 -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    Payment Details
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#orderDetailsAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Payment Method:</strong> Visa (**** 1234)</p>
+                                    <p><strong>Transaction ID:</strong> ABCD56789</p>
+                                    <p><strong>Status:</strong> <span class="badge bg-success">Paid</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+    
+                    <!-- Action Buttons -->
+                    <div class="mt-4 text-center">
+                        <a href="receipt_url_here" class="btn btn-primary me-2">Download Receipt</a>
+                        <a href="contact_url_here" class="btn btn-outline-secondary">Contact Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Sign Agreement Modal -->
     <div class="modal fade" id="signAgreementModal" tabindex="-1" aria-labelledby="signAgreementModalLabel" aria-hidden="true">
@@ -290,85 +477,6 @@
             </div>
         </div>
     </div>
-
-
-    {% if extensions %}
-    <hr>
-    <h4>Extension Requests:</h4>
-    {% for extension in extensions%}
-    {% if extension.paid %}
-    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Thank you for your extension payment!</p>
-    {% else %}
-    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Before approval, please complete payment!</p>
-    {% endif %}
-    <div class="checklist-item d-flex align-items-center mb-3">
-        <!-- Task 2: Make Payment -->
-        {% if not extension.paid %}
-        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center">
-            <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
-        </a>
-        {% else %}
-        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-        <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
-        <div class="ms-4 mt-2">
-            <a href="{{extension.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- This block generates an error message for the extension the user was trying to pay for if there was an error with payment -->
-    {% if messages %}
-        {% for message in messages %}
-            {% if "extensionPayment" in message.tags %}
-                {% if extension.id|stringformat:"s" in message.tags %}
-                    <div class="icon-circle text-danger">
-                        <i class="fas fa-exclamation-triangle text-danger"></i>
-                        {{ message }}
-                    </div>
-                    <br/>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-
-    <!-- Complete EXTENSION Payment Modal -->
-    <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="extensionPaymentModalLabel-{{ extension.id }}">Complete Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Custom code for payment process goes here -->
-                    <div id="payment-form">
-                        <div class="cost-display">
-                            <h3 class="description">Total Cost for Your {{extension.days_extended}}-day Rental Extension</h3>
-                            {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
-                            <p class="price">${{ extension.cost }}</p>
-                        
-                            <div id="extension-{{ extension.id }}-payment-status-container"></div>
-                            <div id="extension-{{ extension.id }}-card-container"></div>
-                            <button id="extension-{{ extension.id }}-card-button" type="button" class="btn btn-primary w-100">Pay</button>
-                            <br>
-                            <br>
-                            {% if sandboxed %}
-                            ***
-                            <h5><u>You're in SANDBOX MODE:</u></h5>
-                            <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
-                            <p><strong>CVV:</strong> 111</p>
-                            <p><strong>Expiration:</strong> Any future date</p>
-                            <p><strong>Zip Code:</strong> Any valid zip</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
 
 
 </div>

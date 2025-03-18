@@ -103,7 +103,7 @@ class TransportRate(models.Model):
         return "Hourly Rate"
     
 class TransportOrder(models.Model):
-    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE)
+    rental_order = models.OneToOneField(RentalOrder, on_delete=models.CASCADE)
     cost = models.DecimalField(max_digits=10, decimal_places=2)
     paid = models.BooleanField(default=False)
 

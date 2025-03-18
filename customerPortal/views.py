@@ -525,6 +525,7 @@ def confirmation(request, orderID, template_name):
     context = {}
     context['today'] = date.today()
     context['order'] = newOrder
+    # context['transportOrder'] = transportOrder
     context['sandboxed'] = sandboxed # used for showing/hiding square sandbox fake card info
     context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
     context['paid'] = newOrder.paid # if order has been paid for, this will contain true
