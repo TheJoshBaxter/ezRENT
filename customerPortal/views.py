@@ -597,7 +597,7 @@ def download_pdf(request, order_id):
     companyInfo = CompanySetting.objects.first()
     signed_contract = SignedContract.objects.get(associated_order=order_id)  # Fetch the signed_contract instance
     context = { # Context to pass to the template
-        "today": today,
+        "today": signed_contract.date_signed,
         "companyInfo": companyInfo,
         "order": signed_contract.associated_order,
         "companyInfo": companyInfo

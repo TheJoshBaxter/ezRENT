@@ -126,4 +126,4 @@ class SignedContract(models.Model):
     associated_order = models.OneToOneField(RentalOrder, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"SignedContract for order #{self.associated_order}"
+        return f"SignedContract for {self.associated_order}"
