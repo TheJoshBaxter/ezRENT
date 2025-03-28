@@ -113,6 +113,17 @@ class TransportOrder(models.Model):
 class CompanySetting(models.Model):
     company_name = models.CharField(max_length=100, blank=False, default="DemoRentals")
     company_phone = models.CharField(max_length=15, blank=False, default="8011231234")
+    owner_name = models.CharField(max_length=100, blank=False, default="Demo Owner Signature")
 
     def __str__(self):
         return f"Company Settings for {self.company_name}"
+    
+class SignedContract(models.Model):
+    date_signed = models.DateField()
+    customer_signature = models.CharField(blank=False, max_length=50)
+    business_signature = models.CharField(blank=False, max_length=50)
+    agreement_box_checked = models.BooleanField(blank=False, default=True)
+    associated_order = models.OneToOneField(RentalOrder, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"SignedContract for order #{self.associated_order}"

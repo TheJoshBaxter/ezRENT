@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% load custom_filters %}
+{% extends "base.html" %} {% load custom_filters %} {% load humanize %}
 
 {% block content %}
 <div class="container mt-5">
@@ -6,65 +6,209 @@
     <p>&nbsp If you have any questions or concerns, please call <a href="tel:{{companyInfo.company_phone|format_phone }}" class="">{{companyInfo.company_phone|format_phone}}</a>.</p>
     <hr>
 
-    <h1 class="mt-5">Almost done...</h1>
-    <hr>
-
-    {% if contract_signed and paid %}
-    <p>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</p>
-    {% else %}
-    <p>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, the following tasks must be completed:</p>
-    {% endif %}
-
-    <!-- Checklist Items -->
-    <div class="checklist">
-        <div class="checklist-item d-flex align-items-center mb-3">
-            <!-- Task 1: Sign Rental Agreement -->
-            {% if not contract_signed %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
-                <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-                <span class="fw-bold">Sign Rental Agreement</span>
-            </a>
-            {% else %}
-            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Signed Rental Agreement</span>
-            {% endif %}
-        </div>
-        
-        <div class="checklist-item d-flex align-items-center mb-3">
-            <!-- Task 2: Make Payment -->
-            {% if not paid %}
-            <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
-                <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-                <span class="fw-bold">Complete Payment</span>
-            </a>
-            {% else %}
-            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Completed Payment</span>
-            {% endif %}
-        </div>
-
-        <!-- This block generates an error message for the initial rental if there was an error with payment -->
-        {% if messages %}
-            {% for message in messages %}
-                {% if "initialPayment" in message.tags %}
-                    <div class="icon-circle text-danger">
-                        <i class="fas fa-exclamation-triangle text-danger"></i>
-                        {{ message }}
-                    </div>
-                    <br/>
-                {% endif %}
-            {% endfor %}
+    <div class="text-center p-3 border bg-light">
+        {% if contract_signed and paid and order.rental_approved %}
+        <h5>Your rental request <u><strong>has been approved</strong></u>. Thank you for your payment and signature!</h5>
+        {% elif contract_signed and paid %}
+        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</h5>
+        {% else %}
+        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, please complete the pending tasks under "Customer Actions."</h5>
         {% endif %}
     </div>
 
-    <h4>Request Details:</h4>
-    <ul>
-        <li><strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}</li>
-        <li><strong>Equipment:</strong> {{ order.equipment.equipment_type }} Forklift</li>
-        <li><strong>Rental Start Date:</strong> {{ order.rental_start_date }}</li>
-        <li><strong>Rental End Date:</strong> {{ order.rental_end_date }}</li>
-        <li><strong>Location for Equipment Dropoff:</strong> {{ order.location }}</li>
-    </ul>
+    <div class="container my-4">
+        <div class="row">
+            <!-- First Column: Takes up 6 out of 12 columns -->
+            <div class="col-md-6">
+                <h3>Customer Actions:</h3>
+                <hr>
+                <u><h5>Initial Rental:</h5></u>
+                <!-- Checklist Items -->
+                <div class="checklist">
+                    <div class="checklist-item d-flex align-items-center mb-3">
+                        <!-- Task 1: Sign Rental Agreement -->
+                        {% if not contract_signed %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
+                            <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Sign Rental Agreement</span>
+                        </a>
+                        {% else %}
+                        <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Signed Rental Agreement</span>
+                        &nbsp
+                        <div class="ml-auto">
+                            <a href="{% url 'download_pdf' order.id %}" class="btn btn-primary">Download PDF Copy</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="checklist-item d-flex align-items-center mb-3">
+                        <!-- Task 2: Make Payment -->
+                        {% if not paid %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
+                            <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Complete Payment</span>
+                        </a>
+                        {% else %}
+                        <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Completed Payment</span>
+                        <div class="ml-auto">
+                            <a href="{{order.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+                        </div>
+                        {% endif %}
+                    </div>
+            
+                    <!-- This block generates an error message for the initial rental if there was an error with payment -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            {% if "initialPayment" in message.tags %}
+                                <div class="icon-circle text-danger">
+                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                    {{ message }}
+                                </div>
+                                <br/>
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                {% if extensions %}
+                <hr>
+                
+                <u><h5>Extension Requests:</h5></u>
+                {% for extension in extensions%}
+                {% if not extension.paid %}
+                <h5>Your rental extension below is <u><strong>being reviewed</strong></u>.</h5>
+                <p>Before approval, please complete payment!</p>
+                {% endif %}
+                <div class="checklist-item d-flex align-items-center mb-3">
+                    <!-- Task 2: Make Payment -->
+                    {% if not extension.paid %}
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center" autofocus>
+                            <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                            <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
+                        </a>
+
+                        <!-- This block generates an error message for the extension the user was trying to pay for if there was an error with payment -->
+                        {% if messages %}
+                        {% for message in messages %}
+                            {% if "extensionPayment" in message.tags %}
+                                {% if extension.id|stringformat:"s" in message.tags %}
+                                    <div class="icon-circle text-danger">
+                                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                                        {{ message }}
+                                    </div>
+                                    <br/>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    
+                    {% else %}
+                        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
+                        <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
+                        <div class="ml-auto mt-2">
+                            <a href="{{extension.payment_receipt_url}}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">View Receipt</a>
+                        </div>
+                    {% endif %}
+
+                    <!-- Complete EXTENSION Payment Modal -->
+                    <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="extensionPaymentModalLabel-{{ extension.id }}">Complete Payment</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
+                                        <span class="btn-close" aria-label="Close" style="font-size: 1.5rem; line-height: 1; color: #495057; background-color: transparent; border: none; cursor: pointer;" role="button">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Custom code for payment process goes here -->
+                                    <div id="payment-form">
+                                        <div class="cost-display">
+                                            <h3 class="description">Total Cost for Your {{extension.days_extended}}-day Rental Extension</h3>
+                                            {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
+                                            <p class="price">${{ extension.cost|intcomma }}</p>
+                                        
+                                            <div id="extension-{{ extension.id }}-payment-status-container"></div>
+                                            <div id="extension-{{ extension.id }}-card-container"></div>
+                                            <button id="extension-{{ extension.id }}-card-button" type="button" class="btn btn-primary w-100">Pay</button>
+                                            <br>
+                                            <br>
+                                            {% if sandboxed %}
+                                            ***
+                                            <h5><u>You're in SANDBOX MODE:</u></h5>
+                                            <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
+                                            <p><strong>CVV:</strong> 111</p>
+                                            <p><strong>Expiration:</strong> Any future date</p>
+                                            <p><strong>Zip Code:</strong> Any valid zip</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+        
+                {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Second Column -->
+            <div class="col-md-6">
+                <div class="row justify-content-center">
+
+                    <!-- Payment Info Card -->
+                    <div class="card p-4">
+                        <h3 class="text-center">Order Info - #{{order.id}}</h3>
+
+                        <hr>
+    
+                        <p class="fw-bold">Customer: <span class="text-muted">{{ order.customer.first_name }} {{ order.customer.last_name }}</span></p>
+                        <p class="fw-bold">Equipment Type: <span class="text-muted">{{ order.equipment.equipment_type }} Forklift </span></p>
+                        <p class="fw-bold">Rental Period: <span class="text-muted">{{ order.rental_start_date }} - {{ order.rental_end_date }}</span></p>
+                        <p class="fw-bold">Dropoff Location: <span class="text-muted">{{ order.location }}</span></p>
+        
+                        <hr>
+        
+                        <!-- Payment Breakdown -->
+                        <div class="mt-4">
+                            <h5 class="fw-bold">Payment Breakdown:</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Initial Forklift Rental</span>
+                                <span class="fw-bold text-muted">${{order.total_cost|intcomma}}</span>
+                            </div>
+                            <br>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Delivery/Transport Costs</span>
+                                <span class="fw-bold text-muted">${% if order.transportorder.cost %} {{order.transportorder.cost|intcomma}} {% else %}0{%endif%}</span>
+                            </div>
+                            <br>
+                            {% for extension in extensions %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Extension to {{extension.new_end_date}}</span>
+                                <span class="fw-bold text-muted">${{extension.cost|intcomma}}</span>
+                            </div>
+                            <br>
+                            {% endfor %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong><span>Grand Total:</span></strong>
+                                <span class="fw-bold text-success">${{grand_total_cost|intcomma}}</span>
+                            </div>
+                        </div>
+        
+                        <!-- Action Buttons -->
+                        {% comment %} <div class="mt-4 text-center">
+                            <a href="receipt_url_here" class="btn btn-primary me-2">Download Receipt</a>
+                            <a href="contact_url_here" class="btn btn-outline-secondary">Contact Support</a>
+                        </div> {% endcomment %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Sign Agreement Modal -->
     <div class="modal fade" id="signAgreementModal" tabindex="-1" aria-labelledby="signAgreementModalLabel" aria-hidden="true">
@@ -76,184 +220,10 @@
                         <span class="btn-close" aria-label="Close" style="font-size: 1.5rem; line-height: 1; color: #495057; background-color: transparent; border: none; cursor: pointer;" role="button">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
-                    <!-- Custom code for agreement signing goes here -->
-                    <h2 class="text-center">Equipment Rental Agreement</h2>
-                    <p>Agreement made on <strong>{{ today }}</strong> between <strong>Jobsite Rents LLC</strong> ("Company") and <strong>{%if order.customer.company_name %} {{order.customer.company_name}} {%else%} {{ order.customer.first_name }} {{ order.customer.last_name }} {%endif%} </strong> ("Customer"). This agreement outlines the terms and conditions for renting the {{order.equipment.equipment_type.category}} described below.</p>
-                    
-                    <hr>
 
-                    <h4><u>Equipment Details</u></h4>
-                    <p><strong>Equipment ID:</strong> {{ order.equipment.name }}</p>
-                    <p><strong>Model:</strong> {{ order.equipment.equipment_type.name }}</p>
-                    <p><strong>Rental Period:</strong> {{ order.rental_start_date }} - {{ order.rental_end_date }}</p>
-                    <p><strong>Rental Location:</strong> {{ order.location }}</p>
-
-                    <hr>
-
-                    <h4><u>Terms</u></h4>
-                    <br>
-                    <h5>Definitions</h5>
-                    
-                    <p>The following definitions are used but not otherwise defined in this Agreement:</p>
-                    <ul>
-                        <li><b>“Casualty Value”</b> means the market value of the Equipment at the end of the Term or when in relation to a Total Loss, the market value the Equipment would have had at the end of the Term but for the Total Loss. The Casualty Value may be less than but will not be more than the original purchase price of the Equipment.</li>
-                        <li><b>“Equipment”</b> means {{ order.equipment.equipment_type.name }}, which has an approximate value of $43,000.00.</li>
-                        <li><b>“Total Loss”</b> means eans any loss or damage that is not repairable or that would cost more to repair than the market value of the Equipment.</li>
-                    </ul>
-
-                    <h5>Lease</h5>
-                    <p>The Lessor agrees to lease the Equipment to the Lessee, and the Lessee agrees to lease the Equipment from the Lessor in accordance with the terms set out in the Agreement.</p>
-
-                    <h5>Term</h5>
-                    <p>The Agreement commences on and concludes on the dates specified in the Rental Period defined above under Equipment Details Unless additional rental agreement supersedes or the Lessee requests a rental extension, in which case the Agreement will end on the end date of the last requested and approved extension period.</p>
-
-                    <h5>Rent</h5>
-                    <p>Rent will be paid prior to the Lessee taking possession of the Equipment.</p>
-
-                    <h5>Delivery of Equipment</h5>
-                    <p>The Lessor will deliver the Equipment to the Lessee at the agreed locations specified above under Equipment Details.</p>
-
-                    <h5>Use of Equipment</h5>
-                    <p>Use the equipment carefully and for its intended purpose. Comply with all manufacturer requirements/recommendations and with all applicable laws. Do not alter/modify the equipment without the permission of the owner. Equipment may not be moved from the specified job site. Equipment may not be driven on the road any distance that exceeds 1⁄2 mile.</p>
-
-                    <h5>Warranties</h5>
-                    <ul>
-                        <li>The Equipment will be in good working order and condition upon delivery.</li>
-                        <li>The Equipment is of merchantable quality and is fit for the purposes it is ordinarily used.</li>
-                    </ul>
-
-                    <h5>Loss and Damage / Customer Responsibilities</h5>
-                    <p>To the extent permitted by law, the Lessee will be responsible for risk of loss, theft, damage or destruction to the Equipment from any and every cause. Includes tire, engine, chassis, seat control, hand control, and forklift carriage due to misuse or negligence.</p>
-                    <p><b>Lessee is required to:</b></p>
-                    <ul>
-                        <li>Perform regular fluid checks and top off as necessary, including coolant, fuel, hydraulic, engine, differential, and axle.</li>
-                        <li>Maintain at least 1/4 tank fuel level (#2 Diesel only).</li>
-                        <li>Repair or replace hydraulic hoses and fittings as needed.</li>
-                        <li>Keep the machine clean and free of mud and debris.</li>
-                    </ul>
-                    <p><b>Lessee is required to prevent:</b></p>
-                    <ul>
-                        <li>Overloading of the starter motor.</li>
-                        <li>Shock loading of driveline and transmission components.</li>
-                        <li>Critical discharge of the battery.</li>
-                        <li>Damage to the key switch.</li>
-                        <li>Tire slipping resulting in chunking or tearing of tread.</li>
-                        <li>Driving in mud or loose material beyond axle depth.</li>
-                        <li>Contacting overhead power lines.</li>
-                        <li>Machine tip-over.</li>
-                        <li>Glass and vinyl cracking or breakage.</li>
-                        <li>Damage to machine controls and switches.</li>
-                    </ul>
-
-                    <h5>Loss and Damage / Customer Responsibilities</h5>
-                    <p>If the Equipment is lost or damaged, the Lessee will continue paying Rent, and will provide the Lessor with prompt written notice of such loss or damage and will pay to the Lessor all unpaid Rent for the Term plus the Casualty Value of the Equipment. 10. In the event of Total Loss of the Equipment, the Lessee will provide the Lessor with prompt written notice of such loss and will pay to the Lessor all unpaid Rent for the Term plus the Casualty Value of the Equipment.</p>
-
-                    <h5>Ownership, Right to Lease and Quiet Enjoyment</h5>
-                    <ul>
-                        <li>The Equipment is the property of the Lessor and will remain the property of the Lessor.</li>
-                        <li>The Lessee will not encumber the Equipment or allow the Equipment to be encumbered or pledge the Equipment as security in any manner.</li>
-                        <li>The Lessee warrants that the Lessor has the right to lease the Equipment according to the terms in this Agreement.</li>
-                        <li>The Lessor warrants that as long as no Event of Default has occurred, the Lessor will not disturb the Lessee’s quiet and peaceful possession of the Equipment or the Lessee’s unrestricted use of the Equipment for the purpose for which the Equipment was designed.</li>
-                    </ul>
-
-                    <h5>Surrender</h5>
-                    <p>At the end of the Term or upon earlier termination of this Agreement, the Lessee will make the Equipment available for pick-up within 100ft of the Equipment drop-off address.</p>
-
-                    <h5>Indemnity</h5>
-                    <p>The Lessee will indemnify and hold harmless the Lessor against any and all claims, actions, suits, proceedings, costs, expenses, damages and liabilities, including attorney’s fees and costs, arising out of or related to the Lessee’s use of the Equipment.</p>
-
-                    <h5>Default</h5>
-                    <p>The occurrence of any one or more of the following events will constitute an event of default (“Event of Default”) under this Agreement:</p>
-                    <ul>
-                        <li>The Lessee fails to pay any amount provided for in this Agreement when such amount is due or otherwise breaches the Lessee’s obligations under this Agreement.</li>
-                        <li>The Lessee becomes insolvent or makes an assignment of rights or property for the benefit of creditors or files for or has bankruptcy proceedings instituted against it under the Federal bankruptcy law of the United States or another competent jurisdiction.</li>
-                        <li>A writ of attachment or execution is levied on the Equipment and is not released or satisfied within 10 days.</li>
-                    </ul>
-
-                    <h5>Remedies</h5>
-                    <p>On the occurrence of an Event of Default, the Lessor will be entitled to pursue any one or more of the following remedies (the “Remedies”):</p>
-                    <ul>
-                        <li>Declare the entire amount of the Rent for the Term immediately due and payable without notice or demand to the Lessee.</li>
-                        <li>Commence legal proceedings to recover the Rent and other obligations accrued before and after the Event of Default.</li>
-                        <li>Take possession of the Equipment, without demand or notice, wherever same may be located, without any court order or other process of law. The Lessee waives any and all damage occasioned by such taking of possession.</li>
-                        <li>Terminate this Agreement immediately upon written notice to the Lessee.</li>
-                        <li>Pursue any other remedy available in law or equity.</li>
-                    </ul>
-
-                    <h5>Assignment</h5>
-                    <p>THE LESSEE WILL NOT ASSIGN THIS AGREEMENT, THE LESSEE’S INTEREST IN THIS AGREEMENT OR THE LESSEE’S INTEREST IN THE EQUIPMENT WITHOUT THE PRIOR WRITTEN CONSENT OF THE LESSOR. 20. If the Lessee assigns this Agreement, the Lessee’s interest in this Agreement of the Lessee’s interest in the Equipment without the prior written consent of the Lessor, the Lessor will have recourse to the Remedies and will be entitled to all damages caused by the transfer to the extent that the damages could not reasonably be prevented by the Lessor.</p>
-
-                    <h5>Additional Documents</h5>
-                    <p>Upon written demand by the Lessor, the Lessee will execute and deliver to the Lessor documents required by the Lessor to protect the Lessor’s interest in the Equipment including, but not limited to, the documents necessary to file a UCC financing statement.</p>
-
-                    <h5>Entire Agreement</h5>
-                    <p>This Agreement will constitute the entire agreement between the Parties. Any prior understanding or representation of any kind preceding the date of this Agreement will not be binding on either Party except to the extent incorporated in this Agreement. Governing Law</p>
-
-                    <h5>Governing Law</h5>
-                    <p>It is the intention of the Parties to this Agreement that this Agreement and the performance under this Agreement, and all suits and special proceedings under this Agreement, be construed in accordance with and governed, to the exclusion of the law of any other forum, by the laws of the State of Utah (the “State”), without regard to the jurisdiction in which any action or special proceeding may be instituted.</p>
-
-                    <h5>Severability</h5>
-                    <ul>
-                        <li>If there is a conflict between any provision of this Agreement and the applicable legislation of the State of Utah (the “Act”), the Act will prevail and such provisions that are required by the Act are incorporated into this Agreement.</li>
-                        <li>In the event that any of the provisions of this Agreement are held to be invalid or unenforceable in whole or in part, those provisions to the extent enforceable and all other provisions will nevertheless continue to be valid and enforceable as though the invalid or unenforceable parts had not been included in this Agreement and the remaining provisions had been executed by both Parties subsequent to the expungement of the invalid provision.</li>
-                    </ul>
-
-                    <h5>General Terms</h5>
-                    <ul>
-                        <li>This Agreement may be executed in counterparts. Facsimile signatures are binding and are considered to be original signatures.</li>
-                        <li>Time is of the essence in this Agreement.</li>
-                        <li>This Agreement will extend to and be binding upon and inure to the benefit of the respective heirs, executors, administrators, successors and assigns, as the case may be, of each Party to this Agreement.</li>
-                        <li>Neither Party will be liable in damages or have the right to terminate this Agreement for any delay or default in performance if such delay or default is caused by conditions beyond its control including, but not limited to Acts of God, Government restrictions, wars, insurrections, natural disasters, such as earthquakes, hurricanes or floods and/or any other cause beyond the reasonable control of the Party whose performance is affected.</li>
-                    </ul>
-
-                    <h5>Notice to Lessee</h5>
-                    <ul>
-                        <li>This is a lease. You are not buying the Equipment. Do not sign this Agreement before you read it. You are entitled to a completed copy of this Agreement when you sign it.</li>
-                        <li>Time is of the essence in this Agreement.</li>
-                        <li>Value other than Rent paid or being paid to Lessor: Fuel top off $5.25 per gallon.</li>
-                    </ul>
-
-                    <h5>Signatures</h5>
-                    <p>This contract may be signed electronically or in hard copy. If signed in hard copy, it must be returned to the Business for valid record. Electronic signatures count as original for all purposes.</p>
-                    <p>By typing their names as signatures below, both parties agree to the terms and provisions of this agreement.</p>
-
-                    <hr>
-
-                    <p><strong>Owner (Lessor) Name:</strong> Jon Fullmer</p>
-                    <p><strong>Owner (Lessor) Signature:</strong><span class="cursive-text"> Jon Fullmer</span>
-
-                    <hr>
-
-                    <!-- Agreement Checkbox and Signature -->
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mt-4">
-                            <p><label for="signature"><strong>Lessee Name: </strong> {{order.customer.first_name}} {{order.customer.last_name}}</label></p>
-                            <label for="signature"><strong>Lessee Signature:</strong></label>
-                            <input type="text" class="form-control" id="signature" name="signature" placeholder="Type your name as a signature" required>
-                        </div>
-                        <br>
-                        <div class="form-check">
-                            <input type="checkbox" class="form-check-input" id="agreeTerms" required>
-                            <label class="form-check-label" for="agreeTerms">I agree to the terms and conditions outlined in this rental agreement.</label>
-                        </div>
-
-                        {% comment %} <div class="agreement-section">
-                            <label for="signatureBox">Signature:</label>
-                            <canvas id="signatureBox" class="signature"></canvas>
-                            <input type="hidden" id="signature_data" name="signature_data">
-                            <button type="button" id="clear_signature">Clear</button>
-                        </div> {% endcomment %}
-
-                    <!-- Custom code for agreement signing ENDS here -->
-                </div>
-                <div class="modal-footer">
-                    <!-- Submission Button -->
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Submit Agreement</button>
-                    </form>
-                </div>
+                <!-- Contract Fragment: -->
+                {% include "contract_fragment.html" %}
+ 
             </div>
         </div>
     </div>
@@ -274,7 +244,7 @@
                         <div class="cost-display">
                             <h3 class="description">Total Cost for Your Order:</h3>
                             {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
-                            <p class="price">${{total_cost}}</p>
+                            <p class="price">${{initial_total_cost|intcomma}}</p>
                         
                             <div id="primary-payment-status-container"></div>
                             <div id="primary-payment-card-container"></div>
@@ -296,86 +266,9 @@
         </div>
     </div>
 
-
-    {% if extensions %}
-    <hr>
-    <h4>Extension Requests:</h4>
-    {% for extension in extensions%}
-    {% if extension.paid %}
-    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Thank you for your extension payment!</p>
-    {% else %}
-    <p>Your rental extension is <u><strong>being reviewed</strong></u>. Before approval, please complete payment!</p>
-    {% endif %}
-    <div class="checklist-item d-flex align-items-center mb-3">
-        <!-- Task 2: Make Payment -->
-        {% if not extension.paid %}
-        <a href="#" data-bs-toggle="modal" data-bs-target="#extensionPaymentModal-{{ extension.id }}" class="d-flex align-items-center">
-            <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-            <span class="fw-bold">Complete Payment for Extension to {{extension.new_end_date}}:</span>
-        </a>
-        {% else %}
-        <i class="{% if extension.paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
-        <span class="fw-bold">Completed Payment for Extension to {{extension.new_end_date}}:</span>
-        {% endif %}
-    </div>
-
-    <!-- This block generates an error message for the extension the user was trying to pay for if there was an error with payment -->
-    {% if messages %}
-        {% for message in messages %}
-            {% if "extensionPayment" in message.tags %}
-                {% if extension.id|stringformat:"s" in message.tags %}
-                    <div class="icon-circle text-danger">
-                        <i class="fas fa-exclamation-triangle text-danger"></i>
-                        {{ message }}
-                    </div>
-                    <br/>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-    {% endif %}
-
-    <!-- Complete EXTENSION Payment Modal -->
-    <div class="modal fade" id="extensionPaymentModal-{{ extension.id }}" tabindex="-1" aria-labelledby="extensionPaymentModalLabel-{{ extension.id }}" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="extensionPaymentModalLabel-{{ extension.id }}">Complete Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                        <span class="btn-close" aria-label="Close" style="font-size: 1.5rem; line-height: 1; color: #495057; background-color: transparent; border: none; cursor: pointer;" role="button">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Custom code for payment process goes here -->
-                    <div id="payment-form">
-                        <div class="cost-display">
-                            <h3 class="description">Total Cost for Your {{extension.days_extended}}-day Rental Extension</h3>
-                            {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
-                            <p class="price">${{ extension.cost }}</p>
-                        
-                            <div id="extension-{{ extension.id }}-payment-status-container"></div>
-                            <div id="extension-{{ extension.id }}-card-container"></div>
-                            <button id="extension-{{ extension.id }}-card-button" type="button" class="btn btn-primary w-100">Pay</button>
-                            <br>
-                            <br>
-                            {% if sandboxed %}
-                            ***
-                            <h5><u>You're in SANDBOX MODE:</u></h5>
-                            <p><strong>Card Number:</strong> 4111 1111 1111 1111</p>
-                            <p><strong>CVV:</strong> 111</p>
-                            <p><strong>Expiration:</strong> Any future date</p>
-                            <p><strong>Zip Code:</strong> Any valid zip</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-    {% endif %}
-
     <br>
-    <h4 class="text-success"><i class="fas fa-check-circle text-success"></i> A link to this confirmation page has been sent to the customer.</h4>
+    <h4 class="text-center text-success"><i class="fas fa-check-circle text-success"></i> A link to this confirmation page has been sent to the customer.</h4>
+    <br>
 
 </div>
 <style>

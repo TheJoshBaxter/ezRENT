@@ -22,4 +22,6 @@ urlpatterns = [
 
     path('privacy_policy/', views.privacy_policy, name='privacy_policy'),
     path('terms_conditions/', views.terms_conditions,  name='terms_conditions'),
+
+    path("download-pdf/<int:order_id>/", views.download_pdf, name="download_pdf"),
 ]

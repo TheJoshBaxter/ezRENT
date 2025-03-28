@@ -2,9 +2,12 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from django.contrib import messages
 from .models import Customer
-from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber, CompanySetting
+from managementPortal.models import Equipment, EquipmentType, RentalOrder, RentalExtensions, TransportOrder, ManagementAlertNumber, CompanySetting, SignedContract
 from datetime import datetime, date, timedelta
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+import io
 from customerPortal.square_client import create_payment, create_order
 # from customerPortal.twilioClient import send_text_alert
 from customerPortal.twilioClient import send_customer_text
@@ -502,6 +505,8 @@ def order_summary(request, template_name):
 def confirmation(request, orderID, template_name):
 
     newOrder = RentalOrder.objects.get(id=orderID)
+    companyInfo = CompanySetting.objects.first()
+    today = date.today()
 
     if settings.SQUARE_ENV == 'sandbox':
         sandboxed = True
@@ -513,29 +518,99 @@ def confirmation(request, orderID, template_name):
         newOrder.contract_signed = True # mark contract signed as true in DB
         newOrder.save()
 
+        # create a new instance of SignedContract
+        signed_contract = SignedContract.objects.create(
+            date_signed=today,
+            customer_signature=request.POST['cust_signature'],
+            business_signature=request.POST['biz_signature'],
+            agreement_box_checked=True,
+            associated_order=newOrder
+        )
+
     try: # if there is a transport order, grab it, and calculate total cost by adding rental order cost and transport cost
         transportOrder = TransportOrder.objects.get(rental_order_id=orderID)
-        grandTotalCost = newOrder.total_cost + transportOrder.cost
+        initialTotalCost = newOrder.total_cost + transportOrder.cost
     
     except: # if there is no transport order, total cost will just be the initial order's total cost
-        grandTotalCost = newOrder.total_cost
+        initialTotalCost = newOrder.total_cost
 
     orderExtensions = newOrder.extensions.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
+
+
+    # add any existing extension orders to the initialTotalCost to find the grandTotalCost
+    grandTotalCost = initialTotalCost
+
+    if orderExtensions:
+        for extension in orderExtensions:
+            grandTotalCost += extension.cost
 
     context = {}
     context['today'] = date.today()
     context['order'] = newOrder
-    # context['transportOrder'] = transportOrder
     context['sandboxed'] = sandboxed # used for showing/hiding square sandbox fake card info
     context['contract_signed'] = newOrder.contract_signed # if contract is signed, this will contain true
     context['paid'] = newOrder.paid # if order has been paid for, this will contain true
-    context['total_cost'] = grandTotalCost
+    context['initial_total_cost'] = initialTotalCost
+    context['grand_total_cost'] = grandTotalCost
     context['order_id'] = orderID
     context['extensions'] = orderExtensions
     context['squareAppId'] = settings.SQUARE_APP_ID
     context['squareLocationId'] = settings.SQUARE_LOCATION_ID
+    context['companyInfo'] = companyInfo
 
     return render(request, template_name, context)
+
+# def generate_pdf_from_template(signed_contract): # generate a PDF from the contract_fragment HTML template
+#     # Step 0: Grab necessary variables to populate the pdf
+#     today = date.today()
+#     companyInfo = CompanySetting.objects.first()
+
+#     # Step 1: Render the HTML template as a string
+#     html_string = render_to_string("contract_fragment.html", {"today": today}, {"companyInfo": companyInfo}, {"order": signed_contract.associated_order}, {"companyInfo": companyInfo})
+    
+#     # Step 2: Convert the HTML string into a PDF
+#     pdf_file = BytesIO()
+#     HTML(string=html_string).write_pdf(pdf_file)
+    
+#     # Step 3: Prepare the HTTP response with the PDF content
+#     pdf_file.seek(0) # Move to the beginning of the file buffer
+#     response = HttpResponse(pdf_file, content_type="application/pdf") # Sends the generated PDF file as an HTTP response
+#     response["Content-Disposition"] = 'attachment; filename="document.pdf"' # Makes the PDF downloadable instead of displaying it in the browser
+#     return response
+
+def generate_pdf_from_template(template_src, context_dict):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+
+    result = io.BytesIO()
+    pdf = pisa.pisaDocument(io.BytesIO(html.encode("UTF-8")), result)
+
+    if pdf.err:
+        return None  # Handle the error appropriately in your view
+
+    return result.getvalue()  # Returns the PDF file as bytes
+
+def download_pdf(request, order_id):
+
+    # Step 1: Grab necessary variables to populate the pdf
+    today = date.today()
+    companyInfo = CompanySetting.objects.first()
+    signed_contract = SignedContract.objects.get(associated_order=order_id)  # Fetch the signed_contract instance
+    context = { # Context to pass to the template
+        "today": today,
+        "companyInfo": companyInfo,
+        "order": signed_contract.associated_order,
+        "companyInfo": companyInfo
+        }  
+
+    pdf_content = generate_pdf_from_template("contract_fragment.html", context)
+
+    if not pdf_content:
+        return HttpResponse("Error generating PDF", status=500)
+
+    response = HttpResponse(pdf_content, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="Rental_contract_order_{signed_contract.associated_order.id}.pdf"'
+    return response
 
 def update_payment_status(request):
     if request.method == 'GET':
