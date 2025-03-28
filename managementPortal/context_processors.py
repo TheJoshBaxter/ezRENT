@@ -16,6 +16,8 @@ def global_notifications(request):
     companyInfo = CompanySetting.objects.first()
 
     overdueRentals_exists = RentalOrder.objects.filter(rental_end_date__lt=today, rental_returned=False).exists()
+    if overdueRentals_exists:
+        numAlerts += 1
 
     if settings.SQUARE_ENV == "production":
         squareURL_prefix = ''
