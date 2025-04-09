@@ -227,7 +227,7 @@ def equipment_detail(request, equipmentType_id, template_name):
                 except: 
                     order_data = {
                         'customer': "ERROR",
-                        'phone_number': "ERROR: something went wrong. Please EDIT INFO to make sure information is correct.",
+                        'phone_number': "ERROR: something went wrong (most likely you have entered the same phone number used in the past, but with a different name). Please EDIT INFO to make sure information is correct.",
                         'email': email,
                         'equipmentType': equipmentType.name + " " + equipmentType.category,
                         'equipment': equipment_id,
