@@ -235,7 +235,7 @@
                         <div class="cost-display">
                             <h3 class="description">Total Cost for Your Order:</h3>
                             {% comment %} <p class="total-cost">Rental Total Cost</p> {% endcomment %}
-                            <p class="price">${{initial_total_cost|intcomma}}</p>
+                            <p class="price">${{initial_total_cost|default:"0"|intcomma}}</p>
                         
                             <div id="primary-payment-status-container"></div>
                             <div id="primary-payment-card-container"></div>
@@ -293,6 +293,9 @@
     const appId = '{{ squareAppId|escapejs }}';
     const locationId = '{{ squareLocationId|escapejs }}';
     console.log("section 1 completed")
+    console.log(orderId)
+    console.log(appId)
+    console.log(locationId)
     
     async function initializePrimaryPayment(extensionId) {
         const payments = Square.payments(appId, locationId);
