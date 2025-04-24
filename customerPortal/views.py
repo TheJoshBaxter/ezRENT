@@ -641,9 +641,13 @@ def update_payment_status(request):
                     messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
 
         else:
-            # order = RentalOrder.objects.get(id=orderId)
-            # transportOrder = TransportOrder.objects.get(rental_order=orderId)
-            cost_in_cents = int(order.total_cost * 100)
+            try: # if there is a transport order, grab it, and calculate total cost by adding rental order cost and transport cost
+                initialTotalCost = order.total_cost + transportOrder.cost
+            
+            except: # if there is no transport order, total cost will just be the initial order's total cost
+                initialTotalCost = order.total_cost
+
+            cost_in_cents = int(initialTotalCost * 100)
 
             # create an order for receipting purposes
             order_data = create_order(orderType, order, cost_in_cents)
