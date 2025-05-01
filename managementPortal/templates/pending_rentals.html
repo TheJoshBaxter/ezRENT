@@ -75,6 +75,10 @@
                                 </button>
                             </div>
                             <div class="modal-body">
+                                <!-- Copy Customer Link Button -->
+                                <button type="button" class="btn btn-sm btn-secondary" id="copyCustLink" data-link={{baseURL}}{% url 'customer_confirmation' order.id %}>Copy Customer Link</button>
+                                <a class="btn btn-sm btn-warning rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
+                                <hr>
                                 <!-- Customer and Rental Information -->
                                 <p><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong> is requesting to rent:</p>
                                 <ul>
@@ -154,6 +158,17 @@
 </style>
 
 <script>
+    // script to handle the "Copy Customer Link" button
+    document.getElementById('copyCustLink').addEventListener('click', function () {
+        const link = this.getAttribute('data-link');
+        navigator.clipboard.writeText(link).then(function () {
+            alert('Customer link copied to clipboard!');
+        }).catch(function (err) {
+            console.error('Could not copy text: ', err);
+        });
+    });
+
+    // Function to check for hashes in the url, and if found, load a specified modal
     document.addEventListener('DOMContentLoaded', () => {
         const hash = window.location.hash; // Get the fragment identifier
         if (hash) {

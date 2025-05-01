@@ -39,6 +39,8 @@
     <!-- Custom styles for this template-->
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
 
+    {% block extra_head %}{% endblock %}
+
 </head>
 
 <body id="page-top">
@@ -121,24 +123,19 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Rental Tracker</h6>
                         <a class="collapse-item" href="{% url 'employee_dashboard' %}">Approved Rentals</a>
-                        <a class="collapse-item" href="{% url 'pending_rentals' %}">Pending Requests
-                            {% comment %} {% if user.is_authenticated %}
-                            {% if unapprovedOrders %}
-                            <span class="notification-dot position-absolute"></span>
-                            {% endif %}
-                            {% endif %} {% endcomment %}
-                        </a>
+                        <a class="collapse-item" href="{% url 'pending_rentals' %}">Pending Requests</a>
+                        <a class="collapse-item" href="{% url 'todays_pickups_dropoffs' %}">Today's Pickups/Dropoffs</a>
                     </div>
                 </div>
             </li>
 
-            <!-- Nav Item - Today's Pickups/Dropoffs -->
+            {% comment %} <!-- Nav Item - Today's Pickups/Dropoffs -->
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'todays_pickups_dropoffs' %}">
                     <i class="fa-solid fa-calendar-day"></i>
                     <span>Today's Pickups/Dropoffs</span>
                 </a>
-            </li>
+            </li> {% endcomment %}
 
             <!-- Nav Item - Inspections -->
             <li class="nav-item">

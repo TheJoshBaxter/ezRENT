@@ -48,14 +48,14 @@ class RentalOrder(models.Model):
     
     @property
     def is_fully_paid(self):
-        # Check the rental order's paid status and any unpaid extensions
-        return self.paid and not self.extensions.filter(paid=False).exists()
+        # Check the rental order's paid status and any unpaid extensions (as well as unpaid transport orders which should never happen based on the approved workflows)
+        return self.paid and not self.extensions.filter(paid=False).exists() and (hasattr(self, 'transport_order') and self.transport_order.paid) # "hasattr" onward checks to make sure there is a transport order related to the main order and that it has been paid
 
     def __str__(self):
         return f"Order #{self.id} - {self.customer.first_name} {self.customer.last_name} - {self.equipment.name} - Ending on {self.rental_end_date}"
     
 class RentalExtensions(models.Model):
-    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE, related_name='extensions') # "related_name='extensions'" allows me to
+    rental_order = models.ForeignKey(RentalOrder, on_delete=models.CASCADE, related_name='extensions') # "related_name='extensions'" allows me to access the reverse relationship--that is, how you access related objects from the other model
     original_end_date = models.DateField()
     days_extended = models.IntegerField()
     new_end_date = models.DateField()
@@ -103,7 +103,7 @@ class TransportRate(models.Model):
         return "Hourly Rate"
     
 class TransportOrder(models.Model):
-    rental_order = models.OneToOneField(RentalOrder, on_delete=models.CASCADE)
+    rental_order = models.OneToOneField(RentalOrder, on_delete=models.CASCADE, related_name='transport_order') # "related_name='extensions'" allows me to access the reverse relationship--that is, how you access related objects from the other model
     cost = models.DecimalField(max_digits=10, decimal_places=2)
     paid = models.BooleanField(default=False)
 

@@ -69,6 +69,11 @@ def summary_dash(request):
         paid=True
     ).aggregate(Sum('cost'))['cost__sum'] or 0.00
 
+    totalMonthTransportRevenue = TransportOrder.objects.filter(
+        rental_order__in=monthlyOrders,
+        paid=True
+    ).aggregate(Sum('cost'))['cost__sum'] or 0.00
+
     # Yearly Revenue Card
     yearlyOrders = RentalOrder.objects.filter(
         rental_start_date__year=today.year,
@@ -81,46 +86,94 @@ def summary_dash(request):
         paid=True
     ).aggregate(Sum('cost'))['cost__sum'] or 0.00
 
+    print("heyo1")
+    print(totalYearExtensionRevenue)
+
+    totalYearTransportRevenue = RentalExtensions.objects.filter(
+        rental_order__in=yearlyOrders,
+        paid=True
+    ).aggregate(Sum('cost'))['cost__sum'] or 0.00
+
+    print("heyo2")
+    print(totalYearTransportRevenue)
+
     # Calculate total monthly and yearly revenue by adding order rev and extension rev
-    monthlyRev = Decimal(totalMonthOrderRevenue) + Decimal(totalMonthExtensionRevenue)
-    annualRev = Decimal(totalYearOrderRevenue) + Decimal(totalYearExtensionRevenue)
+    monthlyRev = Decimal(totalMonthOrderRevenue) + Decimal(totalMonthExtensionRevenue) + Decimal(totalMonthTransportRevenue)
+    annualRev = Decimal(totalYearOrderRevenue) + Decimal(totalYearExtensionRevenue) + Decimal(totalYearTransportRevenue)
 
-    # % Orders Paid Card
+    # % of Orders Fully Paid Card:
+    # get all-time number of orders
+    totalOrderCount = RentalOrder.objects.count()
 
-    ###
+    # get number of orders paid
+    numOrdersPaid = sum(1 for order in RentalOrder.objects.all() if order.is_fully_paid)
+
+    # calc percentage
+    if totalOrderCount > 0:
+        percentageFullyPaid = round((numOrdersPaid / totalOrderCount) * 100)
+    else:
+        percentageFullyPaid = 0
 
     # Overdue Payments Card
     overdueRentalPaymentsQS = RentalOrder.objects.filter(paid=False, rental_start_date__lte=today) # all orders that haven't been paid are considered overdue on the day the rental starts
     overdueExtensionPaymentsQS = RentalExtensions.objects.filter(paid=False, new_end_date__lte=today) # all extensions that haven't been paid are considered overdue on the new end date
+    overdueTransportPaymentsQS = TransportOrder.objects.filter(paid=False, rental_order__rental_start_date__lte=today) # all transport orders that haven't been paid are considered overdue on the start date of the rental order
     # (QS stands for Query Set)
 
     totalOverdueRentalPayments = overdueRentalPaymentsQS.aggregate(Sum('total_cost'))['total_cost__sum'] or 0.00
     totalOverdueExtensionPayments = overdueExtensionPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
+    totalOverdueTransportPayments = overdueTransportPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
 
-    totalOverduePayments = float(totalOverdueRentalPayments) + float(totalOverdueExtensionPayments)
+    totalOverduePayments = float(totalOverdueRentalPayments) + float(totalOverdueExtensionPayments) + float(totalOverdueTransportPayments)
 
-    # Earnings Overview Graph
-    # Calculate the start date of the rolling 12-month window
-    today = date.today()
-    start_date = today - timedelta(days=365)
+    # EARNINGS OVERVIEW GRAPH
 
-    # Example dataset for the last 12 months
-    monthly_data = RentalOrder.objects.filter(
-        rental_start_date__gte=start_date,  # Start date is 12 months ago
-        rental_start_date__lte=today        # End date is today
-    ).values('rental_start_date__year', 'rental_start_date__month').annotate(
-        total_revenue=Sum('total_cost')
-    ).order_by('rental_start_date__year', 'rental_start_date__month')
+    # Create Labels & Data
+    # List of month abbreviations
+    month_abbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-    # Create labels and values
-    earningsChartLabels = [
-        f"{entry['rental_start_date__year']}-{entry['rental_start_date__month']:02d}"  # Format as "YYYY-MM"
-        for entry in monthly_data
-    ]
-    earningsChartValues = [int(entry['total_revenue']) for entry in monthly_data]
+    # Get the current date
+    current_date = datetime.now()
 
-    print(earningsChartLabels)
-    print(earningsChartValues)
+    # Generate the list of the last 12 months
+    months = []
+    month_revenue = []
+
+    for i in range(11, -1, -1):  # Start from 11 months ago, down to 0
+        month_index = (current_date.month - i - 1) % 12  # Calculate the correct month index
+        months.append(month_abbr[month_index])
+
+        # Calculate the year and month for the current loop iteration
+        target_month = (current_date.month - i - 1) % 12 + 1  # Month (1-12)
+        target_year = current_date.year + ((current_date.month - i - 1) // 12)  # Adjust year for previous months
+
+        # Query the database for order revenue for given month and year
+        target_month_orders= RentalOrder.objects.filter(
+            rental_start_date__year=target_year, 
+            rental_start_date__month=target_month,
+            paid=True
+        )
+        
+        total_month_order_revenue = target_month_orders.aggregate(Sum('total_cost'))['total_cost__sum'] or 0  # Default to 0 if no orders
+
+        total_month_extension_revenue = RentalExtensions.objects.filter(
+            rental_order__in=target_month_orders,
+            paid=True
+        ).aggregate(Sum('cost'))['cost__sum'] or 0  # Default to 0 if no orders
+
+        total_month_transport_revenue = TransportOrder.objects.filter(
+            rental_order__in=target_month_orders,
+            paid=True
+        ).aggregate(Sum('cost'))['cost__sum'] or 0  # Default to 0 if no orders
+
+        total_revenue = total_month_order_revenue + total_month_extension_revenue + total_month_transport_revenue
+
+        month_revenue.append(int(total_revenue))
+
+    # Print the results
+    # print('GRAPH DATA CHECK:')
+    # print(months)
+    # print(month_revenue)
 
     # Invoices Filter
     filter_option = request.GET.get('filter', 'all')  # Default to 'all'
@@ -139,13 +192,22 @@ def summary_dash(request):
 
     
     context = {}
-    # context['earningsChartLabels'] = json.dumps(earningsChartLabels)
-    # context['earningsChartValues'] = json.dumps(earningsChartValues)
+
+    context['totalMonthOrderRevenue'] = totalMonthOrderRevenue
+    context['totalMonthExtensionRevenue'] = totalMonthExtensionRevenue
+    context['totalMonthTransportRevenue'] = totalMonthTransportRevenue
+
+    context['earningsChartLabels'] = months
+    context['earningsChartValues'] = month_revenue
+    context['totalYearOrderRevenue'] = totalYearOrderRevenue
+    context['totalYearExtensionRevenue'] = totalYearExtensionRevenue
+    context['totalYearTransportRevenue'] = totalYearTransportRevenue
     context['orders'] = orders
     context['filter_option'] = filter_option
     context['anchor'] = 'invoices'
     context['monthlyRev'] = monthlyRev
     context['anualRev'] = annualRev
+    context['percentageFullyPaid'] = percentageFullyPaid
     context['totalOverduePayments'] = totalOverduePayments
     return render(request, 'summary_dash.html', context)
 
@@ -192,19 +254,6 @@ def employee_dashboard(request):
         order.extensionsTown = extensions
         order.numExtensions = extensions.count()
 
-        # Determine if rental and all extensions are paid
-        allPaid = True # initialize allPaid with a default value
-
-        # check to see if the order and each extension has actually been paid
-        if order.paid:
-            for extension in extensions:
-                if not extension.paid:
-                    allPaid = False 
-                break # no need to keep checking if one is unpaid
-        else: allPaid = False
-
-        order.allPaid = allPaid
-
         # get days remaining for each order
         days_remaining = (order.rental_end_date - today).days
         order.days_remaining = days_remaining # used to color icons based on proximity of end date
@@ -232,9 +281,11 @@ def employee_dashboard(request):
     context['orders'] = orders
     context['filter_option'] = filter_option
     context['today'] = today
+    context['baseURL'] = settings.BASE_SITE_URL
 
     return render(request, 'employee_dashboard.html', context)
 
+@login_required
 def pending_rentals(request):
     pendingOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
 
@@ -243,9 +294,11 @@ def pending_rentals(request):
 
     context = {}
     context['pendingOrders'] = pendingOrders
+    context['baseURL'] = settings.BASE_SITE_URL
     
     return render(request, 'pending_rentals.html', context)
 
+@login_required
 def approve_rental(request, order_id):
     # Get the RentalOrder instance
     order = get_object_or_404(RentalOrder, id=order_id)
@@ -274,6 +327,7 @@ def approve_rental(request, order_id):
         # Redirect to a confirmation page or the updated rental order page
         return redirect('employee_dashboard')
     
+@login_required
 def send_overdue_payment_reminder(request, order_id):
     if request.method == 'POST':
         try:

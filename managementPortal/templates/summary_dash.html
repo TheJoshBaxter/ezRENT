@@ -1,15 +1,27 @@
-{% extends "base.html" %}{% load static %}
-
-{% comment %}
+{% extends "base.html" %}{% load static %}{% block extra_head %} 
 <script>
-  // Define a global object to hold the chart data
-  var earningsChartLabels = {{ earningsChartLabels|safe }};
-  var earningsChartValues = {{ earningsChartValues|safe }};
-  var hello = "hello";
-</script>
-{% endcomment %}
+    // Define global objects to hold the chart data
 
-{% block content %}{% load humanize %}
+    //area chart
+    var earningsChartLabels = {{ earningsChartLabels|safe }};
+    var earningsChartValues = {{ earningsChartValues|safe }};
+
+    //pie chart
+    var totalYearOrderRevenue = {{ totalYearOrderRevenue|safe }};
+    var totalYearExtensionRevenue = {{ totalYearExtensionRevenue|safe }};
+    var totalYearTransportRevenue = {{ totalYearTransportRevenue|safe }};
+
+    //testing
+    console.log(totalYearOrderRevenue)
+    console.log(totalYearExtensionRevenue)
+    console.log(totalYearTransportRevenue)
+    console.log("monthly:")
+    console.log({{totalMonthOrderRevenue}})
+    console.log({{totalMonthExtensionRevenue}})
+    console.log({{totalMonthTransportRevenue}})
+
+</script>
+{% endblock %} {% block content %}{% load humanize %}
 <!-- Begin Page Content -->
 <div class="container-fluid">
 
@@ -65,16 +77,16 @@
                 <div class="card-body">
                     <div class="row no-gutters align-items-center">
                         <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">% Orders Paid
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">% Orders Fully Paid
                             </div>
                             <div class="row no-gutters align-items-center">
                                 <div class="col-auto">
-                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">75%</div>
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{percentageFullyPaid}}%</div>
                                 </div>
                                 <div class="col">
                                     <div class="progress progress-sm mr-2">
                                         <div class="progress-bar bg-info" role="progressbar"
-                                            style="width: 50%" aria-valuenow="50" aria-valuemin="0"
+                                            style="width: {{percentageFullyPaid}}%" aria-valuenow="{{percentageFullyPaid}}" aria-valuemin="0"
                                             aria-valuemax="100"></div>
                                     </div>
                                 </div>
@@ -149,7 +161,7 @@
                 <!-- Card Header - Dropdown -->
                 <div
                     class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Revenue Sources</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Revenue Sources: Last 12 Months</h6>
                     <div class="dropdown no-arrow">
                         <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -172,13 +184,13 @@
                     </div>
                     <div class="mt-4 text-center small">
                         <span class="mr-2">
-                            <i class="fas fa-circle text-primary"></i> Physical Ads
+                            <i class="fas fa-circle text-primary"></i> Rental Orders
                         </span>
                         <span class="mr-2">
-                            <i class="fas fa-circle text-success"></i> FB Marketplace
+                            <i class="fas fa-circle text-success"></i> Transport Fees
                         </span>
                         <span class="mr-2">
-                            <i class="fas fa-circle text-info"></i> Word of Mouth
+                            <i class="fas fa-circle text-info"></i> Extensions
                         </span>
                     </div>
                 </div>
@@ -222,15 +234,24 @@
                                 <strong>Customer:</strong> {{ order.customer.first_name }} {{ order.customer.last_name }}
                             </div>
 
-                            <!-- Customer Phone # -->
-                            <div class="card-text" style="font-size: 14px;">
-                                <strong>Phone:</strong> {{ order.customer.phone_number }}
-                            </div>
-
                             <!-- Rental Period -->
                             <div class="card-text" style="font-size: 14px;">
                                 <strong>Rental: </strong>{{order.equipment.name}}, {{ order.rental_start_date }}-{% if extension %}{{ extension.new_end_date }}{% else%}{{order.rental_end_date}}{% endif %}
                             </div>
+
+                            {% if order.customer.cust_notification_preference == "text" %}
+                            <!-- Customer Phone # -->
+                            <div class="card-text" style="font-size: 14px;">
+                                <strong><u>Customer Notification Preference:</u></strong><br>Text: {{ order.customer.phone_number }}
+                            </div>
+
+                            {% else %}
+                            <!-- Customer Email # -->
+                            <div class="card-text" style="font-size: 14px;">
+                                <strong><u>Customer Notification Preference:</u></strong><br>Email: {{ order.customer.email }}
+                            </div>
+
+                            {%endif%}
 
                             <br>
 
@@ -251,7 +272,7 @@
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="viewDetailsModalLabel-{{ order.id }}">Payment Details for Order #{{ order.id }}</h5>
+                                <h5 class="modal-title" id="viewDetailsModalLabel-{{ order.id }}">Payment Details for <a href="dashboard/?filter=all#editRentalModal-{{ order.id }}"> Order #{{ order.id }}</a></h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                                     <span class="btn-close" aria-label="Close" style="font-size: 1.5rem; line-height: 1; color: #495057; background-color: transparent; border: none; cursor: pointer;" role="button">&times;</span>
                                 </button>
@@ -277,7 +298,23 @@
                                                     <td>${{ order.total_cost }}</td>
                                                     <td>
                                                         <span class="badge text-white {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
-                                                            {% if order.paid %}
+                                                            {% if order.paid %} 
+                                                            Paid
+                                                            {% else %}
+                                                            Outstanding
+                                                            {% endif %}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+
+                                                <!-- Row for Initial Rental TRANSPORT -->
+                                                <tr>
+                                                    <td><strong>Transport Fee<strong></td>
+                                                    <td>(charged w/ initial order)</td>
+                                                    <td>${{ order.transport_order.cost }}</td>
+                                                    <td>
+                                                        <span class="badge text-white {% if order.transport_order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {% if order.transport_order.paid %} 
                                                             Paid
                                                             {% else %}
                                                             Outstanding

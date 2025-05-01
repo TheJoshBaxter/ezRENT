@@ -28,4 +28,4 @@ def send_customer_email(receiver, subject, body):
             server.sendmail(sender_email, receiver_email, msg.as_string())
             print("Email sent successfully!")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Email Error: {e}")
