@@ -124,7 +124,8 @@ def summary_dash(request):
     totalOverdueExtensionPayments = overdueExtensionPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
     totalOverdueTransportPayments = overdueTransportPaymentsQS.aggregate(Sum('cost'))['cost__sum'] or 0.00
 
-    totalOverduePayments = float(totalOverdueRentalPayments) + float(totalOverdueExtensionPayments) + float(totalOverdueTransportPayments)
+    totalOverduePayments = round(float(totalOverdueRentalPayments) + float(totalOverdueExtensionPayments) + float(totalOverdueTransportPayments), 2)
+    totalOverduePayments = f"{totalOverduePayments:.2f}" # guarantees trailing zero
 
     # EARNINGS OVERVIEW GRAPH
 

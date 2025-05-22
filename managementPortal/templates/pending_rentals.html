@@ -238,13 +238,16 @@
         const transportFeeInput = document.getElementById("transportFee");
         const totalCost = document.getElementById("totalCost");
 
-        // listen for changes
-        transportFeeInput.addEventListener("input", function () {
+        function updateTotal() {
             const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
             const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
             const total = (newRentalCost + newTransportFee).toFixed(2);
             totalCost.innerText = total;
-        });
+        }
+
+        // listen for changes to both inputs
+        transportFeeInput.addEventListener("input", updateTotal);
+        rentalCostInput.addEventListener("input", updateTotal);
 
         // on submit, require confirmation of changes with user
         const form = document.querySelector("#approveRentalForm");
