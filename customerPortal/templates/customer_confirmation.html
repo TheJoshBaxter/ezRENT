@@ -187,7 +187,7 @@
                             <br>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span>Delivery/Transport Costs</span>
-                                <span class="fw-bold text-muted">${% if order.transportorder.cost %} {{order.transportorder.cost|intcomma}} {% else %}0{%endif%}</span>
+                                <span class="fw-bold text-muted">${% if order.transport_order.cost %} {{order.transport_order.cost|intcomma}} {% else %}0{%endif%}</span>
                             </div>
                             <br>
                             {% for extension in extensions %}
