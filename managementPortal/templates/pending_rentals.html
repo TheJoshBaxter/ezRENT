@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% load humanize %}
 
 {% block content %}
 <div class="container-fluid">
@@ -77,7 +77,7 @@
                             <div class="modal-body">
                                 <!-- Copy Customer Link Button -->
                                 <button type="button" class="btn btn-sm btn-secondary" id="copyCustLink" data-link={{baseURL}}{% url 'customer_confirmation' order.id %}>Copy Customer Link</button>
-                                <a class="btn btn-sm btn-warning rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
+                                <a class="btn btn-sm btn-primary rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
                                 <hr>
                                 <!-- Customer and Rental Information -->
                                 <p><strong>{{ order.customer.first_name }} {{ order.customer.last_name }}</strong> is requesting to rent:</p>
@@ -109,22 +109,69 @@
                                 </ul>
 
                                 <!-- Payment Information -->
-                                <p>Customer Paid?</p>
-                                <ul>
-                                    <li><strong>{{order.paid}}</strong></li>
-                                </ul>
-                                <hr>
-                                {% comment %} {% if order.extensions%}
-                                <p>Extensions have been paid for:</p>
-                                {% for extension in order.extensions%}
-                                <ul>
-                                    <li><strong>Extension to {{extension.new_end_date}}: {{extension.extension_paid}}</strong></li>
-                                </ul>
-                                {%endfor%}
-                                {%endif%} {% endcomment %}
-                                
-            <form method="POST" action="{% url 'approve_rental' order_id=order.id %}">
+                                <p><strong>Customer Paid?</strong></p>
+                                <table class="table table-bordered table-hover mt-4">
+                                    <thead>
+                                        <tr>
+                                            {% comment %} <th>Type</th> {% endcomment %}
+                                            <th>Requested Service</th>
+                                            <th>Cost</th>
+                                            <th>Payment</th>
+                                        </tr>
+                                    </thead>
+
+            <form method="POST" action="{% url 'approve_rental' order_id=order.id %}" id="approveRentalForm">
             {% csrf_token %}
+                                    <tbody>
+                                        <!-- Row for Initial Rental -->
+                                        <tr>
+                                            {% comment %} <td><strong>Initial Rental</strong></td> {% endcomment %}
+                                            <td>Initial Rental - {{ order.rental_term_agreement }} day{% if order.rental_term_agreement > 1 %}s{% else %}{% endif %}</td>
+                                            <td>
+                                                <div style="display: flex; align-items: center;">
+                                                    <span>$&nbsp</span>
+                                                    <input class="form-control" size="5" id="rentalCost" name="rentalCost" value="{{ order.total_cost|intcomma }}" data-original="{{order.total_cost}}"></input>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge text-white {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {% if order.paid %} 
+                                                    Paid
+                                                    {% else %}
+                                                    Outstanding
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Row for Initial Rental TRANSPORT -->
+                                        <tr>
+                                            {% comment %} <td><strong>Transport Fee</strong></td> {% endcomment %}
+                                            <td>Equipment Transport{% if order.rental_term_agreement >= 28 %} - (1/2 off) {% else %}{%endif%}</td>
+                                            <td>
+                                                <div style="display: flex; align-items: center;">
+                                                    <span>$&nbsp</span>
+                                                    <input class="form-control" size="5" id="transportFee" name="transportFee" value="{{ order.transport_order.cost|intcomma }}" data-original="{{order.transport_order.cost}}"></input>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge text-white {% if order.transport_order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {% if order.transport_order.paid %} 
+                                                    Paid
+                                                    {% else %}
+                                                    Outstanding
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                
+                                        <!-- Rows for Extensions -->
+                                        <tr>
+                                            <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost" name="totalCost">{{order.initialTotalCost}}<span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <hr>
                                 <div class="form-check">
                                     <input type="checkbox" class="form-check-input" id="agreeTerms" required>
                                     <label class="form-check-label" for="agreeTerms">I certify there are no schedule conflicts.</label>
@@ -181,6 +228,44 @@
                 console.warn(`Modal with ID '${modalId}' not found.`);
             }
         }
+    });
+
+    // Function to listen for changes made to the pricing in the approveRental modal, and confirm before submitting
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // grab inputs
+        const rentalCostInput = document.getElementById("rentalCost");
+        const transportFeeInput = document.getElementById("transportFee");
+        const totalCost = document.getElementById("totalCost");
+
+        // listen for changes
+        transportFeeInput.addEventListener("input", function () {
+            const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
+            const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
+            const total = (newRentalCost + newTransportFee).toFixed(2);
+            totalCost.innerText = total;
+        });
+
+        // on submit, require confirmation of changes with user
+        const form = document.querySelector("#approveRentalForm");
+
+        form.addEventListener("submit", function (e) {
+            const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
+            const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
+
+            const originalRentalCost = parseFloat(rentalCostInput.dataset.original) || 0;
+            const originalTransportFee = parseFloat(transportFeeInput.dataset.original) || 0;
+
+            if (newRentalCost !== originalRentalCost || newTransportFee !== originalTransportFee) {
+                const confirmChange = confirm(
+                    "Are you sure you want to change the pricing for this order?"
+                );
+    
+                if (!confirmChange) {
+                    e.preventDefault(); // Stop form from submitting
+                }
+            }
+        });
     });
 </script>
 

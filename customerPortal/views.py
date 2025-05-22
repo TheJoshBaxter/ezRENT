@@ -410,7 +410,7 @@ def order_summary(request, template_name):
     context['order_data'] = order_data
 
     # Calculate transport fee and add to context:
-    delivery_fee = calculate_delivery_fee(order_data['location'])
+    delivery_fee = calculate_delivery_fee(order_data['location'], order_data['rental_period'])
     context['delivery_fee'] = delivery_fee
 
     # Calculate total cost by adding transport fee and rental cost

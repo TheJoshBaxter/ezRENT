@@ -70,11 +70,11 @@
                                     {% endif %}
                                 </span>
 
-                                {% if not order.transport_order.paid %}
+                                {% comment %} {% if not order.transport_order.paid %}
                                 <span class="badge text-white bg-danger">
                                     (Missing Transport Payment)
                                 </span>
-                                {% endif %}
+                                {% endif %} {% endcomment %}
                             </div>
 
                             <!-- Signed Agreement Status -->
@@ -113,7 +113,6 @@
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between">
                                     <button class="btn btn-danger rental-card" data-bs-toggle="modal" data-bs-target="#endRentalModal-{{ order.id }}">End Rental</button>
-                                    <a class="btn btn-primary rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
                                     <button class="btn btn-warning rental-card" data-bs-toggle="modal" data-bs-target="#extendRentalModal-{{ order.id }}">Extend Rental</button>
                                 </div>
                             </div>
@@ -136,6 +135,7 @@
                                 <form method="post" action="{% url 'save_notes' order.id %}">
                                     {% csrf_token %}
                                     <button type="button" class="btn btn-sm btn-secondary" id="copyCustLink" data-link={{baseURL}}{% url 'customer_confirmation' order.id %}>Copy Customer Link</button>
+                                    <a class="btn btn-sm btn-primary rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
                                     <hr>
                                     <div class="mb-3">
                                         <strong><label for="customerFN">Customer First Name:</label></strong> <input class="form-control" pattern="[^ ]+" title="Spaces are not allowed" id="customerFN" name="customerFN" value="{{ order.customer.first_name }}" ></input>

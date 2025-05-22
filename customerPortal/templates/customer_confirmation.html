@@ -6,10 +6,10 @@
     <div class="text-center p-3 border bg-light">
         {% if contract_signed and paid and order.rental_approved %}
         <h5>Your rental request <u><strong>has been approved</strong></u>. Thank you for your payment and signature!</h5>
-        {% elif contract_signed and paid %}
-        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Thank you for your payment and signature!</h5>
+        {% elif order.rental_approved %}
+        <h5>Your rental request <u><strong>has been approved</strong></u>. Please complete the pending customer actions below</h5>
         {% else %}
-        <h5>Your rental request is <u><strong>being reviewed</strong></u>. Before approval, please complete the pending tasks under "Customer Actions."</h5>
+        <h5>Your rental request is <u><strong>being reviewed</strong></u>. You will receive an alert via {{order.customer.cust_notification_preference}} once your request has been approved.</h5>
         {% endif %}
     </div>
 
@@ -25,10 +25,14 @@
                     <div class="checklist-item d-flex align-items-center mb-3">
                         <!-- Task 1: Sign Rental Agreement -->
                         {% if not contract_signed %}
+                        {% if order.rental_approved %}
                         <a href="#" data-bs-toggle="modal" data-bs-target="#signAgreementModal" class="d-flex align-items-center">
                             <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                             <span class="fw-bold">Sign Rental Agreement</span>
                         </a>
+                        {% else %}
+                        <!-- if order hasn't been approved, show nothing here -->
+                        {% endif %}
                         {% else %}
                         <i class="{% if contract_signed %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                         <span class="fw-bold">Signed Rental Agreement</span>
@@ -42,10 +46,15 @@
                     <div class="checklist-item d-flex align-items-center mb-3">
                         <!-- Task 2: Make Payment -->
                         {% if not paid %}
+                        {% if order.rental_approved %}
                         <a href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" class="d-flex align-items-center">
                             <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                             <span class="fw-bold">Complete Payment</span>
                         </a>
+                        {% else %}
+                        <i class="fas fa-hourglass text-muted fa-2x me-3"></i>
+                        <span>Your rental request is still pending approval...</span>
+                        {% endif %}
                         {% else %}
                         <i class="{% if paid %}fas fa-check-square text-success{% else %}far fa-square text-muted{% endif %} fa-2x me-3"></i>
                         <span class="fw-bold">Completed Payment</span>

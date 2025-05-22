@@ -291,6 +291,7 @@ def pending_rentals(request):
 
     for order in pendingOrders:
         order.unavailableDates = get_unavailable_dates(order.equipment_id)
+        order.initialTotalCost = order.total_cost + order.transport_order.cost
 
     context = {}
     context['pendingOrders'] = pendingOrders
@@ -305,9 +306,15 @@ def approve_rental(request, order_id):
     company = CompanySetting.objects.first()
     
     if request.method == 'POST':
-        # Mark the rental as approved (you can update any field in your model)
+        # Mark the rental as approved (and if prices have been changed, which is checked in the JS, update the DB)
+        submitted_orderCost = request.POST['rentalCost']
+        submitted_transportFee = request.POST['transportFee']
+
+        order.total_cost = submitted_orderCost
+        order.transport_order.cost = submitted_transportFee
         order.rental_approved = True
         order.save()
+        order.transport_order.save()
 
         # Send email or text notification to customer depending on preference
         customerPreference = order.customer.cust_notification_preference
@@ -325,7 +332,7 @@ def approve_rental(request, order_id):
             send_customer_email(receiver, subject, body)
 
         # Redirect to a confirmation page or the updated rental order page
-        return redirect('employee_dashboard')
+        return redirect('pending_rentals')
     
 @login_required
 def send_overdue_payment_reminder(request, order_id):

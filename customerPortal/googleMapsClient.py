@@ -3,7 +3,7 @@ import math
 from django.conf import settings
 from managementPortal.models import TransportRate
 
-def calculate_delivery_fee(destination: str, home_base: str = "1726 W 500 N, Springville, UT 84663") -> float:
+def calculate_delivery_fee(destination: str, rental_period, home_base: str = "1726 W 500 N, Springville, UT 84663") -> float:
     """
     Calculate the delivery fee based on the travel time to the destination and back.
     
@@ -23,23 +23,37 @@ def calculate_delivery_fee(destination: str, home_base: str = "1726 W 500 N, Spr
     print(hourly_rate)
     
     try:
-        # Calculate the one-way travel time from home_base to destination
+        print("rental period:")
+        print(rental_period)
+        # Calculate the travel time from home_base to destination, then from the destination to the home base
         directions_to_dest = gmaps.directions(home_base, destination, mode="driving")
         directions_to_home = gmaps.directions(destination, home_base, mode="driving")
         
         # Extract travel time in seconds
         travel_time_to_dest = directions_to_dest[0]['legs'][0]['duration']['value']  # in seconds
         travel_time_to_home = directions_to_home[0]['legs'][0]['duration']['value']  # in seconds
-        
-        # Total round trip travel time in hours
-        total_travel_time_hours = (travel_time_to_dest + travel_time_to_home) / 3600  # Convert seconds to hours
-        print(total_travel_time_hours)
+        print("travel time to dest")
+        print(travel_time_to_dest / 3600)
+        print("travel time back to homebase")
+        print(travel_time_to_home / 3600)
 
-        # Add half hour for pickup and drop-off
-        total_service_time_hours = total_travel_time_hours + .5  # Additional half hour
+        base_thereNback_time = (travel_time_to_dest + travel_time_to_home) / 3600  # Convert seconds to hours
+        
+        # If rental period is >= 28 days, only charge one way travel fee
+        if rental_period >= 28:
+            # Total Service Time for a month-long rental is the base thereNback time plus 1/2 hour for load and unload equipment
+            total_service_time_hours = base_thereNback_time + .5
+            print("total service time for month-long rental (thereNback + .5):")
+            print(total_service_time_hours)
+        else:    
+            # Total Service Time for a LESS THAN MONTH-LONG rental is the base thereNback time TIMES TWO plus 1 hour for load and unload equipment
+            total_service_time_hours = (2 * base_thereNback_time) + 1
+            print("total service time for LESS THAN MONTH-LONG rental (2x thereNback + 1)")
+            print(total_service_time_hours)
         
         # Calculate the fee with a 2-hour minimum
         delivery_fee = max(total_service_time_hours, 2) * float(hourly_rate)  # max() ensures that the time used is at least 2 hours, hourly_rate defined in db (settings portal)
+        print("total delivery fee")
         print(delivery_fee)
 
         return round(delivery_fee, 2)
@@ -49,7 +63,8 @@ def calculate_delivery_fee(destination: str, home_base: str = "1726 W 500 N, Spr
         return 0.00
 
 # # Example usage
-# home_base_address = "123 Main St, YourCity, YourState"
-# destination_address = "456 Elm St, DestinationCity, DestinationState"
-# fee = calculate_delivery_fee(destination_address, home_base=home_base_address)
-# print(f"The delivery fee is: ${fee}")
+# home_base_address = "1726 W 500 N, Springville, UT 84663"
+# destination_address = "5232 W. Cannavale Ln., Herriman, UT 84096"
+# rental_period = "blah blah"
+# fee = calculate_delivery_fee(destination_address, rental_period, home_base=home_base_address)
+# print(f"The delivery fee is bwahahaha: ${fee}")
