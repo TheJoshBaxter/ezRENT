@@ -18,7 +18,7 @@ def grabEmployeeNumbers():
     employeeNumbersList = ManagementAlertNumber.objects.all().values_list('phone_number', flat=True)
     return employeeNumbersList
 
-def send_text_alert(): # FOR EMPLOYEES, sends to all numbers in ManagementAlertNumber database
+def send_text_alert(): # Not used currently...customer version used for both employees and customers # FOR EMPLOYEES, sends to all numbers in ManagementAlertNumber database
     # Initialize Twilio client
     client = initialize_twilio_client()
 
@@ -38,7 +38,7 @@ def send_text_alert(): # FOR EMPLOYEES, sends to all numbers in ManagementAlertN
     else:
         print("Alert text not sent; no numbers found in alert list. Please add numbers to Management Alert Numbers in settings")
 
-def send_customer_text(number, messageBody):
+def send_customer_text(number, messageBody): # FOR CUSTOMERS
     # Initialize Twilio client
     client = initialize_twilio_client()
 
