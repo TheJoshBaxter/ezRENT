@@ -9,6 +9,7 @@ class Command(BaseCommand):
     help = 'Check for rentals starting or ending tomorrow'
 
     def handle(self, *args, **kwargs):
+        print("Rental alert cron job started")
         today = now().date()
         tomorrow = today + timedelta(days=1)
         rentals_starting_tomorrow = RentalOrder.objects.filter(rental_start_date=tomorrow)
@@ -23,7 +24,7 @@ class Command(BaseCommand):
         # Send management alert texts if there are rentals due to go out or come in tomorrow
         if rentals_starting_tomorrow.exists() or rentals_ending_tomorrow.exists(): # if there are EITHER rentals ending or starting tomorrow, check which, and send alerts
 
-            messageBody = "'Ello, mate! Check ezRENT, you've got " # initializing the variable outside the if so that it persists outside
+            messageBody = "G'day, mate! Check ezRENT, you've got " # initializing the variable outside the if so that it persists outside
             subject = "Heads Up! "
 
             if rentals_starting_tomorrow.exists() and rentals_ending_tomorrow.exists():
@@ -42,11 +43,15 @@ class Command(BaseCommand):
 
             managers = ManagementAlertNumber.objects.all()
             for manager in managers:
-                if manager.employee_notification_preference == 'text':
-                    # send an alert text using the send_customer_text method (since it's customizable using arguments)
-                    phone = manager.phone_number
-                    send_customer_text(phone, messageBody)
-                else:
-                    # send an email alert
-                    receiver = manager.email
-                    send_customer_email(receiver, subject, messageBody)
+                try:
+                    if manager.employee_notification_preference == 'text':
+                        # send an alert text using the send_customer_text method (since it's customizable using arguments)
+                        phone = manager.phone_number
+                        send_customer_text(phone, messageBody)
+                    else:
+                        # send an email alert
+                        receiver = manager.email
+                        send_customer_email(receiver, subject, messageBody)
+                except Exception as e:
+                    print(f"Failed to send alert to {manager}: {e}")
+        print("Rental alert cron job ended")
