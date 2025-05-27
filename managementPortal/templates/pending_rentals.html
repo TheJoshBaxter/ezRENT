@@ -130,7 +130,7 @@
                                             <td>
                                                 <div style="display: flex; align-items: center;">
                                                     <span>$&nbsp</span>
-                                                    <input class="form-control" size="5" id="rentalCost" name="rentalCost" value="{{ order.total_cost|intcomma }}" data-original="{{order.total_cost}}"></input>
+                                                    <input class="form-control" size="5" id="rentalCost-{{ order.id }}" name="rentalCost-{{ order.id }}" value="{{ order.total_cost|intcomma }}" oninput="updateTotal({{ order.id }})" data-original="{{order.total_cost}}"></input>
                                                 </div>
                                             </td>
                                             <td>
@@ -151,7 +151,7 @@
                                             <td>
                                                 <div style="display: flex; align-items: center;">
                                                     <span>$&nbsp</span>
-                                                    <input class="form-control" size="5" id="transportFee" name="transportFee" value="{{ order.transport_order.cost|intcomma }}" data-original="{{order.transport_order.cost}}"></input>
+                                                    <input class="form-control" size="5" id="transportFee-{{ order.id }}" name="transportFee-{{ order.id }}" value="{{ order.transport_order.cost|intcomma }}" oninput="updateTotal({{order.id}})" data-original="{{order.transport_order.cost}}"></input>
                                                 </div>
                                             </td>
                                             <td>
@@ -167,7 +167,7 @@
                                 
                                         <!-- Rows for Extensions -->
                                         <tr>
-                                            <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost" name="totalCost">{{order.initialTotalCost}}<span></td>
+                                            <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost-{{ order.id }}" name="totalCost-{{ order.id }}">{{order.initialTotalCost}}<span></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -230,24 +230,24 @@
         }
     });
 
+    function updateTotal(orderId) { // this is used in the function below but needed to declare it on a global scope so that my inline oninput html will work
+        // grab inputs
+        const rentalCostInput = document.getElementById(`rentalCost-${orderId}`);
+        const transportFeeInput = document.getElementById(`transportFee-${orderId}`);
+        const totalCost = document.getElementById(`totalCost-${orderId}`);
+        
+        const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
+        const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
+        const total = (newRentalCost + newTransportFee).toFixed(2);
+        totalCost.innerText = total;
+    }
+
     // Function to listen for changes made to the pricing in the approveRental modal, and confirm before submitting
     document.addEventListener("DOMContentLoaded", function () {
 
-        // grab inputs
-        const rentalCostInput = document.getElementById("rentalCost");
-        const transportFeeInput = document.getElementById("transportFee");
-        const totalCost = document.getElementById("totalCost");
-
-        function updateTotal() {
-            const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
-            const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
-            const total = (newRentalCost + newTransportFee).toFixed(2);
-            totalCost.innerText = total;
-        }
-
         // listen for changes to both inputs
-        transportFeeInput.addEventListener("input", updateTotal);
-        rentalCostInput.addEventListener("input", updateTotal);
+        //transportFeeInput.addEventListener("input", updateTotal);
+        //rentalCostInput.addEventListener("input", updateTotal);
 
         // on submit, require confirmation of changes with user
         const form = document.querySelector("#approveRentalForm");
