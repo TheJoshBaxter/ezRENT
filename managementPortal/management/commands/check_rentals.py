@@ -28,13 +28,13 @@ class Command(BaseCommand):
             subject = "Heads Up! "
 
             if rentals_starting_tomorrow.exists() and rentals_ending_tomorrow.exists():
-                messageBody += f"{rentals_starting_tomorrow.count()} rentals going out and {rentals_ending_tomorrow.count()} coming in TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
+                messageBody += f"{rentals_starting_tomorrow.count()} rental(s) going out and {rentals_ending_tomorrow.count()} coming in TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
                 subject += "Outgoing & Incoming Rentals Tomorrow"
             elif rentals_starting_tomorrow.exists():
-                messageBody += f"{rentals_starting_tomorrow.count()} rentals going out TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
+                messageBody += f"{rentals_starting_tomorrow.count()} rental(s) going out TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
                 subject += "Outgoing Rentals Tomorrow"
             else:
-                messageBody += f"{rentals_ending_tomorrow.count()} rentals coming in TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
+                messageBody += f"{rentals_ending_tomorrow.count()} rental(s) coming in TOMORROW ({tomorrow})! Head to the magic portal: {settings.BASE_SITE_URL}/managementPortal/pickups_dropoffs/?date={tomorrow}"
                 subject += "Incoming Rentals Tomorrow"
 
             # Overdue rental notice tacked on the end
