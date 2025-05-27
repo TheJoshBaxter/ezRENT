@@ -411,10 +411,10 @@ def order_summary(request, template_name):
 
     # Calculate transport fee and add to context:
     delivery_fee = calculate_delivery_fee(order_data['location'], order_data['rental_period'])
-    context['delivery_fee'] = delivery_fee
+    context['delivery_fee'] = format(delivery_fee, ".2f")
 
     # Calculate total cost by adding transport fee and rental cost
-    context['grandTotal'] = float(order_data['total_cost']) + float(delivery_fee)
+    context['grandTotal'] = format(float(order_data['total_cost']) + float(delivery_fee), ".2f") # formatting to always have two decimal places
 
     if request.method == 'POST': # this is triggered when the user hits confirm and pay on the order summary page
 

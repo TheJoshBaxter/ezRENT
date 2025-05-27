@@ -134,7 +134,7 @@
                             <div class="modal-body">
                                 <form method="post" action="{% url 'save_notes' order.id %}">
                                     {% csrf_token %}
-                                    <button type="button" class="btn btn-sm btn-secondary" id="copyCustLink-{{ order.id }}" data-link="{{baseURL}}{% url 'customer_confirmation' order.id %}" onclick="copyCustLink({{ order.id }})">Copy Customer Link</button>
+                                    <button type="button" class="btn btn-sm btn-secondary copy-cust-link" id="copyCustLink-{{ order.id }}" data-link="{{baseURL}}{% url 'customer_confirmation' order.id %}" data-orderid="{{order.id}}">Copy Customer Link</button>
                                     <a class="btn btn-sm btn-primary rental-card" href="{% url 'confirmation' order.id %}">View Docs</a>
                                     <hr>
                                     <div class="mb-3">
@@ -306,7 +306,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                <button type="button" class="btn btn-primary" onclick="extendRental({{ order.id }})">Save</button>
+                                <button type="button" class="btn btn-primary extend-rental" data-orderid="{{ order.id }}">Save</button>
                             </div>
                         </div>
                     </div>
@@ -328,7 +328,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-danger" onclick="endRental({{ order.id }})">Yes, End Rental</button>
+                                <button type="button" class="btn btn-danger end-rental" data-orderid="{{ order.id }}">Yes, End Rental</button>
                             </div>
                         </div>
                     </div>
@@ -355,76 +355,86 @@
 </style>
 
 <script>
-    // script to handle the "Copy Customer Link" button
-    function copyCustLink(orderId) {
-        const link = document.getElementById(`copyCustLink-${orderId}`).getAttribute('data-link');
-        navigator.clipboard.writeText(link).then(function () {
-            alert('Customer link copied to clipboard!');
-        }).catch(function (err) {
-            console.error('Could not copy text: ', err);
+    // script to handle the "Copy Customer Link" buttons
+    document.querySelectorAll(".copy-cust-link").forEach(button => {
+        button.addEventListener("click", function () {
+            const orderId = this.dataset.orderid;
+            const link = document.getElementById(`copyCustLink-${orderId}`).getAttribute('data-link');
+            navigator.clipboard.writeText(link).then(function () {
+                alert('Customer link copied to clipboard!');
+            }).catch(function (err) {
+                console.error('Could not copy text: ', err);
+            });
         });
-    }
+    });
 
     // Function to handle the rental extension
-    function extendRental(orderId) {
-        let daysToExtend = parseInt(document.getElementById(`daysToExtend-${orderId}`).value);
-        if (daysToExtend > 0) {
-            // Make an AJAX request to extend the rental
-            fetch(`/managementPortal/extend_rental/${orderId}/`, {
+    document.querySelectorAll(".extend-rental").forEach(button => {
+        button.addEventListener("click", function () {
+            const orderId = this.dataset.orderid
+            let daysToExtend = parseInt(document.getElementById(`daysToExtend-${orderId}`).value);
+            if (daysToExtend > 0) {
+                // Make an AJAX request to extend the rental
+                fetch(`/managementPortal/extend_rental/${orderId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
+                    },
+                    body: JSON.stringify({ days_to_extend: daysToExtend })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close the modal and refresh the page
+                        let modal = document.getElementById(`extendRentalModal-${orderId}`);
+                        let modalInstance = bootstrap.Modal.getInstance(modal);
+                        modalInstance.hide();
+                        location.reload();
+                    } else {
+                        alert('Failed to extend rental');
+                    }
+                });
+            }
+        });
+    });
+
+    // Function to handle the "end rental" button
+    document.querySelectorAll(".end-rental").forEach(button => {
+        button.addEventListener("click", function () {
+            const orderId = this.dataset.orderid
+
+            // grab the end date input
+            const endDate = document.getElementById(`endDateInput-${orderId}`).value;
+
+            if (!endDate) {
+                alert("Please select a valid end date.");
+                return;
+            }
+            
+            // Make an AJAX request to end the rental
+            fetch(`/managementPortal/end_rental/${orderId}/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
                 },
-                body: JSON.stringify({ days_to_extend: daysToExtend })
+                body: JSON.stringify({ end_date: endDate })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     // Close the modal and refresh the page
-                    let modal = document.getElementById(`extendRentalModal-${orderId}`);
+                    let modal = document.getElementById(`endRentalModal-${orderId}`);
                     let modalInstance = bootstrap.Modal.getInstance(modal);
                     modalInstance.hide();
                     location.reload();
                 } else {
-                    alert('Failed to extend rental');
+                    alert('Failed to end rental');
                 }
-            });
-        }
-    }
-
-    // Function to handle the "end rental" button
-    function endRental(orderId) {
-        // grab the end date input
-        const endDate = document.getElementById(`endDateInput-${orderId}`).value;
-
-        if (!endDate) {
-            alert("Please select a valid end date.");
-            return;
-        }
-        
-        // Make an AJAX request to end the rental
-        fetch(`/managementPortal/end_rental/${orderId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'  // CSRF token for security
-            },
-            body: JSON.stringify({ end_date: endDate })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Close the modal and refresh the page
-                let modal = document.getElementById(`endRentalModal-${orderId}`);
-                let modalInstance = bootstrap.Modal.getInstance(modal);
-                modalInstance.hide();
-                location.reload();
-            } else {
-                alert('Failed to end rental');
-            }
+            })
         });
-    }
+    });
 
     // Function to check for hashes in the url, and if found, load a specified modal
     document.addEventListener('DOMContentLoaded', () => {

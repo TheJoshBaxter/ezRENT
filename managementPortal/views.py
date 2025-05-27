@@ -308,8 +308,8 @@ def approve_rental(request, order_id):
     
     if request.method == 'POST':
         # Mark the rental as approved (and if prices have been changed, which is checked in the JS, update the DB)
-        submitted_orderCost = request.POST['rentalCost']
-        submitted_transportFee = request.POST['transportFee']
+        submitted_orderCost = request.POST[f'rentalCost-{order_id}']
+        submitted_transportFee = request.POST[f'transportFee-{order_id}']
 
         order.total_cost = submitted_orderCost
         order.transport_order.cost = submitted_transportFee
