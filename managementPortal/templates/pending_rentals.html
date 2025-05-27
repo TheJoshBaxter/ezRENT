@@ -235,17 +235,21 @@
     // Function to listen for changes made to the pricing in the approveRental modal, and confirm before submitting
     document.addEventListener("DOMContentLoaded", function () {
 
-        function updateTotal(orderId) { // this is used in the function below but needed to declare it on a global scope so that my inline oninput html will work
+        function cleanCurrency(value) {
+            return parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+        }
+
+        function updateTotal(orderId) {
             // grab inputs
             const rentalCostInput = document.getElementById(`rentalCost-${orderId}`);
             const transportFeeInput = document.getElementById(`transportFee-${orderId}`);
             const totalCost = document.getElementById(`totalCost-${orderId}`);
             
             // convert input values to integers, and if empty or invalid, defaults to 0
-            const newRentalCost = parseFloat(rentalCostInput.value) || 0;
-            const newTransportFee = parseFloat(transportFeeInput.value) || 0;
+            const newRentalCost = cleanCurrency(rentalCostInput.value);
+            const newTransportFee = cleanCurrency(transportFeeInput.value);
             const total = (newRentalCost + newTransportFee).toFixed(2);
-            totalCost.innerText = total;
+            totalCost.innerText = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         // Attach listeners to every input with the relevant class
@@ -261,11 +265,8 @@
 
         forms.forEach(function (form) {
             form.addEventListener("submit", function (e) {
-                console.log("do dis be werkin?")
                 const rentalCostInput = form.querySelector(".rental-cost");
                 const transportFeeInput = form.querySelector(".transport-fee");
-                console.log(rentalCostInput)
-                console.log(transportFeeInput)
 
                 const newRentalCost = parseFloat(rentalCostInput.value) || 0;// converts input value to integer, and if empty or invalid, defaults to 0
                 const newTransportFee = parseFloat(transportFeeInput.value) || 0; 
@@ -274,7 +275,6 @@
                 const originalTransportFee = parseFloat(transportFeeInput.dataset.original) || 0;
 
                 if (newRentalCost !== originalRentalCost || newTransportFee !== originalTransportFee) {
-                    console.log("this shoulda wERKED")
                     const confirmChange = confirm(
                         "Are you sure you want to change the pricing for this order?"
                     );
