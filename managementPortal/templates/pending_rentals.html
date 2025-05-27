@@ -129,7 +129,7 @@
                                                 <td>
                                                     <div style="display: flex; align-items: center;">
                                                         <span>$&nbsp</span>
-                                                        <input class="form-control rental-cost" size="5" id="rentalCost-{{ order.id }}" name="rentalCost-{{ order.id }}" value="{{ order.total_cost|intcomma }}" data-original="{{order.total_cost}}" data-orderid="{{order.id}}"></input>
+                                                        <input class="form-control rental-cost" size="6" id="rentalCost-{{ order.id }}" name="rentalCost-{{ order.id }}" value="{{ order.total_cost|intcomma }}" data-original="{{order.total_cost}}" data-orderid="{{order.id}}"></input>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -150,7 +150,7 @@
                                                 <td>
                                                     <div style="display: flex; align-items: center;">
                                                         <span>$&nbsp</span>
-                                                        <input class="form-control transport-fee" size="5" id="transportFee-{{ order.id }}" name="transportFee-{{ order.id }}" value="{{ order.transport_order.cost|intcomma }}" data-original="{{order.transport_order.cost}}" data-orderid="{{order.id}}"></input>
+                                                        <input class="form-control transport-fee" size="6" id="transportFee-{{ order.id }}" name="transportFee-{{ order.id }}" value="{{ order.transport_order.cost|intcomma }}" data-original="{{order.transport_order.cost}}" data-orderid="{{order.id}}"></input>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -166,7 +166,7 @@
                                     
                                             <!-- Rows for Extensions -->
                                             <tr>
-                                                <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost-{{ order.id }}" name="totalCost-{{ order.id }}">{{order.initialTotalCost}}<span></td>
+                                                <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost-{{ order.id }}" name="totalCost-{{ order.id }}">{{order.initialTotalCost|intcomma}}<span></td>
                                             </tr>
                                         </tbody>
                                     </table>
