@@ -45,8 +45,7 @@ def create_order(orderType, order, cost_in_cents, extension=None):
 
     if orderResult.is_error():
         print("Order Creation resulted in an error")
-        # print(orderResult.errors)
-        return {"success": False,}
+        return {"success": False, "result_errors_info": orderResult.errors}
     elif orderResult.is_success():
         print("Order Creation SUCCESSFUL!!!")
 
@@ -84,5 +83,4 @@ def create_payment(token, cost_in_cents, order_data):
         return {"success": True, "receipt_url": receipt_url, "order_id": order_data["order_id"], "note": order_data["note"]} #Return a dictionary containing success indicator and receipt URL
     elif result.is_error():
         print("PAYMENT ERROR:")
-        print(result.errors)
         return {"success": False, "result_errors_info": result.errors} #Return a dictionary containing success indicator and payment error details

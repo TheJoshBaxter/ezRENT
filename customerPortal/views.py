@@ -664,6 +664,10 @@ def update_payment_status(request):
                     transportOrder.save()
                 else:
                     messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+                    print(result.get("result_errors_info"))
+            else:
+                    messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+                    print(order_data.get("result_errors_info"))
 
         return redirect('confirmation', orderID=orderId)
     
