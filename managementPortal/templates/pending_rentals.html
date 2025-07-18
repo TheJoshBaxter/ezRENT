@@ -116,12 +116,34 @@
                                         <thead>
                                             <tr>
                                                 {% comment %} <th>Type</th> {% endcomment %}
-                                                <th>Requested Service</th>
+                                                <th>Line Item</th>
                                                 <th>Cost</th>
                                                 <th>Payment</th>
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            {% if companyInfo.security_deposits_active %}
+                                            <!-- Row for Security Deposit (if activated) -->
+                                            <tr>
+                                                {% comment %} <td><strong>Initial Rental</strong></td> {% endcomment %}
+                                                <td>Security Deposit</td>
+                                                <td>
+                                                    <div style="display: flex; align-items: center;">
+                                                        <span>${{ order.security_deposit }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge text-white {% if order.paid %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {% if order.paid %} 
+                                                        Paid <!--(this will never show as paid here under the new setup because user can't pay until rental is approved) -->
+                                                        {% else %}
+                                                        Outstanding
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+
                                             <!-- Row for Initial Rental -->
                                             <tr>
                                                 {% comment %} <td><strong>Initial Rental</strong></td> {% endcomment %}
@@ -163,8 +185,8 @@
                                                     </span>
                                                 </td>
                                             </tr>
-                                    
                                             <!-- Rows for Extensions -->
+                                            <!-- (not necessary, at least rn, since it's impossible to create an extension for a rental that hasn't been approved yet.) -->
                                             <tr>
                                                 <td colspan="4" class="text-center"><strong>Total Cost: </strong>$<span id="totalCost-{{ order.id }}" name="totalCost-{{ order.id }}">{{order.initialTotalCost|intcomma}}<span></td>
                                             </tr>
@@ -244,11 +266,14 @@
             const rentalCostInput = document.getElementById(`rentalCost-${orderId}`);
             const transportFeeInput = document.getElementById(`transportFee-${orderId}`);
             const totalCost = document.getElementById(`totalCost-${orderId}`);
+
+            // grab security deposit amount (will be 0 if this setting is off)
+            const securityDepositAmt = {{companyInfo.default_security_deposit}}
             
             // convert input values to integers, and if empty or invalid, defaults to 0
             const newRentalCost = cleanCurrency(rentalCostInput.value);
             const newTransportFee = cleanCurrency(transportFeeInput.value);
-            const total = (newRentalCost + newTransportFee).toFixed(2);
+            const total = (newRentalCost + newTransportFee + securityDepositAmt).toFixed(2); // adding the current security deposit amount could be bad if management happened to change the default amount between order creation and order approval, but the mismatch would only be visible to management and would not cause wrong payment.
             totalCost.innerText = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 

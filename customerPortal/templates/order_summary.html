@@ -18,6 +18,9 @@
     <strong>Estimated Total Cost:</strong> ${{ grandTotal|intcomma }}
     <ul class="cost-breakdown">
         <li><span>Rental Cost: </span><span> ${{ order_data.total_cost|floatformat:2|intcomma }}</span></li>
+        {% if companyInfo.security_deposits_active %}
+        <li><span>Security Deposit (refundable): </span><span> ${{ companyInfo.default_security_deposit|intcomma }}</span></li>
+        {% endif %}
         <li><span>Delivery Cost: </span><span> ${{delivery_fee|intcomma}} *** note that delivery cost is estimated, and will be finalized when your rental is approved. ***</span></li>
     </ul>
 

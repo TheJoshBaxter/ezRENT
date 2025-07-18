@@ -48,6 +48,11 @@
                     {% endif %}
                 </li>
             </ul>
+
+            {% if companyInfo.security_deposits_active %}
+            <p>*** Please note we also charge a refundable security deposit of ${{companyInfo.default_security_deposit|intcomma}} ***</p>
+            {% endif %}
+
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
             <form method="post" action="{% url 'customer_equipment_detail' equipmentType.id %}" id="infoSubmissionForm">
