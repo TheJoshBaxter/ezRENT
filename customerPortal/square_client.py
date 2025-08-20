@@ -1,6 +1,5 @@
 from django.conf import settings
 from square.client import Client
-import uuid
 
 # Square API Configuration
 def get_square_client():
@@ -10,7 +9,7 @@ def get_square_client():
     )
     return client
 
-def create_order(orderType, order, cost_in_cents, extension=None):
+def create_order(orderType, order, cost_in_cents, idempotency_key, extension=None):
 
     # Access the client service (orders)
     orders_api = get_square_client().orders
@@ -39,7 +38,7 @@ def create_order(orderType, order, cost_in_cents, extension=None):
                 }
             ]
             },
-            "idempotency_key": str(uuid.uuid4())
+            "idempotency_key": idempotency_key
         }
     )
 
@@ -53,14 +52,14 @@ def create_order(orderType, order, cost_in_cents, extension=None):
         
         return {"success": True, "order_id": order_id, "note": note} #Return a dictionary containing the order_id and the note to be used in create_payment.
 
-def create_payment(token, cost_in_cents, order_data):
+def create_payment(token, cost_in_cents, order_data, idempotency_key):
 
     client = get_square_client()
 
     result = client.payments.create_payment(
         body = {
             "source_id": token,
-            "idempotency_key": str(uuid.uuid4()),
+            "idempotency_key": idempotency_key,
             "amount_money": {
             "amount": cost_in_cents,
             "currency": "USD"

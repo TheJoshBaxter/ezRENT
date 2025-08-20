@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 import io
+import uuid
 from customerPortal.square_client import create_payment, create_order
 # from customerPortal.twilioClient import send_text_alert
 from customerPortal.twilioClient import send_customer_text
@@ -642,13 +643,18 @@ def update_payment_status(request):
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
 
+            # create an idempotency key for the extension if it doesn't exist yet
+            if not extension.idempotency_key:
+                extension.idempotency_key = str(uuid.uuid4())
+                extension.save()
+
             # create an order for receipting purposes
-            order_data = create_order(orderType, order, cost_in_cents, extension)
+            order_data = create_order(orderType, order, cost_in_cents, extension.idempotency_key, extension)
 
             # if order creation was successful, use create_payment to take the payment
             if order_data.get("success"):
 
-                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                result = create_payment(token, cost_in_cents, order_data, extension.idempotency_key) # execute create_payment, save the results to "result"
                 if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
                     extension.paid = True
                     extension.payment_receipt_url = result.get("receipt_url")
@@ -671,14 +677,19 @@ def update_payment_status(request):
                 pass #no other action is needed
 
             cost_in_cents = int(initialTotalCost * 100)
+            
+            # create an idempotency key for the extension if it doesn't exist yet
+            if not order.idempotency_key:
+                order.idempotency_key = str(uuid.uuid4())
+                order.save()
 
             # create an order for receipting purposes
-            order_data = create_order(orderType, order, cost_in_cents)
+            order_data = create_order(orderType, order, cost_in_cents, order.idempotency_key)
 
             # if order creation was successful, use create_payment to take the payment
             if order_data.get("success"):
 
-                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                result = create_payment(token, cost_in_cents, order_data, order.idempotency_key) # execute create_payment, save the results to "result"
                 if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
                     order.paid = True
                     order.payment_receipt_url = result.get("receipt_url")

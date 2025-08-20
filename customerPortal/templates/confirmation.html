@@ -321,7 +321,7 @@
     const appId = '{{ squareAppId|escapejs }}';
     const locationId = '{{ squareLocationId|escapejs }}';
     
-    async function initializePrimaryPayment(extensionId) {
+    {% comment %} async function initializePrimaryPayment(extensionId) {
         const payments = Square.payments(appId, locationId);
         const card = await payments.card();
         await card.attach('#primary-payment-card-container');
@@ -337,6 +337,43 @@
             } else {
                 statusContainer.innerText = 'Payment Failed!';
             }
+        });
+    } THIS SECTION TO BE REMOVED AFTER THE NEW DUPLICATE PAYMENT PREVENTION METHOD IS FULLY PROVEN! (BOTH!!!! CUST AND NON) {% endcomment %}
+
+    async function initializePrimaryPayment(extensionId) {
+        const payments = Square.payments(appId, locationId);
+        const card = await payments.card();
+        await card.attach('#primary-payment-card-container');
+        const orderType = "initial";
+        console.log("section 2 completed");
+
+        const payButton = document.getElementById('primary-payment-card-button');
+        const statusContainer = document.getElementById('primary-payment-status-container');
+
+        payButton.addEventListener('click', async () => {
+            // Disable button immediately to prevent multiple clicks
+            payButton.disabled = true;
+            payButton.innerText = "Processing...";
+
+            const result = await card.tokenize();
+            console.log("section 3 completed");
+
+            if (result.status === 'OK') {
+                statusContainer.innerText = 'Payment Info Submitted!';
+                try {
+                    await updatePaymentStatus(extensionId, result.token, orderId, orderType);
+                    // Keep button disabled on success (user shouldn’t retry)
+                } catch (error) {
+                    statusContainer.innerText = 'Error processing payment. Try again.';
+                    payButton.disabled = false;
+                    payButton.innerText = "Pay Now";
+                }
+            } else {
+                statusContainer.innerText = 'Payment Failed!';
+                payButton.disabled = false;
+                payButton.innerText = "Pay Now";
+            }
+            console.log("section 4 completed");
         });
     }
 
