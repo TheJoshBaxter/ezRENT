@@ -289,14 +289,18 @@ def employee_dashboard(request):
 @login_required
 def pending_rentals(request):
     pendingOrders = RentalOrder.objects.filter(rental_approved=False).order_by('rental_start_date')
+    companyInfo = CompanySetting.objects.first()
 
     for order in pendingOrders:
         order.unavailableDates = get_unavailable_dates(order.equipment_id)
         order.initialTotalCost = order.total_cost + order.transport_order.cost
+        if companyInfo.security_deposits_active:
+            order.initialTotalCost += order.security_deposit
 
     context = {}
     context['pendingOrders'] = pendingOrders
     context['baseURL'] = settings.BASE_SITE_URL
+    context['companyInfo'] = CompanySetting.objects.first()
     
     return render(request, 'pending_rentals.html', context)
 

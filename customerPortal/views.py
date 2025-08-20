@@ -8,6 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 import io
+import uuid
 from customerPortal.square_client import create_payment, create_order
 # from customerPortal.twilioClient import send_text_alert
 from customerPortal.twilioClient import send_customer_text
@@ -131,6 +132,7 @@ def calc_aggregate_availability(equipmentTypeID):
 def equipment_detail(request, equipmentType_id, template_name):
     equipmentType = EquipmentType.objects.get(id=equipmentType_id)
     aggregateAvailabilityContext = calc_aggregate_availability(equipmentType_id)
+    companyInfo = CompanySetting.objects.first()
 
     if request.method == 'POST':
         # grab the selected rentalEquipment ID that was identified as available for rental
@@ -308,7 +310,7 @@ def equipment_detail(request, equipmentType_id, template_name):
         else:
             return redirect('order_summary', )
 
-    return render(request, template_name, {'equipmentType': equipmentType, 'aggregateAvailabilityContext': aggregateAvailabilityContext})
+    return render(request, template_name, {'equipmentType': equipmentType, 'aggregateAvailabilityContext': aggregateAvailabilityContext, 'companyInfo': companyInfo})
 
 def search_customers(request):
     if request.method == 'GET':
@@ -413,8 +415,18 @@ def order_summary(request, template_name):
     delivery_fee = calculate_delivery_fee(order_data['location'], order_data['rental_period'])
     context['delivery_fee'] = format(delivery_fee, ".2f")
 
-    # Calculate total cost by adding transport fee and rental cost
-    context['grandTotal'] = format(float(order_data['total_cost']) + float(delivery_fee), ".2f") # formatting to always have two decimal places
+    # Grab company settings and add to context
+    companyInfo = CompanySetting.objects.first()
+    context['companyInfo'] = companyInfo
+
+    # Calculate total cost by adding transport fee, rental cost, and security deposit (if active in company settings)
+    if companyInfo.security_deposits_active:
+        grandTotal = format(float(order_data['total_cost']) + float(delivery_fee) + float(companyInfo.default_security_deposit), ".2f") # formatting to always have two decimal places
+    else:
+        grandTotal = format(float(order_data['total_cost']) + float(delivery_fee), ".2f") # formatting to always have two decimal places
+    
+    context['grandTotal'] = grandTotal
+
 
     if request.method == 'POST': # this is triggered when the user hits confirm and pay on the order summary page
 
@@ -426,7 +438,7 @@ def order_summary(request, template_name):
             Q(rental_end_date=order_data['rental_end_date']) &
             Q(location=order_data['location']) &
             Q(total_cost=order_data['total_cost'])
-        )#.exists()
+        )
 
         if existing_order.exists():
             print("This Rental Order has already been submitted. Duplication avoided successfully")
@@ -448,6 +460,7 @@ def order_summary(request, template_name):
                 rental_end_date=order_data['rental_end_date'],
                 location=order_data['location'],
                 total_cost=order_data['total_cost'],
+                security_deposit=companyInfo.default_security_deposit,
             )
             print("Rental Order created in ezRENT successfully")
 
@@ -534,11 +547,15 @@ def confirmation(request, orderID, template_name):
     except: # if there is no transport order, total cost will just be the initial order's total cost
         initialTotalCost = newOrder.total_cost
 
-    orderExtensions = newOrder.extensions.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
-
+    if companyInfo.security_deposits_active:
+        initialTotalCost += newOrder.security_deposit
+    else:
+        pass #nothing required here
 
     # add any existing extension orders to the initialTotalCost to find the grandTotalCost
-    grandTotalCost = initialTotalCost
+    orderExtensions = newOrder.extensions.all() # this grabs all RentalExtensions instances related to the Rental Order newOrder
+
+    grandTotalCost =  initialTotalCost # initialize grandTotalCost variable, then add extension costs to it, if there are any extensions
 
     if orderExtensions:
         for extension in orderExtensions:
@@ -626,13 +643,18 @@ def update_payment_status(request):
             extension = RentalExtensions.objects.get(id=extensionId)
             cost_in_cents = int(extension.cost * 100)
 
+            # create an idempotency key for the extension if it doesn't exist yet
+            if not extension.idempotency_key:
+                extension.idempotency_key = str(uuid.uuid4())
+                extension.save()
+
             # create an order for receipting purposes
-            order_data = create_order(orderType, order, cost_in_cents, extension)
+            order_data = create_order(orderType, order, cost_in_cents, extension.idempotency_key, extension)
 
             # if order creation was successful, use create_payment to take the payment
             if order_data.get("success"):
 
-                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                result = create_payment(token, cost_in_cents, order_data, extension.idempotency_key) # execute create_payment, save the results to "result"
                 if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the extension as paid and save it.
                     extension.paid = True
                     extension.payment_receipt_url = result.get("receipt_url")
@@ -640,22 +662,34 @@ def update_payment_status(request):
                 else:
                     messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags=f"extensionPayment {extensionId}")
 
-        else:
+        else: # orderType is empty, this is an initial order payment
             try: # if there is a transport order, grab it, and calculate total cost by adding rental order cost and transport cost
                 initialTotalCost = order.total_cost + transportOrder.cost
             
             except: # if there is no transport order, total cost will just be the initial order's total cost
                 initialTotalCost = order.total_cost
 
+            # since this is an initial order payment, check if security deposits are activated, and if so, add security deposit to total initial cost
+            companyInfo = CompanySetting.objects.first()
+            if companyInfo.security_deposits_active:
+                initialTotalCost += order.security_deposit
+            else:
+                pass #no other action is needed
+
             cost_in_cents = int(initialTotalCost * 100)
+            
+            # create an idempotency key for the extension if it doesn't exist yet
+            if not order.idempotency_key:
+                order.idempotency_key = str(uuid.uuid4())
+                order.save()
 
             # create an order for receipting purposes
-            order_data = create_order(orderType, order, cost_in_cents)
+            order_data = create_order(orderType, order, cost_in_cents, order.idempotency_key)
 
             # if order creation was successful, use create_payment to take the payment
             if order_data.get("success"):
 
-                result = create_payment(token, cost_in_cents, order_data) # execute create_payment, save the results to "result"
+                result = create_payment(token, cost_in_cents, order_data, order.idempotency_key) # execute create_payment, save the results to "result"
                 if result.get("success"): #if the success key in the returned dict contains True (for successful payment), mark the order and transport as paid and save them.
                     order.paid = True
                     order.payment_receipt_url = result.get("receipt_url")
@@ -664,6 +698,10 @@ def update_payment_status(request):
                     transportOrder.save()
                 else:
                     messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+                    print(result.get("result_errors_info"))
+            else:
+                    messages.error(request, "Payment failed. Please try again or contact support at the number above.", extra_tags="initialPayment")
+                    print(order_data.get("result_errors_info"))
 
         return redirect('confirmation', orderID=orderId)
     

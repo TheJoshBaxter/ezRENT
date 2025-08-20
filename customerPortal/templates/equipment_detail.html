@@ -17,10 +17,45 @@
             <p><strong>Specifications:</strong> {{ equipmentType.specs }}</p>
             <strong>Rental Rates:</strong>
             <ul>
-                <li><strong>1 Day:</strong> ${{ equipmentType.daily_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
-                <li><strong>1 Week:</strong> ${{ equipmentType.weekly_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
-                <li><strong>1 Month:</strong> ${{ equipmentType.monthly_rate|intcomma }} (1 week free) + <strong>one</strong>-way delivery fee</li>
+                <li>
+                    <strong>1 Day:</strong>
+                    {% if equipmentType.discounted_daily_rate > 0 %}
+                    <span style="text-decoration: line-through;">${{ equipmentType.daily_rate|intcomma }}</span>
+                    <span style="color: green; font-weight: bold;">${{ equipmentType.discounted_daily_rate|intcomma }}</span>
+                    <span class="badge bg-success">Limited Time Offer!</span>
+                    + <strong>two</strong>-way delivery fee
+                    {% else %}
+                    ${{ equipmentType.daily_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>1 Week:</strong>
+                    {% if equipmentType.discounted_weekly_rate > 0 %}
+                    <span style="text-decoration: line-through;">${{ equipmentType.weekly_rate|intcomma }}</span>
+                    <span style="color: green; font-weight: bold;">${{ equipmentType.discounted_weekly_rate|intcomma }}</span>
+                    <span class="badge bg-success">Limited Time Offer!</span>
+                    + <strong>two</strong>-way delivery fee
+                    {% else %}
+                    ${{ equipmentType.weekly_rate|intcomma }} + <strong>two</strong>-way delivery fee</li>
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>1 Month:</strong>
+                    {% if equipmentType.discounted_monthly_rate > 0 %}
+                    <span style="text-decoration: line-through;">${{ equipmentType.monthly_rate|intcomma }}</span>
+                    <span style="color: green; font-weight: bold;">${{ equipmentType.discounted_monthly_rate|intcomma }}</span>
+                    <span class="badge bg-success">Limited Time Offer!</span>
+                    + <strong>one</strong>-way delivery fee
+                    {% else %}
+                    ${{ equipmentType.monthly_rate|intcomma }} <span class="badge bg-success">(1 Week Free!)</span> + <strong>one</strong>-way delivery fee</li> {% comment %} <span class="badge bg-success">(50% off Delivery)</span> {% endcomment %}
+                    {% endif %}
+                </li>
             </ul>
+
+            {% if companyInfo.security_deposits_active %}
+            <p>*** Please note we also charge a refundable security deposit of ${{companyInfo.default_security_deposit|intcomma}} ***</p>
+            {% endif %}
+
             <p><strong>Availability:</strong> {{ aggregateAvailabilityContext.theAvailabilityMessage }}</p>
 
             <form method="post" action="{% url 'equipment_detail' equipmentType.id %}">

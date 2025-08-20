@@ -41,6 +41,9 @@ class RentalOrder(models.Model):
     rental_approved = models.BooleanField(default=False, null=True)
     rental_returned = models.BooleanField(default=False, null=True)
     payment_receipt_url = models.CharField(max_length=100, default="noURL")
+    security_deposit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    idempotency_key = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    # square_payment_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
 
     @property
     def rental_term_agreement(self): # (number of days until renewal or return)
@@ -63,6 +66,8 @@ class RentalExtensions(models.Model):
     cost = models.DecimalField(max_digits=10, decimal_places=2, null=True)
     paid = models.BooleanField(default=False, null=True)
     payment_receipt_url = models.CharField(max_length=100, default="noURL")
+    idempotency_key = models.CharField(max_length=50, blank=True, null=True, unique=True)
+    # square_payment_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
 
     def __str__(self):
         return f"Extension for {self.rental_order} originally, now {self.new_end_date}"
@@ -114,6 +119,8 @@ class CompanySetting(models.Model):
     company_name = models.CharField(max_length=100, blank=False, default="DemoRentals")
     company_phone = models.CharField(max_length=15, blank=False, default="8011231234")
     owner_name = models.CharField(max_length=100, blank=False, default="Demo Owner Signature")
+    security_deposits_active = models.BooleanField(default=False, null=True)
+    default_security_deposit = models.DecimalField(max_digits=10, decimal_places=2, default=250.00)
 
     def __str__(self):
         return f"Company Settings for {self.company_name}"
