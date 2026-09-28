@@ -44,6 +44,7 @@ def create_order(orderType, order, cost_in_cents, idempotency_key, extension=Non
 
     if orderResult.is_error():
         print("Order Creation resulted in an error")
+        print(f"Square order errors: {orderResult.errors}")
         return {"success": False, "result_errors_info": orderResult.errors}
     elif orderResult.is_success():
         print("Order Creation SUCCESSFUL!!!")
@@ -82,4 +83,6 @@ def create_payment(token, cost_in_cents, order_data, idempotency_key):
         return {"success": True, "receipt_url": receipt_url, "order_id": order_data["order_id"], "note": order_data["note"]} #Return a dictionary containing success indicator and receipt URL
     elif result.is_error():
         print("PAYMENT ERROR:")
+        print(f"Square payment errors: {result.errors}")
+        print(f"Order ID: {order_data.get('order_id')}, Amount (cents): {cost_in_cents}, Idempotency key: {idempotency_key}")
         return {"success": False, "result_errors_info": result.errors} #Return a dictionary containing success indicator and payment error details
